@@ -1,23 +1,16 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GameBoard } from '@/components/game/GameBoard';
 import { useGameStore } from '@/stores/gameStore';
 
 const Game = () => {
-  const navigate = useNavigate();
-  const { currentRoom, gameState } = useGameStore();
+  const { gameState, initializeDemoGame } = useGameStore();
 
   useEffect(() => {
-    // Redirect if no room or game not started
-    if (!currentRoom) {
-      navigate('/');
-      return;
+    // Initialize a demo game if no game state exists
+    if (!gameState) {
+      initializeDemoGame();
     }
-    if (currentRoom.status === 'waiting') {
-      navigate('/waiting');
-      return;
-    }
-  }, [currentRoom, navigate]);
+  }, [gameState, initializeDemoGame]);
 
   if (!gameState) {
     return (
