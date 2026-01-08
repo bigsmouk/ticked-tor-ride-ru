@@ -424,7 +424,6 @@ export const ROUTE_WAGON_POSITIONS: Record<string, { x: number; y: number; angle
   'munchen-venezia': [{ x: 350, y: 291, angle: 81 }, { x: 356, y: 321, angle: 81 }],
   'zurich-venezia': [{ x: 314, y: 327, angle: 19 }, { x: 339, y: 337, angle: 19 }],
   'wien-munchen': [{ x: 415, y: 286, angle: -37 }, { x: 388, y: 295, angle: -171 }, { x: 363, y: 283, angle: -133 }],
-  'wien-venezia': [{ x: 412, y: 305, angle: 148 }, { x: 380, y: 321, angle: 142 }],
   'zagreb-venezia': [{ x: 408, y: 340, angle: -135 }, { x: 382, y: 337, angle: 158 }],
   'roma-brindisi': [{ x: 392, y: 406, angle: -6 }, { x: 419, y: 415, angle: 53 }],
   'roma-palermo': [{ x: 384, y: 423, angle: 25 }, { x: 407, y: 440, angle: 45 }, { x: 418, y: 466, angle: 101 }, { x: 406, y: 494, angle: 130 }],
@@ -463,4 +462,6 @@ export const ROUTE_WAGON_POSITIONS: Record<string, { x: number; y: number; angle
   'frankfurt-berlin-2': [{ x: 326, y: 231, angle: -25 }, { x: 351, y: 220, angle: -25 }, { x: 377, y: 208, angle: -25 }],
   'frankfurt-berlin-1': [{ x: 321, y: 220, angle: -25 }, { x: 346, y: 208, angle: -25 }, { x: 372, y: 195, angle: -25 }],
   'frankfurt-essen': [{ x: 314, y: 211, angle: -37 }, { x: 329, y: 195, angle: -114 }],
+  'petrograd-wilno': [{ x: 667, y: 73, angle: 122 }, { x: 651, y: 97, angle: 130 }, { x: 633, y: 119, angle: 122 }, { x: 618, y: 138, angle: 122 }],
+  'palermo-smyrna': [{ x: 430, y: 514, angle: 0 }, { x: 460, y: 514, angle: 0 }, { x: 489, y: 515, angle: 0 }, { x: 517, y: 515, angle: 0 }, { x: 547, y: 516, angle: 0 }, { x: 576, y: 514, angle: 0 }],
 };
