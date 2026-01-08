@@ -15,7 +15,7 @@ import {
   INITIAL_TRAIN_CARDS,
   END_GAME_TRAINS_THRESHOLD,
 } from '@/types/game';
-import { playRouteClaimSound } from '@/hooks/useGameSounds';
+import { playRouteClaimSound, playCardDrawSound } from '@/hooks/useGameSounds';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -188,6 +188,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const card = newFaceUp[cardIndex];
       if (!card) return;
       
+      // Play sound effect
+      playCardDrawSound();
+      
       // If taking locomotive from face-up, can only take one card
       if (card === 'locomotive') {
         if (newAction === 'drawTrainCards') {
@@ -247,6 +250,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const card = newDeck.pop();
       if (!card) return;
       newHand.push(card as TrainCardType);
+      
+      // Play sound effect
+      playCardDrawSound();
     }
     
     // Check if this is the first or second card draw
