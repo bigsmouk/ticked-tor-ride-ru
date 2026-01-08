@@ -2,14 +2,10 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GameBoard } from '@/components/game/GameBoard';
 import { useGameStore } from '@/stores/gameStore';
-import { useGameSync } from '@/hooks/useGameSync';
 
 const Game = () => {
   const navigate = useNavigate();
   const { currentRoom, gameState } = useGameStore();
-
-  // Синхронизация состояния игры между игроками
-  useGameSync(currentRoom?.id || null);
 
   useEffect(() => {
     // Redirect if no room or game not started
