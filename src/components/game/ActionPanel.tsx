@@ -13,6 +13,7 @@ interface ActionPanelProps {
   onClaimRoute: () => void;
   onCancelAction: () => void;
   trainsRemaining: number;
+  routeRequirement?: { color: string; count: number } | null;
 }
 
 export const ActionPanel: React.FC<ActionPanelProps> = ({
@@ -26,6 +27,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
   onClaimRoute,
   onCancelAction,
   trainsRemaining,
+  routeRequirement,
 }) => {
   if (!isMyTurn) {
     return (
@@ -115,12 +117,15 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
         </div>
       )}
       
-      {selectedRouteId && currentAction === 'none' && (
+      {selectedRouteId && currentAction === 'none' && routeRequirement && (
         <div className="mt-3 p-2 bg-accent/30 rounded border border-accent">
           <div className="text-sm text-foreground">
             <span className="font-display font-semibold">Выбран маршрут</span>
             <span className="text-muted-foreground ml-2">
-              Выберите карты и нажмите "Построить путь"
+              Нужно {routeRequirement.count} карт ({routeRequirement.color === 'gray' ? 'любого цвета' : routeRequirement.color})
+            </span>
+            <span className="text-gold ml-2 font-bold">
+              Выбрано: {selectedCards.length} / {routeRequirement.count}
             </span>
           </div>
         </div>

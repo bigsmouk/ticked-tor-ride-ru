@@ -4,8 +4,9 @@ import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
 import { CardDeckArea } from '@/components/game/CardDeckArea';
 import { ActionPanel } from '@/components/game/ActionPanel';
+import { DestinationPickerModal } from '@/components/game/DestinationPickerModal';
 import { useGameStore } from '@/stores/gameStore';
-import { TrainCardType } from '@/types/game';
+import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
 
 // Context для передачи sendActionToHost в дочерние компоненты
@@ -17,9 +18,12 @@ const GameSyncContext = createContext<{
 export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
+  const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+  const [showDestinationPicker, setShowDestinationPicker] = useState(false);
+  const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   
   // Получаем функцию синхронизации
   const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
@@ -33,17 +37,40 @@ export const GameBoard: React.FC = () => {
     if (selectedRoute === routeId) {
       setSelectedRoute(null);
       setSelectedCards([]);
+      setSelectedCardIndices([]);
     } else {
       setSelectedRoute(routeId);
       setSelectedCards([]);
+      setSelectedCardIndices([]);
     }
   };
 
-  const handleCardSelect = (card: TrainCardType) => {
-    if (selectedCards.includes(card)) {
-      setSelectedCards(selectedCards.filter(c => c !== card));
+  const handleCardSelect = (card: TrainCardType, cardIndex: number) => {
+    // Проверяем требования маршрута
+    if (!selectedRoute) return;
+    
+    const route = gameState.routes.find(r => r.id === selectedRoute);
+    if (!route) return;
+    
+    if (selectedCardIndices.includes(cardIndex)) {
+      // Убираем карту
+      const idx = selectedCardIndices.indexOf(cardIndex);
+      setSelectedCards(selectedCards.filter((_, i) => i !== idx));
+      setSelectedCardIndices(selectedCardIndices.filter(i => i !== cardIndex));
     } else {
+      // Проверяем не превышен ли лимит
+      if (selectedCards.length >= route.length) return;
+      
+      // Проверяем валидность карты для маршрута
+      const isValidCard = card === 'locomotive' || 
+        route.color === 'gray' || 
+        card === route.color;
+      
+      if (!isValidCard) return;
+      
+      // Добавляем карту
       setSelectedCards([...selectedCards, card]);
+      setSelectedCardIndices([...selectedCardIndices, cardIndex]);
     }
   };
 
@@ -56,23 +83,63 @@ export const GameBoard: React.FC = () => {
     }
   };
 
-  const handleClaimRoute = () => {
-    if (selectedRoute && selectedCards.length > 0) {
-      if (isHost) {
-        claimRoute(selectedRoute, selectedCards);
-      } else {
-        sendActionToHost({ type: 'claimRoute', routeId: selectedRoute, cardsUsed: selectedCards });
-      }
-      setSelectedRoute(null);
-      setSelectedCards([]);
+  const handleDrawDestinations = () => {
+    // Берём 3 карты маршрутов из колоды
+    const destinations = gameState.destinationDeck.slice(0, 3);
+    if (destinations.length === 0) return;
+    
+    setAvailableDestinations(destinations);
+    setShowDestinationPicker(true);
+    
+    if (isHost) {
+      drawDestinations();
+    } else {
+      sendActionToHost({ type: 'drawDestinations' });
     }
   };
+
+  const handleKeepDestinations = (ticketIds: string[]) => {
+    if (ticketIds.length < 1) return;
+    
+    if (isHost) {
+      keepDestinations(ticketIds);
+    } else {
+      sendActionToHost({ type: 'keepDestinations', ticketIds });
+    }
+    
+    setShowDestinationPicker(false);
+    setAvailableDestinations([]);
+  };
+
+  const handleClaimRoute = () => {
+    if (!selectedRoute) return;
+    
+    const route = gameState.routes.find(r => r.id === selectedRoute);
+    if (!route) return;
+    
+    // Проверяем что выбрано достаточно карт
+    if (selectedCards.length < route.length) {
+      return;
+    }
+    
+    if (isHost) {
+      claimRoute(selectedRoute, selectedCards);
+    } else {
+      sendActionToHost({ type: 'claimRoute', routeId: selectedRoute, cardsUsed: selectedCards });
+    }
+    setSelectedRoute(null);
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+  };
+
+  // Получаем требования выбранного маршрута
+  const routeRequirement = selectedRoute ? getRouteCardRequirement(selectedRoute) : null;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <header className="h-12 px-4 flex items-center justify-between bg-primary text-primary-foreground border-b-2 border-gold">
-        <h1 className="font-display font-bold text-lg">Ticket to Ride: Europe</h1>
+        <h1 className="font-display font-bold text-lg">Ticket to Ride: Европа</h1>
         <div className="text-sm">Ход: {gameState.turnNumber}</div>
       </header>
 
@@ -118,12 +185,17 @@ export const GameBoard: React.FC = () => {
               currentAction={gameState.currentAction}
               selectedRouteId={selectedRoute}
               selectedCards={selectedCards}
-              canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) : false}
+              canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && selectedCards.length === (routeRequirement?.count || 0) : false}
               onDrawCards={() => handleDrawTrainCard(false)}
-              onDrawDestinations={() => {}}
+              onDrawDestinations={handleDrawDestinations}
               onClaimRoute={handleClaimRoute}
-              onCancelAction={() => { setSelectedRoute(null); setSelectedCards([]); }}
+              onCancelAction={() => { 
+                setSelectedRoute(null); 
+                setSelectedCards([]); 
+                setSelectedCardIndices([]);
+              }}
               trainsRemaining={localPlayer?.trainsRemaining || 0}
+              routeRequirement={routeRequirement}
             />
           </div>
         </main>
@@ -149,10 +221,21 @@ export const GameBoard: React.FC = () => {
           <PlayerHand
             trainCards={localPlayer.trainCards}
             destinationTickets={localPlayer.destinationTickets}
-            selectedCards={selectedCards}
+            selectedCardIndices={selectedCardIndices}
             onCardSelect={handleCardSelect}
+            routeRequirement={routeRequirement}
           />
         </footer>
+      )}
+
+      {/* Destination picker modal */}
+      {showDestinationPicker && (
+        <DestinationPickerModal
+          destinations={availableDestinations}
+          minKeep={1}
+          onConfirm={handleKeepDestinations}
+          onCancel={() => setShowDestinationPicker(false)}
+        />
       )}
     </div>
   );
