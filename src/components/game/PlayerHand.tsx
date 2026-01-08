@@ -2,6 +2,7 @@ import React from 'react';
 import { TrainCard } from './TrainCard';
 import { DestinationCard } from './DestinationCard';
 import { TrainCardType, DestinationTicket } from '@/types/game';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PlayerHandProps {
   trainCards: TrainCardType[];
@@ -133,8 +134,8 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         <div className="w-px min-h-[120px] bg-ornament/30" />
         
         {/* Destination tickets */}
-        <div className="w-80">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="w-80 flex flex-col max-h-[140px]">
+          <div className="flex items-center gap-2 mb-3 shrink-0">
             <span className="text-sm font-display font-semibold text-foreground">
               Маршруты
             </span>
@@ -143,23 +144,25 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             </span>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            {destinationTickets.map((ticket) => (
-              <DestinationCard
-                key={ticket.id}
-                ticket={ticket}
-                size="small"
-                isCompleted={ticket.isCompleted}
-                onClick={onTicketClick ? () => onTicketClick(ticket) : undefined}
-              />
-            ))}
-            
-            {destinationTickets.length === 0 && (
-              <div className="text-sm text-muted-foreground italic">
-                Нет маршрутов
-              </div>
-            )}
-          </div>
+          <ScrollArea className="flex-1">
+            <div className="flex flex-wrap gap-2 pr-2">
+              {destinationTickets.map((ticket) => (
+                <DestinationCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  size="small"
+                  isCompleted={ticket.isCompleted}
+                  onClick={onTicketClick ? () => onTicketClick(ticket) : undefined}
+                />
+              ))}
+              
+              {destinationTickets.length === 0 && (
+                <div className="text-sm text-muted-foreground italic">
+                  Нет маршрутов
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
