@@ -20,6 +20,16 @@ const roomNameSchema = z.string()
   .max(50, 'Название слишком длинное (максимум 50 символов)')
   .regex(/^[\p{L}\p{N}\s\-_!?.,]+$/u, 'Название содержит недопустимые символы');
 
+// Генерация уникального ID игрока (сохраняется в localStorage)
+const getOrCreatePlayerId = (): string => {
+  const stored = localStorage.getItem('ttr_player_id');
+  if (stored) return stored;
+  
+  const newId = crypto.randomUUID();
+  localStorage.setItem('ttr_player_id', newId);
+  return newId;
+};
+
 // Генерация короткого кода комнаты
 const generateRoomCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -33,43 +43,14 @@ const generateRoomCode = (): string => {
 export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [playerId, setPlayerId] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
 
-  // Инициализация анонимной аутентификации
+  const playerId = getOrCreatePlayerId();
+
+  // Устанавливаем playerId в store при инициализации
   useEffect(() => {
-    const initAuth = async () => {
-      // Проверяем текущую сессию
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setPlayerId(session.user.id);
-        setLocalPlayerId(session.user.id);
-      } else {
-        // Создаём анонимную сессию
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (error) {
-          console.error('Error signing in anonymously:', error);
-          toast.error('Ошибка подключения к серверу');
-        } else if (data.user) {
-          setPlayerId(data.user.id);
-          setLocalPlayerId(data.user.id);
-        }
-      }
-    };
-
-    initAuth();
-
-    // Подписка на изменения состояния аутентификации
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setPlayerId(session.user.id);
-        setLocalPlayerId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [setLocalPlayerId]);
+    setLocalPlayerId(playerId);
+  }, [playerId, setLocalPlayerId]);
 
   // Создание комнаты
   const createRoom = useCallback(async (roomName: string, playerName: string) => {
@@ -322,7 +303,7 @@ export const useMultiplayer = () => {
     playerId,
     isLoading,
     error,
-    isReady: !!playerId,
+    isReady: true,
     createRoom,
     joinRoom,
     leaveRoom,
