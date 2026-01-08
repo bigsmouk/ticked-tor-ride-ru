@@ -6,35 +6,35 @@ import { TrainCardType, DestinationTicket } from '@/types/game';
 interface PlayerHandProps {
   trainCards: TrainCardType[];
   destinationTickets: DestinationTicket[];
-  selectedCards: TrainCardType[];
+  selectedCardIndices: number[];
   onCardSelect: (card: TrainCardType, index: number) => void;
   onTicketClick?: (ticket: DestinationTicket) => void;
+  routeRequirement?: { color: string; count: number } | null;
 }
 
 export const PlayerHand: React.FC<PlayerHandProps> = ({
   trainCards,
   destinationTickets,
-  selectedCards,
+  selectedCardIndices,
   onCardSelect,
   onTicketClick,
+  routeRequirement,
 }) => {
-  // Group cards by type and count
-  const cardGroups: { type: TrainCardType; count: number; indices: number[] }[] = [];
-  const cardTypeCounts: Record<string, { count: number; indices: number[] }> = {};
+  // Group cards by type with individual indices
+  const cardGroups: { type: TrainCardType; indices: number[] }[] = [];
+  const cardTypeCounts: Record<string, number[]> = {};
   
   trainCards.forEach((card, index) => {
     if (!cardTypeCounts[card]) {
-      cardTypeCounts[card] = { count: 0, indices: [] };
+      cardTypeCounts[card] = [];
     }
-    cardTypeCounts[card].count++;
-    cardTypeCounts[card].indices.push(index);
+    cardTypeCounts[card].push(index);
   });
   
-  Object.entries(cardTypeCounts).forEach(([type, data]) => {
+  Object.entries(cardTypeCounts).forEach(([type, indices]) => {
     cardGroups.push({ 
       type: type as TrainCardType, 
-      count: data.count,
-      indices: data.indices,
+      indices,
     });
   });
   
@@ -42,14 +42,16 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   cardGroups.sort((a, b) => {
     if (a.type === 'locomotive') return -1;
     if (b.type === 'locomotive') return 1;
-    return b.count - a.count;
+    return b.indices.length - a.indices.length;
   });
   
-  // Count selected cards by type
-  const selectedCounts: Record<string, number> = {};
-  selectedCards.forEach(card => {
-    selectedCounts[card] = (selectedCounts[card] || 0) + 1;
-  });
+  // Check if a card type is valid for the current route
+  const isCardValidForRoute = (cardType: TrainCardType) => {
+    if (!routeRequirement) return true;
+    if (cardType === 'locomotive') return true;
+    if (routeRequirement.color === 'gray') return true;
+    return cardType === routeRequirement.color;
+  };
   
   return (
     <div className="parchment rounded-lg border-2 border-ornament p-4 shadow-vintage">
@@ -63,40 +65,56 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             <span className="text-xs text-muted-foreground">
               ({trainCards.length} карт)
             </span>
-            {selectedCards.length > 0 && (
+            {selectedCardIndices.length > 0 && routeRequirement && (
               <span className="text-xs text-gold font-bold animate-pulse">
-                Выбрано: {selectedCards.length}
+                Выбрано: {selectedCardIndices.length} / {routeRequirement.count}
               </span>
             )}
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {cardGroups.map(({ type, count, indices }) => {
-              const selectedCount = selectedCounts[type] || 0;
-              const isPartiallySelected = selectedCount > 0 && selectedCount < count;
-              const isFullySelected = selectedCount >= count;
+            {cardGroups.map(({ type, indices }) => {
+              // Count how many of this type are selected
+              const selectedOfType = indices.filter(i => selectedCardIndices.includes(i)).length;
+              const totalCount = indices.length;
+              const isValid = isCardValidForRoute(type);
               
               return (
                 <div key={type} className="relative">
                   <TrainCard
                     type={type}
-                    count={count}
-                    size="large"
-                    onClick={() => onCardSelect(type, indices[0])}
-                    isSelected={isFullySelected}
+                    count={totalCount}
+                    size="medium"
+                    onClick={() => {
+                      // Если есть невыбранные карты этого типа, добавляем первую невыбранную
+                      const unselectedIndex = indices.find(i => !selectedCardIndices.includes(i));
+                      if (unselectedIndex !== undefined) {
+                        onCardSelect(type, unselectedIndex);
+                      } else {
+                        // Иначе убираем последнюю выбранную
+                        const lastSelected = [...indices].reverse().find(i => selectedCardIndices.includes(i));
+                        if (lastSelected !== undefined) {
+                          onCardSelect(type, lastSelected);
+                        }
+                      }
+                    }}
+                    isSelected={selectedOfType > 0}
+                    isDisabled={!isValid && routeRequirement !== null}
                   />
                   
-                  {/* Partial selection indicator */}
-                  {isPartiallySelected && (
+                  {/* Selected count indicator */}
+                  {selectedOfType > 0 && (
                     <div 
-                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center font-display font-bold text-xs"
+                      className="absolute -top-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center font-display font-bold"
                       style={{
-                        background: 'linear-gradient(180deg, hsl(43 80% 50%) 0%, hsl(30 60% 40%) 100%)',
-                        border: '2px solid hsl(30 50% 30%)',
-                        color: 'hsl(30 30% 15%)',
+                        background: 'linear-gradient(180deg, hsl(140 60% 50%) 0%, hsl(140 55% 40%) 100%)',
+                        border: '2px solid hsl(140 50% 30%)',
+                        fontSize: 12,
+                        color: 'white',
+                        boxShadow: '0 2px 6px hsl(0 0% 0% / 0.2)',
                       }}
                     >
-                      {selectedCount}
+                      {selectedOfType}
                     </div>
                   )}
                 </div>
@@ -115,7 +133,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         <div className="w-px min-h-[120px] bg-ornament/30" />
         
         {/* Destination tickets */}
-        <div className="w-72">
+        <div className="w-80">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-display font-semibold text-foreground">
               Маршруты

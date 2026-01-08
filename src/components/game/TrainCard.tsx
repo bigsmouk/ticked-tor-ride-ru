@@ -6,8 +6,10 @@ interface TrainCardProps {
   count?: number;
   onClick?: () => void;
   isSelected?: boolean;
+  isDisabled?: boolean;
   size?: 'small' | 'medium' | 'large';
   showBack?: boolean;
+  showCount?: boolean;
 }
 
 const CARD_COLORS: Record<TrainCardType, { bg: string; accent: string; icon: string }> = {
@@ -74,8 +76,10 @@ export const TrainCard: React.FC<TrainCardProps> = ({
   count,
   onClick,
   isSelected,
+  isDisabled,
   size = 'medium',
   showBack = false,
+  showCount = true,
 }) => {
   const colors = CARD_COLORS[type];
   const dimensions = SIZES[size];
@@ -133,17 +137,18 @@ export const TrainCard: React.FC<TrainCardProps> = ({
   return (
     <div
       className={`
-        train-card relative rounded-lg cursor-pointer transition-all duration-200
-        ${onClick ? 'hover:-translate-y-1' : ''}
+        train-card relative rounded-lg transition-all duration-200
+        ${onClick && !isDisabled ? 'cursor-pointer hover:-translate-y-1' : ''}
+        ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
         ${isSelected ? 'ring-3 ring-gold -translate-y-2 shadow-xl' : ''}
       `}
       style={{
         width: dimensions.width,
         height: dimensions.height,
         background: colors.bg,
-        border: `3px solid hsl(30 50% 35%)`,
+        border: `3px solid ${isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 50% 35%)'}`,
       }}
-      onClick={onClick}
+      onClick={!isDisabled ? onClick : undefined}
     >
       {/* Card shine effect */}
       <div 
@@ -194,7 +199,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
       </div>
       
       {/* Card count badge */}
-      {count !== undefined && count > 0 && (
+      {showCount && count !== undefined && count > 1 && (
         <div 
           className="absolute -bottom-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center font-display font-bold"
           style={{
