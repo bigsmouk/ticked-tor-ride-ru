@@ -101,6 +101,9 @@ export interface GameState {
   lastRoundTriggeredBy?: string;
   turnsRemainingInLastRound?: number;
   
+  // Game logs
+  logs: GameLogEntry[];
+  
   // Winner info
   winnerId?: string;
   finalScores?: { playerId: string; score: number; longestPath: number }[];

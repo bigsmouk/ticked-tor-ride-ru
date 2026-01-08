@@ -9,6 +9,7 @@ import {
   GamePhase,
   TurnAction,
   PlayerColor,
+  GameLogEntry,
   ROUTE_POINTS,
   INITIAL_TRAINS,
   INITIAL_TRAIN_CARDS,
@@ -21,6 +22,15 @@ import {
   createTrainCardDeck, 
   shuffleArray 
 } from '@/data/europeMap';
+
+// Helper to create log entry
+const createLog = (playerId: string | undefined, action: string, details?: string): GameLogEntry => ({
+  id: crypto.randomUUID(),
+  playerId,
+  action,
+  details,
+  timestamp: new Date(),
+});
 
 interface GameStore {
   // Current view
@@ -52,6 +62,7 @@ interface GameStore {
   cancelDestinationDraw: () => void;
   endTurn: () => void;
   calculateFinalScores: () => void;
+  addLog: (playerId: string | undefined, action: string, details?: string) => void;
   
   // Helpers
   canClaimRoute: (routeId: string) => boolean;
@@ -132,6 +143,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       cities: EUROPE_CITIES,
       routes: EUROPE_ROUTES.map(route => ({ ...route })),
       turnNumber: 1,
+      logs: [
+        {
+          id: crypto.randomUUID(),
+          action: 'Игра началась',
+          details: `${players.length} игроков`,
+          timestamp: new Date(),
+        },
+        {
+          id: crypto.randomUUID(),
+          playerId: players[0].id,
+          action: 'Начинает ход',
+          timestamp: new Date(),
+        },
+      ],
     };
     
     set({
@@ -187,15 +212,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
         updatedPlayers[playerIndex] = { ...player, trainCards: newHand, isActive: false };
         updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
         
+        const nextPlayer = updatedPlayers[nextPlayerIndex];
         set({
           gameState: {
             ...gameState,
             players: updatedPlayers,
-            currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+            currentPlayerId: nextPlayer.id,
             currentAction: 'none',
             trainCardDeck: newDeck,
             faceUpCards: newFaceUp,
             turnNumber: gameState.turnNumber + 1,
+            logs: [
+              ...gameState.logs,
+              createLog(localPlayerId, 'Взял локомотив', 'Из открытых карт'),
+              createLog(nextPlayer.id, 'Начинает ход'),
+            ],
           },
         });
         return;
@@ -264,16 +295,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }
       
+      const nextPlayer = updatedPlayers[nextPlayerIndex];
+      const cardSource = fromFaceUp ? 'из открытых' : 'из колоды';
       set({
         gameState: {
           ...gameState,
           players: updatedPlayers,
-          currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+          currentPlayerId: nextPlayer.id,
           currentAction: 'none',
           trainCardDeck: newDeck,
           faceUpCards: newFaceUp,
           turnNumber: gameState.turnNumber + 1,
           turnsRemainingInLastRound,
+          logs: [
+            ...gameState.logs,
+            createLog(localPlayerId, 'Взял 2 карты', cardSource),
+            createLog(nextPlayer.id, 'Начинает ход'),
+          ],
         },
       });
     }
@@ -365,18 +403,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     
+    const nextPlayer = updatedPlayers[nextPlayerIndex];
+    const city1 = gameState.cities.find(c => c.id === route.cities[0])?.name || route.cities[0];
+    const city2 = gameState.cities.find(c => c.id === route.cities[1])?.name || route.cities[1];
+    
     set({
       gameState: {
         ...gameState,
         phase: newPhase,
         players: updatedPlayers,
-        currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+        currentPlayerId: nextPlayer.id,
         currentAction: 'none',
         routes: newRoutes,
         trainCardDiscard: newDiscard,
         turnNumber: gameState.turnNumber + 1,
         lastRoundTriggeredBy,
         turnsRemainingInLastRound,
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Построил маршрут', `${city1} — ${city2} (+${points} очков)`),
+          createLog(nextPlayer.id, 'Начинает ход'),
+        ],
       },
     });
   },
@@ -490,6 +537,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentPlayerId: updatedPlayers[nextPlayerIndex].id,
         currentAction: 'none',
         turnNumber: gameState.turnNumber + 1,
+      },
+    });
+  },
+  
+  addLog: (playerId, action, details) => {
+    const { gameState } = get();
+    if (!gameState) return;
+    
+    set({
+      gameState: {
+        ...gameState,
+        logs: [...gameState.logs, createLog(playerId, action, details)],
       },
     });
   },
