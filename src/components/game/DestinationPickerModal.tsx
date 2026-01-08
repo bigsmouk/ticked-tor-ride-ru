@@ -16,7 +16,10 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // По умолчанию выбираем все карты при начальной загрузке
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => 
+    destinations.map(d => d.id)
+  );
 
   const toggleTicket = (ticketId: string) => {
     if (selectedIds.includes(ticketId)) {

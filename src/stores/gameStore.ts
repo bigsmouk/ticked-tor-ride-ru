@@ -49,7 +49,9 @@ interface GameStore {
   claimRoute: (routeId: string, cardsUsed: TrainCardType[]) => void;
   drawDestinations: () => void;
   keepDestinations: (ticketIds: string[]) => void;
+  cancelDestinationDraw: () => void;
   endTurn: () => void;
+  calculateFinalScores: () => void;
   
   // Helpers
   canClaimRoute: (routeId: string) => boolean;
@@ -240,6 +242,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
       updatedPlayers[playerIndex] = { ...player, trainCards: newHand, isActive: false };
       updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
       
+      // Check last round
+      let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
+      if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined) {
+        turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+        if (turnsRemainingInLastRound <= 0) {
+          set({
+            gameState: {
+              ...gameState,
+              players: updatedPlayers,
+              currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+              currentAction: 'none',
+              trainCardDeck: newDeck,
+              faceUpCards: newFaceUp,
+              turnNumber: gameState.turnNumber + 1,
+              turnsRemainingInLastRound: 0,
+            },
+          });
+          setTimeout(() => get().calculateFinalScores(), 100);
+          return;
+        }
+      }
+      
       set({
         gameState: {
           ...gameState,
@@ -249,6 +273,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           trainCardDeck: newDeck,
           faceUpCards: newFaceUp,
           turnNumber: gameState.turnNumber + 1,
+          turnsRemainingInLastRound,
         },
       });
     }
@@ -301,6 +326,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       turnsRemainingInLastRound = gameState.players.length;
     }
     
+    // Decrement last round counter if in last round
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined) {
+      turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+    }
+    
     // Move to next player
     const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
     
@@ -313,6 +343,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isActive: false,
     };
     updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
+    
+    // Check if last round is over
+    if (turnsRemainingInLastRound !== undefined && turnsRemainingInLastRound <= 0) {
+      set({
+        gameState: {
+          ...gameState,
+          phase: 'lastRound',
+          players: updatedPlayers,
+          currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+          currentAction: 'none',
+          routes: newRoutes,
+          trainCardDiscard: newDiscard,
+          turnNumber: gameState.turnNumber + 1,
+          lastRoundTriggeredBy,
+          turnsRemainingInLastRound: 0,
+        },
+      });
+      // Trigger final scoring
+      setTimeout(() => get().calculateFinalScores(), 100);
+      return;
+    }
     
     set({
       gameState: {
@@ -372,6 +423,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
     updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
     
+    // Check last round
+    let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined) {
+      turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+      if (turnsRemainingInLastRound <= 0) {
+        set({
+          gameState: {
+            ...gameState,
+            players: updatedPlayers,
+            currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+            currentAction: 'none',
+            destinationDeck: newDestinationDeck,
+            turnNumber: gameState.turnNumber + 1,
+            turnsRemainingInLastRound: 0,
+          },
+        });
+        setTimeout(() => get().calculateFinalScores(), 100);
+        return;
+      }
+    }
+    
     set({
       gameState: {
         ...gameState,
@@ -380,6 +452,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentAction: 'none',
         destinationDeck: newDestinationDeck,
         turnNumber: gameState.turnNumber + 1,
+        turnsRemainingInLastRound,
+      },
+    });
+  },
+  
+  cancelDestinationDraw: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    
+    // Просто сбрасываем currentAction, не меняя ход
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'none',
       },
     });
   },
@@ -408,6 +494,160 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
   
+  calculateFinalScores: () => {
+    const { gameState } = get();
+    if (!gameState) return;
+    
+    // Build a graph of claimed routes for each player
+    const getPlayerConnections = (playerId: string): Map<string, Set<string>> => {
+      const connections = new Map<string, Set<string>>();
+      gameState.routes.forEach(route => {
+        if (route.claimedBy === playerId) {
+          const [city1, city2] = route.cities;
+          if (!connections.has(city1)) connections.set(city1, new Set());
+          if (!connections.has(city2)) connections.set(city2, new Set());
+          connections.get(city1)!.add(city2);
+          connections.get(city2)!.add(city1);
+        }
+      });
+      return connections;
+    };
+    
+    // Check if two cities are connected for a player
+    const areCitiesConnected = (playerId: string, city1: string, city2: string): boolean => {
+      const connections = getPlayerConnections(playerId);
+      if (!connections.has(city1) || !connections.has(city2)) return false;
+      
+      const visited = new Set<string>();
+      const queue = [city1];
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (current === city2) return true;
+        if (visited.has(current)) continue;
+        visited.add(current);
+        
+        const neighbors = connections.get(current);
+        if (neighbors) {
+          neighbors.forEach(neighbor => {
+            if (!visited.has(neighbor)) queue.push(neighbor);
+          });
+        }
+      }
+      return false;
+    };
+    
+    // Calculate longest path using DFS
+    const calculateLongestPath = (playerId: string): number => {
+      const routes = gameState.routes.filter(r => r.claimedBy === playerId);
+      if (routes.length === 0) return 0;
+      
+      const connections = new Map<string, { city: string; length: number }[]>();
+      routes.forEach(route => {
+        const [city1, city2] = route.cities;
+        if (!connections.has(city1)) connections.set(city1, []);
+        if (!connections.has(city2)) connections.set(city2, []);
+        connections.get(city1)!.push({ city: city2, length: route.length });
+        connections.get(city2)!.push({ city: city1, length: route.length });
+      });
+      
+      let maxPath = 0;
+      const visitedRoutes = new Set<string>();
+      
+      const dfs = (city: string, pathLength: number) => {
+        maxPath = Math.max(maxPath, pathLength);
+        const neighbors = connections.get(city) || [];
+        
+        for (const neighbor of neighbors) {
+          const routeKey = [city, neighbor.city].sort().join('-');
+          if (!visitedRoutes.has(routeKey)) {
+            visitedRoutes.add(routeKey);
+            dfs(neighbor.city, pathLength + neighbor.length);
+            visitedRoutes.delete(routeKey);
+          }
+        }
+      };
+      
+      // Start DFS from each city
+      connections.forEach((_, city) => {
+        visitedRoutes.clear();
+        dfs(city, 0);
+      });
+      
+      return maxPath;
+    };
+    
+    // Calculate final scores
+    const finalScores: { playerId: string; score: number; longestPath: number; completedTickets: number; failedTickets: number }[] = [];
+    let maxLongestPath = 0;
+    
+    gameState.players.forEach(player => {
+      const longestPath = calculateLongestPath(player.id);
+      maxLongestPath = Math.max(maxLongestPath, longestPath);
+      
+      let ticketBonus = 0;
+      let ticketPenalty = 0;
+      let completedCount = 0;
+      let failedCount = 0;
+      
+      player.destinationTickets.forEach(ticket => {
+        if (areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1])) {
+          ticketBonus += ticket.points;
+          completedCount++;
+        } else {
+          ticketPenalty += ticket.points;
+          failedCount++;
+        }
+      });
+      
+      finalScores.push({
+        playerId: player.id,
+        score: player.score + ticketBonus - ticketPenalty,
+        longestPath,
+        completedTickets: completedCount,
+        failedTickets: failedCount,
+      });
+    });
+    
+    // Add longest path bonus
+    finalScores.forEach(fs => {
+      if (fs.longestPath === maxLongestPath) {
+        fs.score += 10; // LONGEST_PATH_BONUS
+      }
+    });
+    
+    // Determine winner
+    const sortedScores = [...finalScores].sort((a, b) => b.score - a.score);
+    const winnerId = sortedScores[0]?.playerId;
+    
+    // Update players with final scores
+    const updatedPlayers = gameState.players.map(player => {
+      const fs = finalScores.find(f => f.playerId === player.id);
+      return {
+        ...player,
+        score: fs?.score || player.score,
+        destinationTickets: player.destinationTickets.map(ticket => ({
+          ...ticket,
+          isCompleted: areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1]),
+        })),
+      };
+    });
+    
+    set({
+      gameState: {
+        ...gameState,
+        phase: 'finished',
+        players: updatedPlayers,
+        winnerId,
+        finalScores: finalScores.map(fs => ({
+          playerId: fs.playerId,
+          score: fs.score,
+          longestPath: fs.longestPath,
+        })),
+      },
+    });
+  },
+  
   canClaimRoute: (routeId) => {
     const { gameState, localPlayerId } = get();
     if (!gameState || gameState.currentPlayerId !== localPlayerId) return false;
@@ -419,6 +659,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!player) return false;
     
     if (player.trainsRemaining < route.length) return false;
+    
+    // Check if player already claimed the parallel route
+    if (route.parallelRouteId) {
+      const parallelRoute = gameState.routes.find(r => r.id === route.parallelRouteId);
+      if (parallelRoute?.claimedBy === localPlayerId) return false;
+    }
+    // Also check reverse - if this route is someone's parallel
+    const routeAsParallel = gameState.routes.find(r => r.parallelRouteId === routeId);
+    if (routeAsParallel?.claimedBy === localPlayerId) return false;
     
     // Count cards
     const cardCounts: Record<string, number> = {};

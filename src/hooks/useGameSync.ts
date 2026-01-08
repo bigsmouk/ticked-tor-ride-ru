@@ -9,6 +9,7 @@ export type GameAction =
   | { type: 'claimRoute'; routeId: string; cardsUsed: TrainCardType[] }
   | { type: 'drawDestinations' }
   | { type: 'keepDestinations'; ticketIds: string[] }
+  | { type: 'cancelDestinationDraw' }
   | { type: 'endTurn' };
 
 export const useGameSync = (roomId: string | null) => {
@@ -23,6 +24,7 @@ export const useGameSync = (roomId: string | null) => {
   const executeClaimRoute = useGameStore(state => state.claimRoute);
   const executeDrawDestinations = useGameStore(state => state.drawDestinations);
   const executeKeepDestinations = useGameStore(state => state.keepDestinations);
+  const executeCancelDestinationDraw = useGameStore(state => state.cancelDestinationDraw);
   const executeEndTurn = useGameStore(state => state.endTurn);
   
   const isHost = currentRoom?.hostId === localPlayerId;
@@ -132,6 +134,9 @@ export const useGameSync = (roomId: string | null) => {
           case 'keepDestinations':
             executeKeepDestinations(action.ticketIds);
             break;
+          case 'cancelDestinationDraw':
+            executeCancelDestinationDraw();
+            break;
           case 'endTurn':
             executeEndTurn();
             break;
@@ -163,7 +168,7 @@ export const useGameSync = (roomId: string | null) => {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [roomId, localPlayerId, setGameState, executeDrawTrainCard, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeEndTurn]);
+  }, [roomId, localPlayerId, setGameState, executeDrawTrainCard, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn]);
 
   // Транслируем изменения состояния игры (только хост)
   useEffect(() => {

@@ -247,9 +247,9 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           {routes.map((route) => {
             const { path, segments } = getRoutePath(route, cities, routes);
             const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
-            const isClaimable = canClaimRoute(route.id);
             const isSelected = selectedRoute === route.id;
             const isClaimed = !!route.claimedBy;
+            const isClaimable = !isClaimed && canClaimRoute(route.id);
             
             // Find claiming player for color
             const claimingPlayer = isClaimed && gameState
@@ -260,7 +260,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               <g 
                 key={route.id}
                 className={`route-segment ${isClaimable ? 'cursor-pointer' : ''}`}
-                onClick={() => onRouteClick?.(route.id)}
+                onClick={() => !isClaimed && onRouteClick?.(route.id)}
+                style={{ opacity: isClaimed ? 0.7 : 1 }}
               >
                 {/* Route background line */}
                 <path
@@ -366,11 +367,9 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           {cities.map((city) => (
             <g 
               key={city.id}
-              className="city-marker"
               onClick={() => onCityClick?.(city.id)}
-              filter="url(#city-shadow)"
             >
-              {/* City circle - static, no hover effects */}
+              {/* City circle - completely static */}
               <circle
                 cx={city.x}
                 cy={city.y}
@@ -378,6 +377,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 fill="hsl(40 35% 92%)"
                 stroke="hsl(30 50% 30%)"
                 strokeWidth={2}
+                style={{ pointerEvents: 'none' }}
               />
               
               {/* Inner circle */}
@@ -386,6 +386,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 cy={city.y}
                 r={4}
                 fill="hsl(30 60% 40%)"
+                style={{ pointerEvents: 'none' }}
               />
               
               {/* City name */}
@@ -393,12 +394,12 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 x={city.x}
                 y={city.y - 12}
                 textAnchor="middle"
-                className="font-display pointer-events-none"
                 style={{
                   fontSize: '8px',
                   fill: 'hsl(30 40% 20%)',
                   fontWeight: 600,
-                  textShadow: '0 1px 2px hsl(40 30% 90%)',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
                 }}
               >
                 {city.name}
