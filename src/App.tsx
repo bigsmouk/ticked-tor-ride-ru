@@ -2,13 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import WaitingRoom from "./pages/WaitingRoom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Game from "./pages/Game";
-import MapCalibration from "./pages/MapCalibration";
-import RouteCalibration from "./pages/RouteCalibration";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -19,12 +14,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/calibration" element={<MapCalibration />} />
-          <Route path="/routes" element={<RouteCalibration />} />
-          <Route path="/waiting" element={<WaitingRoom />} />
           <Route path="/game" element={<Game />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/game" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
