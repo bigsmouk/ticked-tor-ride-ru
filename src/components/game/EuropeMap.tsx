@@ -4,6 +4,13 @@ import { useGameStore } from '@/stores/gameStore';
 import europeMapImage from '@/assets/europe-map.jpg';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 
+// Player wagon images
+import wagonRed from '@/assets/wagons/red.png';
+import wagonBlue from '@/assets/wagons/blue.png';
+import wagonGreen from '@/assets/wagons/green.png';
+import wagonYellow from '@/assets/wagons/yellow.png';
+import wagonBlack from '@/assets/wagons/black.png';
+
 interface EuropeMapProps {
   cities: City[];
   routes: Route[];
@@ -25,13 +32,13 @@ const ROUTE_COLORS: Record<string, string> = {
   gray: '#9ca3af',
 };
 
-// Player color mappings - very bright and saturated
-const PLAYER_COLORS: Record<PlayerColor, string> = {
-  red: '#ff3333',
-  blue: '#4488ff',
-  green: '#33ff66',
-  yellow: '#ffee00',
-  black: '#555555',
+// Player wagon image mappings
+const PLAYER_WAGON_IMAGES: Record<PlayerColor, string> = {
+  red: wagonRed,
+  blue: wagonBlue,
+  green: wagonGreen,
+  yellow: wagonYellow,
+  black: wagonBlack,
 };
 
 // Get city position
@@ -295,9 +302,9 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                   
                   {/* Individual train car slots */}
                   {segments.map((seg, i) => {
-                    const wagonColor = isClaimed && claimingPlayer 
-                      ? PLAYER_COLORS[claimingPlayer.color]
-                      : color;
+                    const wagonImage = isClaimed && claimingPlayer 
+                      ? PLAYER_WAGON_IMAGES[claimingPlayer.color]
+                      : null;
                     
                     return (
                       <g 
@@ -305,59 +312,61 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                         className="wagon-slot"
                       >
-                        {/* Slot background - player color border for claimed */}
-                        <rect
-                          x={-12}
-                          y={-5}
-                          width={24}
-                          height={10}
-                          rx={2}
-                          fill={isClaimed ? wagonColor : color}
-                          stroke={isClaimed ? wagonColor : 'hsl(30 30% 50%)'}
-                          strokeWidth={isClaimed ? 3 : 1.5}
-                          opacity={isClaimed ? 1 : 0.9}
-                          className="wagon-rect"
-                        />
-                        
-                        {/* Inner fill for claimed wagons */}
-                        {isClaimed && (
-                          <rect
-                            x={-9}
-                            y={-3}
-                            width={18}
-                            height={6}
-                            rx={1}
-                            fill="hsl(40 30% 95%)"
+                        {/* Player wagon image for claimed routes */}
+                        {isClaimed && wagonImage ? (
+                          <image
+                            href={wagonImage}
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            preserveAspectRatio="xMidYMid meet"
                           />
-                        )}
-                        
-                        {/* Tunnel indicator */}
-                        {route.isTunnel && !isClaimed && (
-                          <rect
-                            x={-12}
-                            y={-5}
-                            width={24}
-                            height={10}
-                            rx={2}
-                            fill="none"
-                            stroke="hsl(30 20% 30%)"
-                            strokeWidth={1}
-                            strokeDasharray="4 2"
-                          />
-                        )}
-                        
-                        {/* Ferry locomotive indicator */}
-                        {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && !isClaimed && (
-                          <text
-                            x={0}
-                            y={4}
-                            textAnchor="middle"
-                            fontSize="8"
-                            fill="hsl(30 20% 30%)"
-                            fontWeight="bold"
-                          >
-                            🚂
-                          </text>
+                        ) : (
+                          <>
+                            {/* Unclaimed slot background */}
+                            <rect
+                              x={-12}
+                              y={-5}
+                              width={24}
+                              height={10}
+                              rx={2}
+                              fill={color}
+                              stroke="hsl(30 30% 50%)"
+                              strokeWidth={1.5}
+                              opacity={0.9}
+                              className="wagon-rect"
+                            />
+                            
+                            {/* Tunnel indicator */}
+                            {route.isTunnel && (
+                              <rect
+                                x={-12}
+                                y={-5}
+                                width={24}
+                                height={10}
+                                rx={2}
+                                fill="none"
+                                stroke="hsl(30 20% 30%)"
+                                strokeWidth={1}
+                                strokeDasharray="4 2"
+                              />
+                            )}
+                            
+                            {/* Ferry locomotive indicator */}
+                            {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && (
+                              <text
+                                x={0}
+                                y={4}
+                                textAnchor="middle"
+                                fontSize="8"
+                                fill="hsl(30 20% 30%)"
+                                fontWeight="bold"
+                              >
+                                🚂
+                              </text>
+                            )}
+                          </>
                         )}
                       </g>
                     );
