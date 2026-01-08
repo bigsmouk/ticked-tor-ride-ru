@@ -415,17 +415,27 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 style={{ pointerEvents: 'none' }}
               />
               
-              {/* City name */}
+              {/* City name with background for visibility */}
+              <rect
+                x={city.x - 30}
+                y={city.y + 10}
+                width={60}
+                height={14}
+                rx={2}
+                fill="hsl(30 20% 15% / 0.75)"
+                style={{ pointerEvents: 'none' }}
+              />
               <text
                 x={city.x}
-                y={city.y - 12}
+                y={city.y + 20}
                 textAnchor="middle"
                 style={{
-                  fontSize: '8px',
-                  fill: 'hsl(30 40% 20%)',
-                  fontWeight: 600,
+                  fontSize: '10px',
+                  fill: '#ffffff',
+                  fontWeight: 700,
                   pointerEvents: 'none',
                   userSelect: 'none',
+                  letterSpacing: '0.5px',
                 }}
               >
                 {city.name}
