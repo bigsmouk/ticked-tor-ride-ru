@@ -25,7 +25,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
       <DialogContent className="max-w-3xl max-h-[85vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <DialogTitle className="font-display text-2xl flex items-center gap-3">
-            📜 Правила игры Ticket to Ride: Europe
+            📜 Правила игры «Железнодорожное Приключение»
           </DialogTitle>
         </DialogHeader>
         
