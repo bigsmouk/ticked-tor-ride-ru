@@ -4,6 +4,7 @@ import { useGameStore } from '@/stores/gameStore';
 import europeMapImage from '@/assets/europe-map.jpg';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 import redWagonImage from '@/assets/wagons/red.png';
+import blueWagonImage from '@/assets/wagons/blue.png';
 
 interface EuropeMapProps {
   cities: City[];
@@ -300,8 +301,9 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                       ? PLAYER_COLORS[claimingPlayer.color]
                       : color;
                     
-                    // Check if this is a claimed wagon by red player
+                    // Check if this is a claimed wagon by red or blue player
                     const isRedPlayerWagon = isClaimed && claimingPlayer?.color === 'red';
+                    const isBluePlayerWagon = isClaimed && claimingPlayer?.color === 'blue';
                     
                     return (
                       <g 
@@ -309,10 +311,19 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                         className="wagon-slot"
                       >
-                        {/* Use wagon image for red player, rectangles for others */}
+                        {/* Use wagon image for red/blue player, rectangles for others */}
                         {isRedPlayerWagon ? (
                           <image
                             href={redWagonImage}
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        ) : isBluePlayerWagon ? (
+                          <image
+                            href={blueWagonImage}
                             x={-14}
                             y={-7}
                             width={28}
