@@ -256,6 +256,11 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           <filter id="city-shadow" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
           </filter>
+          
+          {/* Wagon shadow for better contrast */}
+          <filter id="wagon-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.6"/>
+          </filter>
         </defs>
         
         {/* Background image */}
@@ -326,6 +331,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             width={28}
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
+                            filter="url(#wagon-shadow)"
                           />
                         ) : isBluePlayerWagon ? (
                           <image
@@ -335,6 +341,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             width={28}
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
+                            filter="url(#wagon-shadow)"
                           />
                         ) : isGreenPlayerWagon ? (
                           <image
@@ -344,6 +351,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             width={28}
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
+                            filter="url(#wagon-shadow)"
                           />
                         ) : isBlackPlayerWagon ? (
                           <image
@@ -353,6 +361,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             width={28}
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
+                            filter="url(#wagon-shadow)"
                           />
                         ) : isYellowPlayerWagon ? (
                           <image
@@ -362,6 +371,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             width={28}
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
+                            filter="url(#wagon-shadow)"
                           />
                         ) : (
                           <>
