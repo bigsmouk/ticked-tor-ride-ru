@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import europeMapImage from '@/assets/europe-map.jpg';
+import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 
 interface EuropeMapProps {
   cities: City[];
@@ -44,7 +45,19 @@ const getRoutePath = (
   route: Route, 
   cities: City[], 
   allRoutes: Route[]
-): { path: string; segments: { x: number; y: number }[] } => {
+): { path: string; segments: { x: number; y: number; angle: number }[] } => {
+  // Check if we have calibrated positions for this route
+  const calibrated = ROUTE_WAGON_POSITIONS[route.id];
+  if (calibrated && calibrated.length === route.length) {
+    // Use calibrated positions
+    const pathPoints = calibrated.map(w => `${w.x} ${w.y}`);
+    return {
+      path: `M ${pathPoints.join(' L ')}`,
+      segments: calibrated.map(w => ({ x: w.x, y: w.y, angle: w.angle })),
+    };
+  }
+  
+  // Fallback to calculated positions
   const start = getCityPosition(route.cities[0], cities);
   const end = getCityPosition(route.cities[1], cities);
   
@@ -67,15 +80,17 @@ const getRoutePath = (
   const endX = end.x + perpX * offset;
   const endY = end.y + perpY * offset;
   
+  const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+  
   // Calculate segments
-  const segments: { x: number; y: number }[] = [];
-  const segmentLength = length / route.length;
+  const segments: { x: number; y: number; angle: number }[] = [];
   
   for (let i = 0; i < route.length; i++) {
     const t = (i + 0.5) / route.length;
     segments.push({
       x: startX + (endX - startX) * t,
       y: startY + (endY - startY) * t,
+      angle,
     });
   }
   
@@ -254,14 +269,10 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 
                 {/* Individual train car slots */}
                 {segments.map((seg, i) => {
-                  const start = getCityPosition(route.cities[0], cities);
-                  const end = getCityPosition(route.cities[1], cities);
-                  const angle = Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI;
-                  
                   return (
                     <g 
                       key={i} 
-                      transform={`translate(${seg.x}, ${seg.y}) rotate(${angle})`}
+                      transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                     >
                       {/* Slot background */}
                       <rect

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { EUROPE_CITIES, EUROPE_ROUTES } from '@/data/europeMap';
+import { EUROPE_CITIES, EUROPE_ROUTES, ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 import europeMapImage from '@/assets/europe-map.jpg';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -32,6 +32,13 @@ const getCityPosition = (cityId: string): { x: number; y: number } => {
 };
 
 const getDefaultWagons = (route: typeof EUROPE_ROUTES[0]): WagonPosition[] => {
+  // First check if we have saved positions
+  const savedPositions = ROUTE_WAGON_POSITIONS[route.id];
+  if (savedPositions && savedPositions.length === route.length) {
+    return savedPositions;
+  }
+  
+  // Otherwise calculate default positions
   const startCity = getCityPosition(route.cities[0]);
   const endCity = getCityPosition(route.cities[1]);
   
@@ -65,10 +72,19 @@ const getDefaultWagons = (route: typeof EUROPE_ROUTES[0]): WagonPosition[] => {
   return wagons;
 };
 
+// Check if route has been calibrated
+const isRouteCalibrated = (routeId: string): boolean => {
+  const route = EUROPE_ROUTES.find(r => r.id === routeId);
+  if (!route) return false;
+  const saved = ROUTE_WAGON_POSITIONS[routeId];
+  return saved !== undefined && saved.length === route.length;
+};
+
 const RouteCalibration = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showCities, setShowCities] = useState(true);
   const [showRoutes, setShowRoutes] = useState(true);
+  const [showOnlyUncalibrated, setShowOnlyUncalibrated] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [routeWagons, setRouteWagons] = useState<Record<string, RouteWagons>>({});
   const [dragging, setDragging] = useState<{ routeId: string; wagonIndex: number } | null>(null);
@@ -87,6 +103,13 @@ const RouteCalibration = () => {
   const getWagons = (route: typeof EUROPE_ROUTES[0]): WagonPosition[] => {
     return routeWagons[route.id]?.wagons || getDefaultWagons(route);
   };
+
+  // Count stats
+  const calibratedCount = EUROPE_ROUTES.filter(r => isRouteCalibrated(r.id)).length;
+  const uncalibratedCount = EUROPE_ROUTES.length - calibratedCount;
+  const filteredRoutes = showOnlyUncalibrated 
+    ? EUROPE_ROUTES.filter(r => !isRouteCalibrated(r.id))
+    : EUROPE_ROUTES;
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const pos = getMouseSVGPos(e);
@@ -143,15 +166,23 @@ const RouteCalibration = () => {
     const output: string[] = ['// Route wagon positions - paste into europeMap.ts'];
     output.push('export const ROUTE_WAGON_POSITIONS: Record<string, { x: number; y: number; angle: number }[]> = {');
     
+    // Include both existing saved positions and modified ones
+    const allPositions: Record<string, WagonPosition[]> = { ...ROUTE_WAGON_POSITIONS };
+    
+    // Override with modified positions
     Object.entries(routeWagons).forEach(([routeId, data]) => {
-      const wagonsStr = data.wagons.map(w => `{ x: ${w.x}, y: ${w.y}, angle: ${w.angle} }`).join(', ');
+      allPositions[routeId] = data.wagons;
+    });
+    
+    Object.entries(allPositions).forEach(([routeId, wagons]) => {
+      const wagonsStr = wagons.map(w => `{ x: ${w.x}, y: ${w.y}, angle: ${w.angle} }`).join(', ');
       output.push(`  '${routeId}': [${wagonsStr}],`);
     });
     
     output.push('};');
     
     navigator.clipboard.writeText(output.join('\n'));
-    toast.success(`Скопировано ${Object.keys(routeWagons).length} маршрутов!`);
+    toast.success(`Скопировано ${Object.keys(allPositions).length} маршрутов!`);
   };
 
   const resetRoute = (routeId: string) => {
@@ -191,8 +222,19 @@ const RouteCalibration = () => {
               />
               Маршруты
             </label>
+            <label className="flex items-center gap-2 text-sm text-amber-400">
+              <input 
+                type="checkbox" 
+                checked={showOnlyUncalibrated} 
+                onChange={(e) => setShowOnlyUncalibrated(e.target.checked)}
+              />
+              Только некалиброванные ({uncalibratedCount})
+            </label>
             <div className="bg-stone-800 px-3 py-1 rounded font-mono text-sm">
               x={mousePos.x}, y={mousePos.y}
+            </div>
+            <div className="bg-green-800 px-3 py-1 rounded text-sm">
+              ✓ Откалибровано: {calibratedCount}
             </div>
             <div className="bg-stone-700 px-3 py-1 rounded text-sm">
               Изменено: {modifiedCount}
@@ -200,14 +242,15 @@ const RouteCalibration = () => {
             <Button size="sm" variant="outline" onClick={resetAll}>
               Сбросить всё
             </Button>
-            <Button size="sm" onClick={copyCoordinates} disabled={modifiedCount === 0}>
-              📋 Копировать
+            <Button size="sm" onClick={copyCoordinates}>
+              📋 Копировать все
             </Button>
           </div>
         </div>
 
         <div className="mb-2 text-stone-400 text-sm">
-          💡 Кликните на маршрут → перетащите вагоны (зелёные) | Shift+клик на вагон для поворота
+          💡 Кликните на маршрут → перетащите вагоны (зелёные) | Shift+клик на вагон для поворота | 
+          <span className="text-green-400 ml-2">Зелёная рамка = откалиброван</span>
         </div>
         
         <div className="bg-stone-800 rounded-lg overflow-hidden">
@@ -229,11 +272,15 @@ const RouteCalibration = () => {
             />
             
             {/* Routes */}
-            {showRoutes && EUROPE_ROUTES.map((route) => {
+            {showRoutes && filteredRoutes.map((route) => {
               const wagons = getWagons(route);
               const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
               const isSelected = selectedRoute === route.id;
               const isModified = !!routeWagons[route.id];
+              const isCalibrated = isRouteCalibrated(route.id);
+              
+              // Determine border color: selected > modified > calibrated > default
+              const borderColor = isSelected ? '#22c55e' : isModified ? '#f59e0b' : isCalibrated ? '#10b981' : '#666';
               
               return (
                 <g 
@@ -249,7 +296,7 @@ const RouteCalibration = () => {
                   {wagons.length > 1 && (
                     <path
                       d={`M ${wagons.map(w => `${w.x} ${w.y}`).join(' L ')}`}
-                      stroke={isSelected ? '#22c55e' : isModified ? '#f59e0b' : '#666'}
+                      stroke={borderColor}
                       strokeWidth={1}
                       fill="none"
                       opacity={0.5}
@@ -270,8 +317,8 @@ const RouteCalibration = () => {
                         height={10}
                         rx={2}
                         fill={color}
-                        stroke={isSelected ? '#22c55e' : isModified ? '#f59e0b' : '#333'}
-                        strokeWidth={isSelected ? 2 : 1}
+                        stroke={borderColor}
+                        strokeWidth={isSelected ? 2 : isCalibrated ? 1.5 : 1}
                         opacity={0.9}
                       />
                       {route.isTunnel && (
@@ -377,18 +424,20 @@ const RouteCalibration = () => {
                     if (!route) return null;
                     const city1 = EUROPE_CITIES.find(c => c.id === route.cities[0]);
                     const city2 = EUROPE_CITIES.find(c => c.id === route.cities[1]);
+                    const calibrated = isRouteCalibrated(selectedRoute);
                     return (
                       <>
                         {city1?.name} → {city2?.name} | Длина: {route.length} | Цвет: {route.color}
                         {route.isTunnel && ' | Туннель'}
                         {route.ferryLocomotives && ` | Паром: ${route.ferryLocomotives}`}
+                        {calibrated && <span className="text-green-400 ml-2">✓ Откалиброван</span>}
                       </>
                     );
                   })()}
                 </div>
-                {routeWagons[selectedRoute] && (
+                {(routeWagons[selectedRoute] || ROUTE_WAGON_POSITIONS[selectedRoute]) && (
                   <div className="text-xs text-amber-400 mt-2 font-mono">
-                    {routeWagons[selectedRoute].wagons.map((w, i) => (
+                    {(routeWagons[selectedRoute]?.wagons || ROUTE_WAGON_POSITIONS[selectedRoute])?.map((w, i) => (
                       <span key={i} className="mr-3">
                         [{i}] x:{w.x} y:{w.y} ∠{w.angle}°
                       </span>
@@ -399,6 +448,28 @@ const RouteCalibration = () => {
               <Button size="sm" variant="outline" onClick={() => resetRoute(selectedRoute)}>
                 Сбросить
               </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Uncalibrated routes list */}
+        {uncalibratedCount > 0 && (
+          <div className="mt-4 bg-stone-800 rounded-lg p-4">
+            <h2 className="text-white font-bold mb-2">Некалиброванные маршруты ({uncalibratedCount}):</h2>
+            <div className="grid grid-cols-4 gap-2 text-xs text-red-300">
+              {EUROPE_ROUTES.filter(r => !isRouteCalibrated(r.id)).map((route) => {
+                const city1 = EUROPE_CITIES.find(c => c.id === route.cities[0]);
+                const city2 = EUROPE_CITIES.find(c => c.id === route.cities[1]);
+                return (
+                  <div 
+                    key={route.id}
+                    className={`px-2 py-1 rounded cursor-pointer hover:bg-stone-600 ${selectedRoute === route.id ? 'bg-green-900' : 'bg-stone-700'}`}
+                    onClick={() => setSelectedRoute(route.id)}
+                  >
+                    {city1?.name} → {city2?.name}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
