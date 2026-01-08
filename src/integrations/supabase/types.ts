@@ -64,7 +64,6 @@ export type Database = {
           is_private: boolean
           max_players: number
           name: string
-          password: string | null
           status: string
           updated_at: string
         }
@@ -76,7 +75,6 @@ export type Database = {
           is_private?: boolean
           max_players?: number
           name: string
-          password?: string | null
           status?: string
           updated_at?: string
         }
@@ -88,7 +86,6 @@ export type Database = {
           is_private?: boolean
           max_players?: number
           name?: string
-          password?: string | null
           status?: string
           updated_at?: string
         }
