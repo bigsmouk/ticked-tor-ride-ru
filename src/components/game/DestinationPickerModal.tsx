@@ -46,32 +46,40 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
         </p>
         
         <div className="flex flex-wrap justify-center gap-4 mb-6">
-          {destinations.map((ticket) => (
-            <DestinationCard
-              key={ticket.id}
-              ticket={ticket}
-              size="large"
-              isSelected={selectedIds.includes(ticket.id)}
-              onClick={() => toggleTicket(ticket.id)}
-            />
-          ))}
+          {destinations.map((ticket) => {
+            const isTicketSelected = selectedIds.includes(ticket.id);
+            return (
+              <div
+                key={ticket.id}
+                className={`
+                  relative transition-all duration-200 rounded-lg
+                  ${isTicketSelected ? 'ring-4 ring-gold shadow-lg shadow-gold/30 -translate-y-1' : 'opacity-60 hover:opacity-100'}
+                `}
+              >
+                <DestinationCard
+                  ticket={ticket}
+                  size="large"
+                  isSelected={isTicketSelected}
+                  onClick={() => toggleTicket(ticket.id)}
+                />
+                {isTicketSelected && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gold rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md">
+                    ✓
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         
-        <div className="flex justify-center gap-4">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="btn-vintage"
-          >
-            Отмена
-          </Button>
-          <Button
+        <div className="flex justify-center">
+          <button
             onClick={handleConfirm}
             disabled={selectedIds.length < minKeep}
-            className="btn-gold"
+            className="btn-gold px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Подтвердить ({selectedIds.length} выбрано)
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -20,7 +20,8 @@ export const CardDeckArea: React.FC<CardDeckAreaProps> = ({
   canDraw,
   currentAction,
 }) => {
-  const isDrawingCards = currentAction === 'drawTrainCards';
+  const isSelectingFirstCard = currentAction === 'selectingFirstCard';
+  const isDrawingSecondCard = currentAction === 'drawTrainCards';
   
   return (
     <div className="flex items-center gap-3 p-4 parchment rounded-lg border-2 border-ornament shadow-vintage">
@@ -72,14 +73,17 @@ export const CardDeckArea: React.FC<CardDeckAreaProps> = ({
       <div className="flex flex-col items-center gap-1">
         <div className="text-xs font-display text-muted-foreground">
           Открытые карты
-          {isDrawingCards && (
-            <span className="ml-2 text-gold animate-pulse">(выберите ещё 1)</span>
+          {isSelectingFirstCard && (
+            <span className="ml-2 text-gold animate-pulse">(выберите 1-ю карту)</span>
+          )}
+          {isDrawingSecondCard && (
+            <span className="ml-2 text-gold animate-pulse">(выберите 2-ю карту)</span>
           )}
         </div>
         <div className="flex gap-2">
           {faceUpCards.map((card, index) => {
             // Can't take locomotive as second card
-            const canTakeThis = canDraw && !(isDrawingCards && card === 'locomotive');
+            const canTakeThis = canDraw && !(isDrawingSecondCard && card === 'locomotive');
             
             return (
               <TrainCard

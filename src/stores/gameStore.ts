@@ -57,10 +57,12 @@ interface GameStore {
   
   // Game actions
   drawTrainCard: (fromFaceUp: boolean, cardIndex?: number) => void;
+  startDrawingCards: () => void;
   claimRoute: (routeId: string, cardsUsed: TrainCardType[]) => void;
   drawDestinations: () => void;
   keepDestinations: (ticketIds: string[]) => void;
   cancelDestinationDraw: () => void;
+  cancelDrawingCards: () => void;
   endTurn: () => void;
   calculateFinalScores: () => void;
   addLog: (playerId: string | undefined, action: string, details?: string) => void;
@@ -169,9 +171,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
   
+  startDrawingCards: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    if (gameState.currentAction !== 'none') return;
+    
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'selectingFirstCard',
+      },
+    });
+  },
+  
   drawTrainCard: (fromFaceUp, cardIndex) => {
     const { gameState, localPlayerId } = get();
     if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    
+    // Можно брать карты только в режиме выбора первой или второй карты
+    if (gameState.currentAction !== 'selectingFirstCard' && gameState.currentAction !== 'drawTrainCards') return;
     
     const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
     if (playerIndex === -1) return;
@@ -180,8 +198,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let newDeck = [...gameState.trainCardDeck];
     let newFaceUp = [...gameState.faceUpCards];
     let newHand = [...player.trainCards];
-    let newDiscard = [...gameState.trainCardDiscard];
-    let newAction = gameState.currentAction;
+    const isFirstCard = gameState.currentAction === 'selectingFirstCard';
     
     if (fromFaceUp && cardIndex !== undefined) {
       // Take from face-up cards
@@ -191,12 +208,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Play sound effect
       playCardDrawSound();
       
-      // If taking locomotive from face-up, can only take one card
+      // If taking locomotive from face-up
       if (card === 'locomotive') {
-        if (newAction === 'drawTrainCards') {
-          // Already drew one card, can't take locomotive
-          return;
+        // Локомотив можно взять только как первую карту (и это завершает ход)
+        if (!isFirstCard) {
+          return; // Нельзя брать локомотив как вторую карту
         }
+        
         newHand.push(card);
         
         // Replace the face-up card
@@ -208,8 +226,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         
         // End turn after taking locomotive
-        newAction = 'none';
-        // Move to next player
         const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
         
         const updatedPlayers = [...gameState.players];
@@ -255,11 +271,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       playCardDrawSound();
     }
     
-    // Check if this is the first or second card draw
-    if (newAction === 'none') {
-      newAction = 'drawTrainCards';
-      
-      // First card drawn, update state but don't end turn
+    if (isFirstCard) {
+      // First card drawn, wait for second card
       const updatedPlayers = [...gameState.players];
       updatedPlayers[playerIndex] = { ...player, trainCards: newHand };
       
@@ -267,7 +280,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gameState: {
           ...gameState,
           players: updatedPlayers,
-          currentAction: newAction,
+          currentAction: 'drawTrainCards', // Теперь ждём вторую карту
           trainCardDeck: newDeck,
           faceUpCards: newFaceUp,
         },
@@ -518,6 +531,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
     
     // Просто сбрасываем currentAction, не меняя ход
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'none',
+      },
+    });
+  },
+  
+  cancelDrawingCards: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    // Можно отменить только если ещё не взяли ни одной карты (currentAction только начался)
+    // После взятия первой карты отменить нельзя - нужно взять вторую
+    if (gameState.currentAction !== 'drawTrainCards') return;
+    
     set({
       gameState: {
         ...gameState,
