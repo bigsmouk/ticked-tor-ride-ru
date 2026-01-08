@@ -5,6 +5,7 @@ import europeMapImage from '@/assets/europe-map.jpg';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 import redWagonImage from '@/assets/wagons/red.png';
 import blueWagonImage from '@/assets/wagons/blue.png';
+import greenWagonImage from '@/assets/wagons/green.png';
 
 interface EuropeMapProps {
   cities: City[];
@@ -304,6 +305,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                     // Check if this is a claimed wagon by red or blue player
                     const isRedPlayerWagon = isClaimed && claimingPlayer?.color === 'red';
                     const isBluePlayerWagon = isClaimed && claimingPlayer?.color === 'blue';
+                    const isGreenPlayerWagon = isClaimed && claimingPlayer?.color === 'green';
                     
                     return (
                       <g 
@@ -324,6 +326,15 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         ) : isBluePlayerWagon ? (
                           <image
                             href={blueWagonImage}
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        ) : isGreenPlayerWagon ? (
+                          <image
+                            href={greenWagonImage}
                             x={-14}
                             y={-7}
                             width={28}
