@@ -12,26 +12,26 @@ interface EuropeMapProps {
   selectedRoute?: string | null;
 }
 
-// Color mappings for routes
+// Color mappings for routes - bright and vibrant
 const ROUTE_COLORS: Record<string, string> = {
-  red: '#dc2626',
-  blue: '#2563eb',
-  green: '#16a34a',
-  yellow: '#eab308',
-  orange: '#ea580c',
-  pink: '#db2777',
-  white: '#f5f5f4',
-  black: '#1c1917',
-  gray: '#78716c',
-};
-
-// Player color mappings
-const PLAYER_COLORS: Record<PlayerColor, string> = {
   red: '#ef4444',
   blue: '#3b82f6',
   green: '#22c55e',
-  yellow: '#facc15',
-  black: '#171717',
+  yellow: '#fbbf24',
+  orange: '#f97316',
+  pink: '#ec4899',
+  white: '#fafafa',
+  black: '#404040',
+  gray: '#9ca3af',
+};
+
+// Player color mappings - very bright and saturated
+const PLAYER_COLORS: Record<PlayerColor, string> = {
+  red: '#ff3333',
+  blue: '#4488ff',
+  green: '#33ff66',
+  yellow: '#ffee00',
+  black: '#555555',
 };
 
 // Get city position
@@ -220,6 +220,25 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             </feMerge>
           </filter>
           
+          {/* Strong glow for player wagons */}
+          <filter id="player-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          
+          {/* Hover glow effect */}
+          <filter id="hover-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          
           {/* Drop shadow for cities */}
           <filter id="city-shadow" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
@@ -250,105 +269,122 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               ? gameState.players.find(p => p.id === route.claimedBy)
               : null;
             
-            return (
-              <g 
-                key={route.id}
-                className={`route-segment ${isClaimable ? 'cursor-pointer' : ''}`}
-                onClick={() => !isClaimed && onRouteClick?.(route.id)}
-                style={{ opacity: isClaimed ? 0.7 : 1 }}
-              >
-                {/* Route background line */}
-                <path
-                  d={path}
-                  stroke={isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 30% 40%)'}
-                  strokeWidth={isSelected ? 14 : 10}
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={isSelected ? 1 : 0.3}
-                />
-                
-                {/* Individual train car slots */}
-                {segments.map((seg, i) => {
-                  return (
-                    <g 
-                      key={i} 
-                      transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
-                    >
-                      {/* Slot background */}
-                      <rect
-                        x={-12}
-                        y={-5}
-                        width={24}
-                        height={10}
-                        rx={2}
-                        fill={isClaimed && claimingPlayer 
-                          ? PLAYER_COLORS[claimingPlayer.color]
-                          : color
-                        }
-                        stroke={isClaimed ? 'hsl(30 40% 20%)' : 'hsl(30 30% 40%)'}
-                        strokeWidth={1.5}
-                        opacity={isClaimed ? 1 : 0.8}
-                      />
-                      
-                      {/* Tunnel indicator */}
-                      {route.isTunnel && !isClaimed && (
+              return (
+                <g 
+                  key={route.id}
+                  className={`route-segment ${isClaimable ? 'cursor-pointer' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
+                  onClick={() => !isClaimed && onRouteClick?.(route.id)}
+                >
+                  {/* Route background line - dimmed for unclaimed */}
+                  <path
+                    d={path}
+                    stroke={isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 30% 40%)'}
+                    strokeWidth={isSelected ? 14 : 10}
+                    fill="none"
+                    strokeLinecap="round"
+                    opacity={isSelected ? 1 : isClaimed ? 0.2 : 0.3}
+                  />
+                  
+                  {/* Individual train car slots */}
+                  {segments.map((seg, i) => {
+                    const wagonColor = isClaimed && claimingPlayer 
+                      ? PLAYER_COLORS[claimingPlayer.color]
+                      : color;
+                    
+                    return (
+                      <g 
+                        key={i} 
+                        transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
+                        className="wagon-slot"
+                        filter={isClaimed ? 'url(#player-glow)' : undefined}
+                      >
+                        {/* Outer glow for claimed wagons */}
+                        {isClaimed && (
+                          <rect
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            rx={3}
+                            fill="none"
+                            stroke={wagonColor}
+                            strokeWidth={2}
+                            opacity={0.6}
+                          />
+                        )}
+                        
+                        {/* Slot background - bright colors */}
                         <rect
                           x={-12}
                           y={-5}
                           width={24}
                           height={10}
                           rx={2}
-                          fill="none"
-                          stroke="hsl(30 20% 30%)"
-                          strokeWidth={1}
-                          strokeDasharray="4 2"
+                          fill={wagonColor}
+                          stroke={isClaimed ? '#ffffff' : 'hsl(30 30% 50%)'}
+                          strokeWidth={isClaimed ? 2 : 1.5}
+                          opacity={isClaimed ? 1 : 0.9}
+                          className="wagon-rect"
                         />
-                      )}
-                      
-                      {/* Ferry locomotive indicator */}
-                      {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && !isClaimed && (
-                        <text
-                          x={0}
-                          y={4}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="hsl(30 20% 30%)"
-                          fontWeight="bold"
-                        >
-                          🚂
-                        </text>
-                      )}
-                      
-                      {/* Claimed train indicator */}
-                      {isClaimed && (
-                        <rect
-                          x={-10}
-                          y={-3}
-                          width={20}
-                          height={6}
-                          rx={1}
-                          fill="hsl(30 30% 25%)"
-                          opacity={0.6}
-                        />
-                      )}
-                    </g>
-                  );
-                })}
-                
-                {/* Hover highlight */}
-                {isClaimable && (
-                  <path
-                    d={path}
-                    stroke="hsl(43 80% 50%)"
-                    strokeWidth={16}
-                    fill="none"
-                    strokeLinecap="round"
-                    opacity={0}
-                    className="transition-opacity hover:opacity-30"
-                  />
-                )}
-              </g>
-            );
+                        
+                        {/* Inner highlight for claimed wagons */}
+                        {isClaimed && (
+                          <rect
+                            x={-10}
+                            y={-3}
+                            width={20}
+                            height={6}
+                            rx={1}
+                            fill="rgba(255,255,255,0.3)"
+                          />
+                        )}
+                        
+                        {/* Tunnel indicator */}
+                        {route.isTunnel && !isClaimed && (
+                          <rect
+                            x={-12}
+                            y={-5}
+                            width={24}
+                            height={10}
+                            rx={2}
+                            fill="none"
+                            stroke="hsl(30 20% 30%)"
+                            strokeWidth={1}
+                            strokeDasharray="4 2"
+                          />
+                        )}
+                        
+                        {/* Ferry locomotive indicator */}
+                        {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && !isClaimed && (
+                          <text
+                            x={0}
+                            y={4}
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="hsl(30 20% 30%)"
+                            fontWeight="bold"
+                          >
+                            🚂
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                  
+                  {/* Hover highlight */}
+                  {isClaimable && (
+                    <path
+                      d={path}
+                      stroke="hsl(43 80% 50%)"
+                      strokeWidth={16}
+                      fill="none"
+                      strokeLinecap="round"
+                      opacity={0}
+                      className="transition-opacity hover:opacity-30"
+                    />
+                  )}
+                </g>
+              );
           })}
         </g>
         
