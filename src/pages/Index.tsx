@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { Input } from '@/components/ui/input';
+import { RulesModal } from '@/components/game/RulesModal';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -158,12 +159,16 @@ const Index = () => {
             )}
           </div>
 
-          {/* Game rules preview */}
-          <div className="mt-8 text-center">
+          {/* Game info and rules */}
+          <div className="mt-8 text-center space-y-4">
             <div className="inline-flex gap-6 text-sm text-muted-foreground">
               <span>👥 2-4 игрока</span>
               <span>⏱️ 30-60 мин</span>
               <span>🎯 46 городов</span>
+            </div>
+            
+            <div>
+              <RulesModal />
             </div>
           </div>
         </div>
