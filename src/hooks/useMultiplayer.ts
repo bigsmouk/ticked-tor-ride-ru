@@ -3,8 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGameStore } from '@/stores/gameStore';
 import { Player, PlayerColor } from '@/types/game';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
+
+// Схемы валидации
+const playerNameSchema = z.string()
+  .trim()
+  .min(1, 'Имя не может быть пустым')
+  .max(30, 'Имя слишком длинное (максимум 30 символов)')
+  .regex(/^[\p{L}\p{N}\s\-_]+$/u, 'Имя содержит недопустимые символы');
+
+const roomNameSchema = z.string()
+  .trim()
+  .min(1, 'Название комнаты не может быть пустым')
+  .max(50, 'Название слишком длинное (максимум 50 символов)')
+  .regex(/^[\p{L}\p{N}\s\-_!?.,]+$/u, 'Название содержит недопустимые символы');
 
 // Генерация короткого кода комнаты
 const generateRoomCode = (): string => {
@@ -64,6 +78,22 @@ export const useMultiplayer = () => {
       return null;
     }
 
+    // Валидация входных данных
+    const roomNameResult = roomNameSchema.safeParse(roomName);
+    if (!roomNameResult.success) {
+      toast.error(roomNameResult.error.errors[0].message);
+      return null;
+    }
+
+    const playerNameResult = playerNameSchema.safeParse(playerName);
+    if (!playerNameResult.success) {
+      toast.error(playerNameResult.error.errors[0].message);
+      return null;
+    }
+
+    const validatedRoomName = roomNameResult.data;
+    const validatedPlayerName = playerNameResult.data;
+
     setIsLoading(true);
     setError(null);
 
@@ -75,7 +105,7 @@ export const useMultiplayer = () => {
         .from('rooms')
         .insert({
           code: roomCode,
-          name: roomName,
+          name: validatedRoomName,
           host_id: playerId,
           status: 'waiting',
           max_players: 4,
@@ -92,7 +122,7 @@ export const useMultiplayer = () => {
         .insert({
           room_id: room.id,
           player_id: playerId,
-          player_name: playerName,
+          player_name: validatedPlayerName,
           color: PLAYER_COLORS[0],
           is_ready: true,
           is_host: true,
@@ -103,11 +133,11 @@ export const useMultiplayer = () => {
       setCurrentRoom({
         id: room.id,
         code: roomCode,
-        name: roomName,
+        name: validatedRoomName,
         hostId: playerId,
         players: [{
           id: playerId,
-          name: playerName,
+          name: validatedPlayerName,
           color: PLAYER_COLORS[0],
           trainCards: [],
           destinationTickets: [],
@@ -140,6 +170,15 @@ export const useMultiplayer = () => {
       toast.error('Подождите, идёт подключение...');
       return null;
     }
+
+    // Валидация имени игрока
+    const playerNameResult = playerNameSchema.safeParse(playerName);
+    if (!playerNameResult.success) {
+      toast.error(playerNameResult.error.errors[0].message);
+      return null;
+    }
+
+    const validatedPlayerName = playerNameResult.data;
 
     setIsLoading(true);
     setError(null);
@@ -185,7 +224,7 @@ export const useMultiplayer = () => {
           .insert({
             room_id: room.id,
             player_id: playerId,
-            player_name: playerName,
+            player_name: validatedPlayerName,
             color: availableColor,
             is_ready: true,
             is_host: false,
