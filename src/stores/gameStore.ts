@@ -40,6 +40,7 @@ interface GameStore {
   setView: (view: 'lobby' | 'waiting' | 'game') => void;
   setCurrentRoom: (room: (GameRoom & { code?: string }) | null) => void;
   setLocalPlayerId: (id: string | null) => void;
+  setGameState: (state: GameState | null) => void;
   leaveRoom: () => void;
   initializeGame: () => void;
   
@@ -68,6 +69,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setLocalPlayerId: (id) => set({ localPlayerId: id }),
   
+  setGameState: (state) => set({ gameState: state }),
   leaveRoom: () => {
     set({
       currentRoom: null,
