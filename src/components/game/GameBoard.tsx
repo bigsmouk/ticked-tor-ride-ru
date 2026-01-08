@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, createContext } from 'react';
 import { EuropeMap } from '@/components/game/EuropeMap';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
@@ -6,11 +6,23 @@ import { CardDeckArea } from '@/components/game/CardDeckArea';
 import { ActionPanel } from '@/components/game/ActionPanel';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType } from '@/types/game';
+import { useGameSync, GameAction } from '@/hooks/useGameSync';
+
+// Context для передачи sendActionToHost в дочерние компоненты
+const GameSyncContext = createContext<{
+  sendActionToHost: (action: GameAction) => void;
+  isHost: boolean;
+} | null>(null);
+
+export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, drawTrainCard, claimRoute, canClaimRoute } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
+  
+  // Получаем функцию синхронизации
+  const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
 
   if (!gameState) return <div className="flex items-center justify-center h-screen">Загрузка...</div>;
 
@@ -35,9 +47,22 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  // Обёртка для действий - хост выполняет локально, не-хост отправляет хосту
+  const handleDrawTrainCard = (fromFaceUp: boolean, cardIndex?: number) => {
+    if (isHost) {
+      drawTrainCard(fromFaceUp, cardIndex);
+    } else {
+      sendActionToHost({ type: 'drawTrainCard', fromFaceUp, cardIndex });
+    }
+  };
+
   const handleClaimRoute = () => {
     if (selectedRoute && selectedCards.length > 0) {
-      claimRoute(selectedRoute, selectedCards);
+      if (isHost) {
+        claimRoute(selectedRoute, selectedCards);
+      } else {
+        sendActionToHost({ type: 'claimRoute', routeId: selectedRoute, cardsUsed: selectedCards });
+      }
       setSelectedRoute(null);
       setSelectedCards([]);
     }
@@ -83,8 +108,8 @@ export const GameBoard: React.FC = () => {
             <CardDeckArea
               faceUpCards={gameState.faceUpCards}
               deckCount={gameState.trainCardDeck.length}
-              onDrawFromDeck={() => drawTrainCard(false)}
-              onDrawFaceUp={(i) => drawTrainCard(true, i)}
+              onDrawFromDeck={() => handleDrawTrainCard(false)}
+              onDrawFaceUp={(i) => handleDrawTrainCard(true, i)}
               canDraw={isMyTurn && gameState.currentAction !== 'drawDestinations'}
               currentAction={gameState.currentAction}
             />
@@ -94,7 +119,7 @@ export const GameBoard: React.FC = () => {
               selectedRouteId={selectedRoute}
               selectedCards={selectedCards}
               canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) : false}
-              onDrawCards={() => drawTrainCard(false)}
+              onDrawCards={() => handleDrawTrainCard(false)}
               onDrawDestinations={() => {}}
               onClaimRoute={handleClaimRoute}
               onCancelAction={() => { setSelectedRoute(null); setSelectedCards([]); }}

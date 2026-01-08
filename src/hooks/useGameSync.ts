@@ -1,8 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameStore } from '@/stores/gameStore';
-import { GameState } from '@/types/game';
+import { GameState, TrainCardType } from '@/types/game';
 import { RealtimeChannel } from '@supabase/supabase-js';
+
+export type GameAction = 
+  | { type: 'drawTrainCard'; fromFaceUp: boolean; cardIndex?: number }
+  | { type: 'claimRoute'; routeId: string; cardsUsed: TrainCardType[] }
+  | { type: 'drawDestinations' }
+  | { type: 'keepDestinations'; ticketIds: string[] }
+  | { type: 'endTurn' };
 
 export const useGameSync = (roomId: string | null) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -11,6 +18,13 @@ export const useGameSync = (roomId: string | null) => {
   const currentRoom = useGameStore(state => state.currentRoom);
   const setGameState = useGameStore(state => state.setGameState);
   
+  // Game actions from store (host will execute these)
+  const executeDrawTrainCard = useGameStore(state => state.drawTrainCard);
+  const executeClaimRoute = useGameStore(state => state.claimRoute);
+  const executeDrawDestinations = useGameStore(state => state.drawDestinations);
+  const executeKeepDestinations = useGameStore(state => state.keepDestinations);
+  const executeEndTurn = useGameStore(state => state.endTurn);
+  
   const isHost = currentRoom?.hostId === localPlayerId;
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
@@ -18,17 +32,20 @@ export const useGameSync = (roomId: string | null) => {
   const hostIdRef = useRef<string | null>(null);
   hostIdRef.current = currentRoom?.hostId || null;
 
-  // Функция для трансляции состояния игры (только хост)
-  const broadcastGameState = useCallback((state: GameState) => {
-    if (!channelRef.current || !isHostRef.current) return;
+  // Отправка действия хосту (для не-хостов)
+  const sendActionToHost = useCallback((action: GameAction) => {
+    if (!channelRef.current || isHostRef.current) return;
     
-    console.log('[GameSync] Broadcasting state as host');
-    channelRef.current.track({
-      gameState: JSON.stringify(state),
-      updatedAt: Date.now(),
-      isHost: true,
+    console.log('[GameSync] Sending action to host:', action.type);
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'player_action',
+      payload: {
+        playerId: localPlayerId,
+        action,
+      },
     });
-  }, []);
+  }, [localPlayerId]);
 
   useEffect(() => {
     if (!roomId || !localPlayerId) {
@@ -43,6 +60,9 @@ export const useGameSync = (roomId: string | null) => {
       config: {
         presence: {
           key: localPlayerId,
+        },
+        broadcast: {
+          self: false,
         },
       },
     });
@@ -72,13 +92,53 @@ export const useGameSync = (roomId: string | null) => {
           if (hostPresence?.gameState) {
             try {
               const parsedState = JSON.parse(hostPresence.gameState) as GameState;
-              console.log('[GameSync] Received state from host, currentPlayer:', parsedState.currentPlayerId);
+              console.log('[GameSync] Received state from host, currentPlayer:', parsedState.currentPlayerId, 'turn:', parsedState.turnNumber);
               setGameState(parsedState);
             } catch (e) {
               console.error('[GameSync] Error parsing game state:', e);
             }
           }
         }
+      })
+      // Хост слушает действия от других игроков
+      .on('broadcast', { event: 'player_action' }, (payload) => {
+        if (!isHostRef.current) return;
+        
+        const { playerId, action } = payload.payload as { playerId: string; action: GameAction };
+        console.log('[GameSync] Host received action from player:', playerId, 'action:', action.type);
+        
+        // Проверяем, что действие от текущего активного игрока
+        const currentState = useGameStore.getState().gameState;
+        if (!currentState || currentState.currentPlayerId !== playerId) {
+          console.log('[GameSync] Ignoring action - not from current player');
+          return;
+        }
+        
+        // Временно подменяем localPlayerId для выполнения действия
+        const originalPlayerId = useGameStore.getState().localPlayerId;
+        useGameStore.setState({ localPlayerId: playerId });
+        
+        // Выполняем действие
+        switch (action.type) {
+          case 'drawTrainCard':
+            executeDrawTrainCard(action.fromFaceUp, action.cardIndex);
+            break;
+          case 'claimRoute':
+            executeClaimRoute(action.routeId, action.cardsUsed);
+            break;
+          case 'drawDestinations':
+            executeDrawDestinations();
+            break;
+          case 'keepDestinations':
+            executeKeepDestinations(action.ticketIds);
+            break;
+          case 'endTurn':
+            executeEndTurn();
+            break;
+        }
+        
+        // Восстанавливаем localPlayerId
+        useGameStore.setState({ localPlayerId: originalPlayerId });
       })
       .subscribe(async (status) => {
         console.log('[GameSync] Subscription status:', status);
@@ -103,12 +163,12 @@ export const useGameSync = (roomId: string | null) => {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [roomId, localPlayerId, setGameState]);
+  }, [roomId, localPlayerId, setGameState, executeDrawTrainCard, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeEndTurn]);
 
   // Транслируем изменения состояния игры (только хост)
   useEffect(() => {
     if (gameState && isHostRef.current && channelRef.current) {
-      console.log('[GameSync] Host broadcasting updated state, turn:', gameState.turnNumber);
+      console.log('[GameSync] Host broadcasting updated state, turn:', gameState.turnNumber, 'currentPlayer:', gameState.currentPlayerId);
       channelRef.current.track({
         gameState: JSON.stringify(gameState),
         updatedAt: Date.now(),
@@ -117,5 +177,5 @@ export const useGameSync = (roomId: string | null) => {
     }
   }, [gameState]);
 
-  return { broadcastGameState, isHost };
+  return { sendActionToHost, isHost };
 };
