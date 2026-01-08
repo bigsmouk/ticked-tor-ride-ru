@@ -5,12 +5,24 @@ import { Input } from '@/components/ui/input';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { createRoom, joinRoom, isLoading } = useMultiplayer();
+  const { createRoom, joinRoom, isLoading, isReady } = useMultiplayer();
   const [playerName, setPlayerName] = useState('');
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+
+  // Показываем загрузку пока аутентификация не завершена
+  if (!isReady) {
+    return (
+      <div className="min-h-screen parchment flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">🚂</div>
+          <p className="font-display text-lg text-muted-foreground">Подключение к серверу...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateGame = async () => {
     if (playerName.trim() && roomName.trim()) {
