@@ -48,9 +48,9 @@ const Index = () => {
       {/* Header */}
       <header className="py-6 text-center border-b-4 border-ornament bg-primary">
         <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
-          🚂 Ticket to Ride
+          🚂 Железнодорожное Приключение
         </h1>
-        <p className="font-display text-xl text-gold mt-2">EUROPE</p>
+        <p className="font-display text-xl text-gold mt-2">ЕВРОПА</p>
       </header>
 
       {/* Main content */}
@@ -175,8 +175,9 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-ornament">
-        <p>Основано на настольной игре Ticket to Ride: Europe</p>
+      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-ornament space-y-1">
+        <p>Создатель: <strong>Симинеев Тимур</strong></p>
+        <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
       </footer>
     </div>
   );
