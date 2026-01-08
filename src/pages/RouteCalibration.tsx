@@ -4,16 +4,17 @@ import europeMapImage from '@/assets/europe-map.jpg';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+// Bright route colors
 const ROUTE_COLORS: Record<string, string> = {
-  red: '#dc2626',
-  blue: '#2563eb',
-  green: '#16a34a',
-  yellow: '#eab308',
-  orange: '#ea580c',
-  pink: '#db2777',
-  white: '#f5f5f4',
-  black: '#1c1917',
-  gray: '#78716c',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  yellow: '#fbbf24',
+  orange: '#f97316',
+  pink: '#ec4899',
+  white: '#fafafa',
+  black: '#404040',
+  gray: '#9ca3af',
 };
 
 interface WagonPosition {
