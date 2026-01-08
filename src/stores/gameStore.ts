@@ -53,7 +53,6 @@ interface GameStore {
   setGameState: (state: GameState | null) => void;
   leaveRoom: () => void;
   initializeGame: () => void;
-  initializeDemoGame: () => void;
   
   // Game actions
   drawTrainCard: (fromFaceUp: boolean, cardIndex?: number) => void;
@@ -166,114 +165,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...currentRoom,
         status: 'playing',
       },
-    });
-  },
-  
-  initializeDemoGame: () => {
-    const playerColors: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
-    
-    // Create demo players
-    const demoPlayers: Player[] = [
-      {
-        id: 'demo-player-1',
-        name: 'Вы',
-        color: playerColors[0],
-        trainCards: [],
-        destinationTickets: [],
-        trainsRemaining: INITIAL_TRAINS,
-        stations: 3,
-        score: 0,
-        isActive: true,
-        isConnected: true,
-      },
-      {
-        id: 'demo-ai-1',
-        name: 'Бот Иван',
-        color: playerColors[1],
-        trainCards: [],
-        destinationTickets: [],
-        trainsRemaining: INITIAL_TRAINS,
-        stations: 3,
-        score: 0,
-        isActive: false,
-        isConnected: true,
-        isBot: true,
-      },
-    ];
-    
-    // Initialize deck
-    let trainDeck = shuffleArray(createTrainCardDeck());
-    let destinationDeck = shuffleArray([...DESTINATION_TICKETS]);
-    
-    // Deal cards to players
-    const players = demoPlayers.map((player, index) => {
-      const initialCards: TrainCardType[] = [];
-      for (let i = 0; i < INITIAL_TRAIN_CARDS; i++) {
-        const card = trainDeck.pop();
-        if (card) initialCards.push(card as TrainCardType);
-      }
-      
-      // Draw initial destination tickets
-      const initialDestinations: DestinationTicket[] = [];
-      for (let i = 0; i < 3; i++) {
-        const ticket = destinationDeck.pop();
-        if (ticket) initialDestinations.push(ticket);
-      }
-      
-      return {
-        ...player,
-        trainCards: initialCards,
-        destinationTickets: initialDestinations,
-        isActive: index === 0,
-      };
-    });
-    
-    // Set up 5 face-up cards
-    const faceUpCards: TrainCardType[] = [];
-    for (let i = 0; i < 5; i++) {
-      const card = trainDeck.pop();
-      if (card) faceUpCards.push(card as TrainCardType);
-    }
-    
-    const demoRoom: GameRoom & { code?: string } = {
-      id: 'demo-room',
-      name: 'Демо игра',
-      hostId: 'demo-player-1',
-      players: players,
-      maxPlayers: 5,
-      status: 'playing',
-      code: 'DEMO',
-      createdAt: new Date(),
-    };
-    
-    const gameState: GameState = {
-      roomId: demoRoom.id,
-      phase: 'playing',
-      players,
-      currentPlayerId: players[0].id,
-      currentAction: 'none',
-      trainCardDeck: trainDeck as TrainCardType[],
-      trainCardDiscard: [],
-      faceUpCards,
-      destinationDeck,
-      cities: EUROPE_CITIES,
-      routes: EUROPE_ROUTES.map(route => ({ ...route })),
-      turnNumber: 1,
-      logs: [
-        {
-          id: crypto.randomUUID(),
-          action: 'Демо-игра началась',
-          details: 'Играйте против бота',
-          timestamp: new Date(),
-        },
-      ],
-    };
-    
-    set({
-      gameState,
-      currentRoom: demoRoom,
-      localPlayerId: 'demo-player-1',
-      currentView: 'game',
     });
   },
   
