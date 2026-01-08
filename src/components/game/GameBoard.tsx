@@ -1,4 +1,4 @@
-import React, { useState, useContext, createContext } from 'react';
+import React, { useState, useContext, createContext, useEffect, useRef } from 'react';
 import { EuropeMap } from '@/components/game/EuropeMap';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
@@ -10,6 +10,7 @@ import { GameLog } from '@/components/game/GameLog';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
+import { playTurnNotificationSound } from '@/hooks/useGameSounds';
 
 // Context для передачи sendActionToHost в дочерние компоненты
 const GameSyncContext = createContext<{
@@ -20,7 +21,7 @@ const GameSyncContext = createContext<{
 export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -30,23 +31,36 @@ export const GameBoard: React.FC = () => {
   // Получаем функцию синхронизации
   const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
 
-  // Сбрасываем выделение при смене хода
-  const prevCurrentPlayerId = React.useRef(gameState?.currentPlayerId);
-  React.useEffect(() => {
+  // Сбрасываем выделение при смене хода и проигрываем звук если ход перешёл к нам
+  const prevCurrentPlayerId = useRef(gameState?.currentPlayerId);
+  const isFirstRender = useRef(true);
+  
+  useEffect(() => {
     if (gameState?.currentPlayerId !== prevCurrentPlayerId.current) {
       setSelectedRoute(null);
       setSelectedCards([]);
       setSelectedCardIndices([]);
+      
+      // Проигрываем звук если ход перешёл к текущему игроку (не при первом рендере)
+      if (!isFirstRender.current && gameState?.currentPlayerId === localPlayerId && gameState?.phase !== 'finished') {
+        playTurnNotificationSound();
+      }
+      
       prevCurrentPlayerId.current = gameState?.currentPlayerId;
     }
-  }, [gameState?.currentPlayerId]);
+    isFirstRender.current = false;
+  }, [gameState?.currentPlayerId, localPlayerId, gameState?.phase]);
 
   if (!gameState) return <div className="flex items-center justify-center h-screen">Загрузка...</div>;
 
   const localPlayer = gameState.players.find(p => p.id === localPlayerId);
   const isMyTurn = gameState.currentPlayerId === localPlayerId;
+  const canInteract = isMyTurn && gameState.currentAction === 'none';
 
   const handleRouteClick = (routeId: string) => {
+    // Можно выбирать маршрут только если наш ход и нет активного действия
+    if (!canInteract) return;
+    
     if (selectedRoute === routeId) {
       setSelectedRoute(null);
       setSelectedCards([]);
@@ -59,6 +73,9 @@ export const GameBoard: React.FC = () => {
   };
 
   const handleCardSelect = (card: TrainCardType, cardIndex: number) => {
+    // Проверяем что наш ход и нет активного действия
+    if (!canInteract) return;
+    
     // Проверяем требования маршрута
     if (!selectedRoute) return;
     
@@ -87,12 +104,30 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  // Начать режим выбора карт
+  const handleStartDrawingCards = () => {
+    if (isHost) {
+      startDrawingCards();
+    } else {
+      sendActionToHost({ type: 'startDrawingCards' });
+    }
+  };
+
   // Обёртка для действий - хост выполняет локально, не-хост отправляет хосту
   const handleDrawTrainCard = (fromFaceUp: boolean, cardIndex?: number) => {
     if (isHost) {
       drawTrainCard(fromFaceUp, cardIndex);
     } else {
       sendActionToHost({ type: 'drawTrainCard', fromFaceUp, cardIndex });
+    }
+  };
+
+  // Отмена режима выбора карт
+  const handleCancelDrawingCards = () => {
+    if (isHost) {
+      cancelDrawingCards();
+    } else {
+      sendActionToHost({ type: 'cancelDrawingCards' });
     }
   };
 
@@ -212,7 +247,7 @@ export const GameBoard: React.FC = () => {
               deckCount={gameState.trainCardDeck.length}
               onDrawFromDeck={() => handleDrawTrainCard(false)}
               onDrawFaceUp={(i) => handleDrawTrainCard(true, i)}
-              canDraw={isMyTurn && gameState.currentAction !== 'drawDestinations'}
+              canDraw={isMyTurn && (gameState.currentAction === 'selectingFirstCard' || gameState.currentAction === 'drawTrainCards')}
               currentAction={gameState.currentAction}
             />
             <ActionPanel
@@ -221,14 +256,10 @@ export const GameBoard: React.FC = () => {
               selectedRouteId={selectedRoute}
               selectedCards={selectedCards}
               canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && selectedCards.length === (routeRequirement?.count || 0) : false}
-              onDrawCards={() => handleDrawTrainCard(false)}
+              onDrawCards={handleStartDrawingCards}
               onDrawDestinations={handleDrawDestinations}
               onClaimRoute={handleClaimRoute}
-              onCancelAction={() => { 
-                setSelectedRoute(null); 
-                setSelectedCards([]); 
-                setSelectedCardIndices([]);
-              }}
+              onCancelAction={handleCancelDrawingCards}
               trainsRemaining={localPlayer?.trainsRemaining || 0}
               routeRequirement={routeRequirement}
             />

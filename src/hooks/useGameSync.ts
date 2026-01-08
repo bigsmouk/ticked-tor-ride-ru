@@ -5,7 +5,9 @@ import { GameState, TrainCardType } from '@/types/game';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export type GameAction = 
+  | { type: 'startDrawingCards' }
   | { type: 'drawTrainCard'; fromFaceUp: boolean; cardIndex?: number }
+  | { type: 'cancelDrawingCards' }
   | { type: 'claimRoute'; routeId: string; cardsUsed: TrainCardType[] }
   | { type: 'drawDestinations' }
   | { type: 'keepDestinations'; ticketIds: string[] }
@@ -20,7 +22,9 @@ export const useGameSync = (roomId: string | null) => {
   const setGameState = useGameStore(state => state.setGameState);
   
   // Game actions from store (host will execute these)
+  const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
   const executeDrawTrainCard = useGameStore(state => state.drawTrainCard);
+  const executeCancelDrawingCards = useGameStore(state => state.cancelDrawingCards);
   const executeClaimRoute = useGameStore(state => state.claimRoute);
   const executeDrawDestinations = useGameStore(state => state.drawDestinations);
   const executeKeepDestinations = useGameStore(state => state.keepDestinations);
@@ -122,8 +126,14 @@ export const useGameSync = (roomId: string | null) => {
         
         // Выполняем действие
         switch (action.type) {
+          case 'startDrawingCards':
+            executeStartDrawingCards();
+            break;
           case 'drawTrainCard':
             executeDrawTrainCard(action.fromFaceUp, action.cardIndex);
+            break;
+          case 'cancelDrawingCards':
+            executeCancelDrawingCards();
             break;
           case 'claimRoute':
             executeClaimRoute(action.routeId, action.cardsUsed);
@@ -168,7 +178,7 @@ export const useGameSync = (roomId: string | null) => {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [roomId, localPlayerId, setGameState, executeDrawTrainCard, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn]);
+  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn]);
 
   // Транслируем изменения состояния игры (только хост)
   useEffect(() => {

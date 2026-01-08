@@ -107,3 +107,34 @@ export const playSuccessSound = () => {
     console.log('Audio not available:', e);
   }
 };
+
+// Turn notification sound - plays when it's your turn
+export const playTurnNotificationSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    // Two quick ascending notes
+    const notes = [587.33, 880]; // D5, A5
+    
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, now + i * 0.15);
+      osc.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, now + i * 0.15);
+      gainNode.gain.linearRampToValueAtTime(0.12, now + i * 0.15 + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.2);
+      
+      osc.start(now + i * 0.15);
+      osc.stop(now + i * 0.15 + 0.25);
+    });
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};

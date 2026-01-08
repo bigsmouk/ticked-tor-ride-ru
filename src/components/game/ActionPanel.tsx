@@ -89,10 +89,10 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
         </div>
       )}
       
-      {currentAction === 'drawTrainCards' && (
+      {currentAction === 'selectingFirstCard' && (
         <div className="flex items-center gap-3">
           <div className="text-sm text-gold font-display animate-pulse">
-            Выберите ещё одну карту (вторую)
+            Выберите первую карту из открытых или из колоды
           </div>
           <button
             className="btn-vintage rounded-lg text-sm"
@@ -103,17 +103,19 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
         </div>
       )}
       
+      {currentAction === 'drawTrainCards' && (
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gold font-display animate-pulse">
+            Выберите вторую карту (локомотив недоступен)
+          </div>
+        </div>
+      )}
+      
       {currentAction === 'drawDestinations' && (
         <div className="flex items-center gap-3">
           <div className="text-sm text-gold font-display animate-pulse">
             Выберите маршруты для сохранения (минимум 1)
           </div>
-          <button
-            className="btn-vintage rounded-lg text-sm"
-            onClick={onCancelAction}
-          >
-            ❌ Отмена
-          </button>
         </div>
       )}
       

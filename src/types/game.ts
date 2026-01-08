@@ -63,7 +63,8 @@ export type GamePhase =
 // Turn actions
 export type TurnAction = 
   | 'none'
-  | 'drawTrainCards' // Drawing train cards
+  | 'selectingFirstCard' // Choosing where to draw first card from
+  | 'drawTrainCards' // Already drew first card, drawing second
   | 'claimRoute' // Claiming a route
   | 'drawDestinations'; // Drawing destination tickets
 
