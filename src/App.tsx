@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import WaitingRoom from "./pages/WaitingRoom";
 import Game from "./pages/Game";
+import MapCalibration from "./pages/MapCalibration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,7 +18,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<MapCalibration />} />
+          <Route path="/home" element={<Index />} />
           <Route path="/waiting" element={<WaitingRoom />} />
           <Route path="/game" element={<Game />} />
           <Route path="*" element={<NotFound />} />
