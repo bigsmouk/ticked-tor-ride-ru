@@ -12,9 +12,9 @@ interface DestinationCardProps {
 }
 
 const SIZES = {
-  small: { width: 100, height: 60, fontSize: 8 },
-  medium: { width: 140, height: 80, fontSize: 10 },
-  large: { width: 180, height: 100, fontSize: 12 },
+  small: { width: 140, height: 50, fontSize: 10, routeFontSize: 11 },
+  medium: { width: 180, height: 60, fontSize: 12, routeFontSize: 13 },
+  large: { width: 220, height: 70, fontSize: 14, routeFontSize: 15 },
 };
 
 export const DestinationCard: React.FC<DestinationCardProps> = ({
@@ -36,6 +36,8 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
     ? 'hsl(0 65% 50%)' 
     : 'transparent';
   
+  const pointsValue = isFailed ? `-${ticket.points}` : `+${ticket.points}`;
+  
   return (
     <div
       className={`
@@ -47,7 +49,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         width: dimensions.width,
         height: dimensions.height,
         background: ticket.isLongRoute 
-          ? 'linear-gradient(135deg, hsl(35 40% 88%) 0%, hsl(25 35% 78%) 100%)'
+          ? 'linear-gradient(135deg, hsl(35 50% 85%) 0%, hsl(25 45% 75%) 100%)'
           : 'linear-gradient(135deg, hsl(40 35% 92%) 0%, hsl(35 30% 85%) 100%)',
         border: `3px solid ${ticket.isLongRoute ? 'hsl(25 50% 45%)' : 'hsl(30 40% 55%)'}`,
         boxShadow: isSelected 
@@ -66,107 +68,69 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         />
       )}
       
-      {/* Long route indicator */}
+      {/* Points badge - top left */}
+      <div 
+        className="absolute top-1.5 left-1.5 min-w-[32px] h-6 px-2 rounded flex items-center justify-center font-display font-bold"
+        style={{
+          background: isCompleted 
+            ? 'linear-gradient(180deg, hsl(140 60% 50%) 0%, hsl(140 55% 40%) 100%)'
+            : isFailed
+            ? 'linear-gradient(180deg, hsl(0 65% 55%) 0%, hsl(0 60% 45%) 100%)'
+            : ticket.isLongRoute
+            ? 'linear-gradient(180deg, hsl(25 60% 50%) 0%, hsl(25 55% 40%) 100%)'
+            : 'linear-gradient(180deg, hsl(43 80% 50%) 0%, hsl(30 60% 40%) 100%)',
+          border: '2px solid hsl(30 50% 30%)',
+          fontSize: dimensions.fontSize,
+          color: 'white',
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+        }}
+      >
+        {pointsValue}
+      </div>
+      
+      {/* Long route badge */}
       {ticket.isLongRoute && (
         <div 
-          className="absolute top-0 left-0 px-1.5 py-0.5 text-xs font-display font-bold"
+          className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-xs font-display font-bold"
           style={{
             background: 'hsl(25 60% 45%)',
             color: 'white',
-            borderBottomRightRadius: 4,
-            fontSize: dimensions.fontSize - 2,
+            fontSize: dimensions.fontSize - 3,
           }}
         >
-          LONG
+          ★
         </div>
       )}
       
-      {/* Mini map visualization */}
-      <svg 
-        className="absolute inset-0 opacity-30"
-        viewBox="0 0 100 60"
-        preserveAspectRatio="xMidYMid meet"
+      {/* Route text - center, prominent */}
+      <div 
+        className="absolute inset-0 flex items-center justify-center px-10"
       >
-        {city1 && city2 && (
-          <>
-            <line
-              x1={city1.x / 8}
-              y1={city1.y / 9}
-              x2={city2.x / 8}
-              y2={city2.y / 9}
-              stroke="hsl(30 50% 40%)"
-              strokeWidth={2}
-              strokeDasharray="4 2"
-            />
-            <circle cx={city1.x / 8} cy={city1.y / 9} r={4} fill="hsl(0 70% 50%)" />
-            <circle cx={city2.x / 8} cy={city2.y / 9} r={4} fill="hsl(210 70% 50%)" />
-          </>
-        )}
-      </svg>
-      
-      {/* Content */}
-      <div className="relative h-full flex flex-col justify-between p-2">
-        {/* Cities */}
-        <div className="flex-1 flex flex-col justify-center">
-          <div 
-            className="font-display font-bold text-center leading-tight"
-            style={{ 
-              fontSize: dimensions.fontSize,
-              color: 'hsl(30 40% 25%)',
-            }}
-          >
-            {city1?.name || ticket.cities[0]}
-          </div>
-          <div 
-            className="text-center my-0.5"
-            style={{ 
-              fontSize: dimensions.fontSize - 2,
-              color: 'hsl(30 30% 40%)',
-            }}
-          >
-            ↔
-          </div>
-          <div 
-            className="font-display font-bold text-center leading-tight"
-            style={{ 
-              fontSize: dimensions.fontSize,
-              color: 'hsl(30 40% 25%)',
-            }}
-          >
-            {city2?.name || ticket.cities[1]}
-          </div>
-        </div>
-        
-        {/* Points */}
         <div 
-          className="absolute bottom-1 right-1 min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center font-display font-bold"
-          style={{
-            background: isCompleted 
-              ? 'linear-gradient(180deg, hsl(140 60% 50%) 0%, hsl(140 55% 40%) 100%)'
-              : isFailed
-              ? 'linear-gradient(180deg, hsl(0 65% 55%) 0%, hsl(0 60% 45%) 100%)'
-              : 'linear-gradient(180deg, hsl(43 80% 50%) 0%, hsl(30 60% 40%) 100%)',
-            border: '2px solid hsl(30 50% 30%)',
-            fontSize: dimensions.fontSize,
-            color: isCompleted || isFailed ? 'white' : 'hsl(30 30% 15%)',
+          className="font-display font-bold text-center leading-tight"
+          style={{ 
+            fontSize: dimensions.routeFontSize,
+            color: 'hsl(30 40% 20%)',
+            textShadow: '0 1px 0 hsl(40 30% 90%)',
           }}
         >
-          {isFailed ? `-${ticket.points}` : ticket.points}
+          {city1?.name || ticket.cities[0]} — {city2?.name || ticket.cities[1]}
         </div>
-        
-        {/* Status icon */}
-        {(isCompleted || isFailed) && (
-          <div 
-            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-            style={{
-              background: statusColor,
-              fontSize: 12,
-            }}
-          >
-            {isCompleted ? '✓' : '✗'}
-          </div>
-        )}
       </div>
+      
+      {/* Status icon */}
+      {(isCompleted || isFailed) && (
+        <div 
+          className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+          style={{
+            background: statusColor,
+            fontSize: 12,
+            color: 'white',
+          }}
+        >
+          {isCompleted ? '✓' : '✗'}
+        </div>
+      )}
     </div>
   );
 };
