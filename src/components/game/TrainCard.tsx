@@ -1,6 +1,18 @@
 import React from 'react';
 import { TrainCardType } from '@/types/game';
 
+// Import card images
+import locomotiveCard from '@/assets/cards/locomotive.png';
+import redCard from '@/assets/cards/red.png';
+import blueCard from '@/assets/cards/blue.png';
+import greenCard from '@/assets/cards/green.png';
+import yellowCard from '@/assets/cards/yellow.png';
+import orangeCard from '@/assets/cards/orange.png';
+import pinkCard from '@/assets/cards/pink.png';
+import whiteCard from '@/assets/cards/white.png';
+import blackCard from '@/assets/cards/black.png';
+import cardBack from '@/assets/cards/card-back.png';
+
 interface TrainCardProps {
   type: TrainCardType;
   count?: number;
@@ -12,63 +24,23 @@ interface TrainCardProps {
   showCount?: boolean;
 }
 
-const CARD_COLORS: Record<TrainCardType, { bg: string; accent: string; icon: string }> = {
-  red: { 
-    bg: 'linear-gradient(135deg, hsl(0 75% 55%) 0%, hsl(0 70% 40%) 100%)',
-    accent: 'hsl(0 80% 60%)',
-    icon: '🚃',
-  },
-  blue: { 
-    bg: 'linear-gradient(135deg, hsl(210 80% 55%) 0%, hsl(210 75% 40%) 100%)',
-    accent: 'hsl(210 85% 60%)',
-    icon: '🚃',
-  },
-  green: { 
-    bg: 'linear-gradient(135deg, hsl(140 60% 50%) 0%, hsl(140 55% 35%) 100%)',
-    accent: 'hsl(140 65% 55%)',
-    icon: '🚃',
-  },
-  yellow: { 
-    bg: 'linear-gradient(135deg, hsl(48 95% 60%) 0%, hsl(45 90% 45%) 100%)',
-    accent: 'hsl(48 100% 65%)',
-    icon: '🚃',
-  },
-  orange: { 
-    bg: 'linear-gradient(135deg, hsl(25 95% 55%) 0%, hsl(25 90% 40%) 100%)',
-    accent: 'hsl(25 100% 60%)',
-    icon: '🚃',
-  },
-  pink: { 
-    bg: 'linear-gradient(135deg, hsl(330 70% 60%) 0%, hsl(330 65% 45%) 100%)',
-    accent: 'hsl(330 75% 65%)',
-    icon: '🚃',
-  },
-  white: { 
-    bg: 'linear-gradient(135deg, hsl(0 0% 95%) 0%, hsl(0 0% 80%) 100%)',
-    accent: 'hsl(0 0% 100%)',
-    icon: '🚃',
-  },
-  black: { 
-    bg: 'linear-gradient(135deg, hsl(0 0% 30%) 0%, hsl(0 0% 15%) 100%)',
-    accent: 'hsl(0 0% 40%)',
-    icon: '🚃',
-  },
-  gray: {
-    bg: 'linear-gradient(135deg, hsl(0 0% 55%) 0%, hsl(0 0% 40%) 100%)',
-    accent: 'hsl(0 0% 65%)',
-    icon: '🚃',
-  },
-  locomotive: { 
-    bg: 'linear-gradient(135deg, hsl(280 70% 55%) 0%, hsl(280 65% 40%) 100%)',
-    accent: 'hsl(280 75% 60%)',
-    icon: '🚂',
-  },
+const CARD_IMAGES: Record<TrainCardType, string> = {
+  red: redCard,
+  blue: blueCard,
+  green: greenCard,
+  yellow: yellowCard,
+  orange: orangeCard,
+  pink: pinkCard,
+  white: whiteCard,
+  black: blackCard,
+  gray: whiteCard, // fallback to white for gray
+  locomotive: locomotiveCard,
 };
 
 const SIZES = {
-  small: { width: 40, height: 56, fontSize: 12, iconSize: 16 },
-  medium: { width: 60, height: 84, fontSize: 14, iconSize: 24 },
-  large: { width: 80, height: 112, fontSize: 16, iconSize: 32 },
+  small: { width: 45, height: 70 },
+  medium: { width: 70, height: 105 },
+  large: { width: 100, height: 150 },
 };
 
 export const TrainCard: React.FC<TrainCardProps> = ({
@@ -81,50 +53,40 @@ export const TrainCard: React.FC<TrainCardProps> = ({
   showBack = false,
   showCount = true,
 }) => {
-  const colors = CARD_COLORS[type];
   const dimensions = SIZES[size];
+  const cardImage = CARD_IMAGES[type];
   
   if (showBack) {
     return (
       <div
         className={`
-          relative rounded-lg cursor-pointer transition-all duration-200
-          ${onClick ? 'hover:-translate-y-1 hover:shadow-lg' : ''}
+          relative rounded-lg overflow-hidden transition-all duration-200
+          ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg' : ''}
         `}
         style={{
           width: dimensions.width,
           height: dimensions.height,
-          background: 'linear-gradient(135deg, hsl(24 60% 30%) 0%, hsl(24 60% 20%) 100%)',
-          border: '3px solid hsl(30 50% 35%)',
-          boxShadow: '0 4px 10px hsl(0 0% 0% / 0.2)',
+          boxShadow: '0 4px 10px hsl(0 0% 0% / 0.3)',
         }}
         onClick={onClick}
       >
-        {/* Decorative pattern */}
-        <div 
-          className="absolute inset-2 rounded opacity-30"
-          style={{
-            background: 'repeating-linear-gradient(45deg, transparent, transparent 5px, hsl(43 80% 50% / 0.3) 5px, hsl(43 80% 50% / 0.3) 10px)',
-          }}
+        <img 
+          src={cardBack} 
+          alt="Card back"
+          className="w-full h-full object-cover"
+          draggable={false}
         />
-        
-        {/* Center icon */}
-        <div 
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ fontSize: dimensions.iconSize }}
-        >
-          🚂
-        </div>
         
         {/* Card count badge */}
         {count !== undefined && count > 0 && (
           <div 
-            className="absolute -bottom-1 -right-1 min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center font-display font-bold"
+            className="absolute -bottom-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center font-display font-bold"
             style={{
               background: 'linear-gradient(180deg, hsl(43 80% 50%) 0%, hsl(30 60% 40%) 100%)',
               border: '2px solid hsl(30 50% 30%)',
-              fontSize: 10,
+              fontSize: 11,
               color: 'hsl(30 30% 15%)',
+              boxShadow: '0 2px 4px hsl(0 0% 0% / 0.3)',
             }}
           >
             {count}
@@ -137,77 +99,47 @@ export const TrainCard: React.FC<TrainCardProps> = ({
   return (
     <div
       className={`
-        train-card relative rounded-lg transition-all duration-200
-        ${onClick && !isDisabled ? 'cursor-pointer hover:-translate-y-1' : ''}
+        relative rounded-lg overflow-hidden transition-all duration-200
+        ${onClick && !isDisabled ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : ''}
         ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
-        ${isSelected ? 'ring-3 ring-gold -translate-y-2 shadow-xl' : ''}
+        ${isSelected ? 'ring-4 ring-yellow-400 -translate-y-2 shadow-2xl scale-105' : ''}
       `}
       style={{
         width: dimensions.width,
         height: dimensions.height,
-        background: colors.bg,
-        border: `3px solid ${isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 50% 35%)'}`,
+        boxShadow: isSelected 
+          ? '0 8px 25px hsl(43 80% 50% / 0.5)' 
+          : '0 4px 10px hsl(0 0% 0% / 0.3)',
       }}
       onClick={!isDisabled ? onClick : undefined}
     >
-      {/* Card shine effect */}
-      <div 
-        className="absolute inset-0 rounded-md opacity-20"
-        style={{
-          background: `linear-gradient(135deg, ${colors.accent} 0%, transparent 50%)`,
-        }}
+      <img 
+        src={cardImage} 
+        alt={`${type} card`}
+        className="w-full h-full object-cover"
+        draggable={false}
       />
       
-      {/* Decorative border */}
-      <div 
-        className="absolute inset-1 rounded border-2 opacity-30"
-        style={{ borderColor: colors.accent }}
-      />
-      
-      {/* Card icon */}
-      <div 
-        className="absolute inset-0 flex flex-col items-center justify-center"
-        style={{ 
-          fontSize: dimensions.iconSize,
-          textShadow: '0 2px 4px hsl(0 0% 0% / 0.3)',
-        }}
-      >
-        <span>{colors.icon}</span>
-        {type !== 'locomotive' && (
-          <span 
-            className="font-display font-bold uppercase"
-            style={{ 
-              fontSize: dimensions.fontSize - 4,
-              color: ['yellow', 'white'].includes(type) ? 'hsl(0 0% 15%)' : 'white',
-              textShadow: '0 1px 2px hsl(0 0% 0% / 0.3)',
-            }}
-          >
-            {type.slice(0, 3)}
-          </span>
-        )}
-        {type === 'locomotive' && (
-          <span 
-            className="font-display font-bold text-white"
-            style={{ 
-              fontSize: dimensions.fontSize - 4,
-              textShadow: '0 1px 2px hsl(0 0% 0% / 0.3)',
-            }}
-          >
-            WILD
-          </span>
-        )}
-      </div>
+      {/* Selection glow overlay */}
+      {isSelected && (
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            boxShadow: 'inset 0 0 15px hsl(43 80% 50% / 0.5)',
+          }}
+        />
+      )}
       
       {/* Card count badge */}
       {showCount && count !== undefined && count > 1 && (
         <div 
-          className="absolute -bottom-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center font-display font-bold"
+          className="absolute -bottom-2 -right-2 min-w-[26px] h-[26px] px-1.5 rounded-full flex items-center justify-center font-display font-bold"
           style={{
             background: 'linear-gradient(180deg, hsl(43 80% 50%) 0%, hsl(30 60% 40%) 100%)',
             border: '2px solid hsl(30 50% 30%)',
-            fontSize: 12,
+            fontSize: 13,
             color: 'hsl(30 30% 15%)',
-            boxShadow: '0 2px 6px hsl(0 0% 0% / 0.2)',
+            boxShadow: '0 2px 6px hsl(0 0% 0% / 0.3)',
           }}
         >
           {count}
