@@ -27,7 +27,7 @@ interface GameStore {
   currentView: 'lobby' | 'waiting' | 'game';
   
   // Game room
-  currentRoom: GameRoom | null;
+  currentRoom: (GameRoom & { code?: string }) | null;
   availableRooms: GameRoom[];
   
   // Game state
@@ -38,11 +38,10 @@ interface GameStore {
   
   // Actions
   setView: (view: 'lobby' | 'waiting' | 'game') => void;
-  createRoom: (roomName: string, hostName: string) => void;
-  joinRoom: (roomId: string, playerName: string) => void;
+  setCurrentRoom: (room: (GameRoom & { code?: string }) | null) => void;
+  setLocalPlayerId: (id: string | null) => void;
   leaveRoom: () => void;
-  addBotPlayer: () => void;
-  startGame: () => void;
+  initializeGame: () => void;
   
   // Game actions
   drawTrainCard: (fromFaceUp: boolean, cardIndex?: number) => void;
@@ -56,10 +55,6 @@ interface GameStore {
   getRouteCardRequirement: (routeId: string) => { color: string; count: number } | null;
 }
 
-const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
-
-const generateId = () => Math.random().toString(36).substring(2, 9);
-
 export const useGameStore = create<GameStore>((set, get) => ({
   currentView: 'lobby',
   currentRoom: null,
@@ -69,101 +64,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setView: (view) => set({ currentView: view }),
   
-  createRoom: (roomName, hostName) => {
-    const playerId = generateId();
-    const roomId = generateId();
-    
-    const hostPlayer: Player = {
-      id: playerId,
-      name: hostName,
-      color: PLAYER_COLORS[0],
-      trainCards: [],
-      destinationTickets: [],
-      trainsRemaining: INITIAL_TRAINS,
-      stations: 3,
-      score: 0,
-      isActive: true,
-      isConnected: true,
-    };
-    
-    const room: GameRoom = {
-      id: roomId,
-      name: roomName,
-      hostId: playerId,
-      players: [hostPlayer],
-      maxPlayers: 4,
-      status: 'waiting',
-      createdAt: new Date(),
-    };
-    
-    set({
-      currentRoom: room,
-      localPlayerId: playerId,
-      currentView: 'waiting',
-    });
-  },
+  setCurrentRoom: (room) => set({ currentRoom: room }),
   
-  addBotPlayer: () => {
-    const { currentRoom } = get();
-    if (!currentRoom || currentRoom.players.length >= 4) return;
-    
-    const botId = generateId();
-    const botNames = ['Бот Алексей', 'Бот Мария', 'Бот Иван', 'Бот Анна'];
-    const usedNames = currentRoom.players.map(p => p.name);
-    const availableName = botNames.find(n => !usedNames.includes(n)) || `Бот ${currentRoom.players.length + 1}`;
-    
-    const botPlayer: Player = {
-      id: botId,
-      name: availableName,
-      color: PLAYER_COLORS[currentRoom.players.length],
-      trainCards: [],
-      destinationTickets: [],
-      trainsRemaining: INITIAL_TRAINS,
-      stations: 3,
-      score: 0,
-      isActive: false,
-      isConnected: true,
-      isBot: true,
-    };
-    
-    set({
-      currentRoom: {
-        ...currentRoom,
-        players: [...currentRoom.players, botPlayer],
-      },
-    });
-  },
-  
-  joinRoom: (roomId, playerName) => {
-    const { currentRoom } = get();
-    if (!currentRoom || currentRoom.id !== roomId) return;
-    
-    const playerId = generateId();
-    const playerIndex = currentRoom.players.length;
-    
-    if (playerIndex >= 4) return;
-    
-    const newPlayer: Player = {
-      id: playerId,
-      name: playerName,
-      color: PLAYER_COLORS[playerIndex],
-      trainCards: [],
-      destinationTickets: [],
-      trainsRemaining: INITIAL_TRAINS,
-      stations: 3,
-      score: 0,
-      isActive: false,
-      isConnected: true,
-    };
-    
-    set({
-      currentRoom: {
-        ...currentRoom,
-        players: [...currentRoom.players, newPlayer],
-      },
-      localPlayerId: playerId,
-    });
-  },
+  setLocalPlayerId: (id) => set({ localPlayerId: id }),
   
   leaveRoom: () => {
     set({
@@ -174,7 +77,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
   
-  startGame: () => {
+  initializeGame: () => {
     const { currentRoom } = get();
     if (!currentRoom || currentRoom.players.length < 2) return;
     

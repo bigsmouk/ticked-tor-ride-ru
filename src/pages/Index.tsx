@@ -1,36 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGameStore } from '@/stores/gameStore';
-import { Button } from '@/components/ui/button';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { Input } from '@/components/ui/input';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { createRoom, joinRoom, currentRoom } = useGameStore();
+  const { createRoom, joinRoom, isLoading } = useMultiplayer();
   const [playerName, setPlayerName] = useState('');
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
 
-  const handleCreateGame = () => {
+  const handleCreateGame = async () => {
     if (playerName.trim() && roomName.trim()) {
-      createRoom(roomName.trim(), playerName.trim());
-      navigate('/waiting');
+      const result = await createRoom(roomName.trim(), playerName.trim());
+      if (result) {
+        navigate('/waiting');
+      }
     }
   };
 
-  const handleJoinGame = () => {
+  const handleJoinGame = async () => {
     if (playerName.trim() && joinCode.trim()) {
-      joinRoom(joinCode.trim().toLowerCase(), playerName.trim());
-      navigate('/waiting');
+      const result = await joinRoom(joinCode.trim(), playerName.trim());
+      if (result) {
+        navigate('/waiting');
+      }
     }
-  };
-
-  const handleQuickStart = () => {
-    const name = playerName.trim() || 'Игрок';
-    createRoom('Быстрая игра', name);
-    navigate('/waiting');
   };
 
   return (
@@ -80,22 +77,6 @@ const Index = () => {
                   🔗 Присоединиться по коду
                 </button>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-ornament" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">или</span>
-                  </div>
-                </div>
-
-                <button
-                  className="w-full rounded-lg py-3 border-2 border-ornament text-foreground hover:bg-muted transition-colors"
-                  onClick={handleQuickStart}
-                >
-                  🎮 Быстрая игра (с ботом)
-                </button>
-
                 <div className="text-center text-sm text-muted-foreground mt-6">
                   <p>Онлайн-версия настольной игры</p>
                   <p className="mt-1">Постройте железнодорожную империю в Европе!</p>
@@ -118,14 +99,15 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleCreateGame}
-                  disabled={!playerName.trim() || !roomName.trim()}
+                  disabled={!playerName.trim() || !roomName.trim() || isLoading}
                 >
-                  ✓ Создать комнату
+                  {isLoading ? '⏳ Создание...' : '✓ Создать комнату'}
                 </button>
 
                 <button
                   className="btn-vintage w-full rounded-lg"
                   onClick={() => setShowCreate(false)}
+                  disabled={isLoading}
                 >
                   ← Назад
                 </button>
@@ -141,21 +123,22 @@ const Index = () => {
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                     placeholder="Введите код..."
                     className="w-full bg-background border-ornament font-mono text-center text-lg tracking-widest"
-                    maxLength={7}
+                    maxLength={6}
                   />
                 </div>
 
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleJoinGame}
-                  disabled={!playerName.trim() || !joinCode.trim()}
+                  disabled={!playerName.trim() || !joinCode.trim() || isLoading}
                 >
-                  🚂 Присоединиться
+                  {isLoading ? '⏳ Присоединение...' : '🚂 Присоединиться'}
                 </button>
 
                 <button
                   className="btn-vintage w-full rounded-lg"
                   onClick={() => setShowJoin(false)}
+                  disabled={isLoading}
                 >
                   ← Назад
                 </button>
