@@ -7,13 +7,13 @@ interface GameLogProps {
   players: Player[];
 }
 
-// Player color mapping
+// Player color mapping - high contrast on dark backgrounds
 const PLAYER_COLOR_CLASSES: Record<string, string> = {
-  red: 'text-red-400',
-  blue: 'text-blue-400',
-  green: 'text-green-400',
-  yellow: 'text-yellow-400',
-  black: 'text-gray-300',
+  red: 'text-red-300',
+  blue: 'text-blue-300',
+  green: 'text-green-300',
+  yellow: 'text-yellow-200',
+  black: 'text-gray-200',
 };
 
 const ACTION_ICONS: Record<string, string> = {
@@ -81,25 +81,25 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
             logs.map((log) => (
               <div 
                 key={log.id} 
-                className="text-xs p-2 rounded bg-background/50 border border-ornament/20 hover:bg-background/80 transition-colors"
+                className="text-xs p-2 rounded bg-card border border-border shadow-sm hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-start gap-2">
                   <span className="text-base shrink-0">{getActionIcon(log.action)}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`font-semibold ${getPlayerColorClass(log.playerId)}`}>
+                      <span className={`font-bold ${getPlayerColorClass(log.playerId)}`}>
                         {getPlayerName(log.playerId)}
                       </span>
-                      <span className="text-muted-foreground">—</span>
-                      <span className="text-foreground">{log.action}</span>
+                      <span className="text-foreground/60">—</span>
+                      <span className="text-foreground font-medium">{log.action}</span>
                     </div>
                     {log.details && (
-                      <div className="text-muted-foreground mt-0.5 break-words">
+                      <div className="text-foreground/80 mt-0.5 break-words">
                         {log.details}
                       </div>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
+                  <span className="text-[10px] text-foreground/50 shrink-0">
                     {formatTime(log.timestamp)}
                   </span>
                 </div>

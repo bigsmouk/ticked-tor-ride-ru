@@ -114,6 +114,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showCityNames, setShowCityNames] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const MIN_SCALE = 0.5;
@@ -167,7 +168,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* Zoom controls */}
+      {/* Map controls */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
         <button 
           onClick={() => setScale(prev => Math.min(MAX_SCALE, prev * 1.2))}
@@ -186,6 +187,13 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs"
         >
           ⟲
+        </button>
+        <button 
+          onClick={() => setShowCityNames(prev => !prev)}
+          className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showCityNames ? 'bg-primary text-primary-foreground' : ''}`}
+          title={showCityNames ? 'Скрыть названия' : 'Показать названия'}
+        >
+          🏙️
         </button>
       </div>
       
@@ -296,46 +304,30 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         key={i} 
                         transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                         className="wagon-slot"
-                        filter={isClaimed ? 'url(#player-glow)' : undefined}
                       >
-                        {/* Outer glow for claimed wagons */}
-                        {isClaimed && (
-                          <rect
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            rx={3}
-                            fill="none"
-                            stroke={wagonColor}
-                            strokeWidth={2}
-                            opacity={0.6}
-                          />
-                        )}
-                        
-                        {/* Slot background - bright colors */}
+                        {/* Slot background - player color border for claimed */}
                         <rect
                           x={-12}
                           y={-5}
                           width={24}
                           height={10}
                           rx={2}
-                          fill={wagonColor}
-                          stroke={isClaimed ? '#ffffff' : 'hsl(30 30% 50%)'}
-                          strokeWidth={isClaimed ? 2 : 1.5}
+                          fill={isClaimed ? wagonColor : color}
+                          stroke={isClaimed ? wagonColor : 'hsl(30 30% 50%)'}
+                          strokeWidth={isClaimed ? 3 : 1.5}
                           opacity={isClaimed ? 1 : 0.9}
                           className="wagon-rect"
                         />
                         
-                        {/* Inner highlight for claimed wagons */}
+                        {/* Inner fill for claimed wagons */}
                         {isClaimed && (
                           <rect
-                            x={-10}
+                            x={-9}
                             y={-3}
-                            width={20}
+                            width={18}
                             height={6}
                             rx={1}
-                            fill="rgba(255,255,255,0.3)"
+                            fill="hsl(40 30% 95%)"
                           />
                         )}
                         
@@ -395,7 +387,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               key={city.id}
               onClick={() => onCityClick?.(city.id)}
             >
-              {/* City circle - completely static */}
+              {/* City circle */}
               <circle
                 cx={city.x}
                 cy={city.y}
@@ -415,31 +407,35 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 style={{ pointerEvents: 'none' }}
               />
               
-              {/* City name with background for visibility */}
-              <rect
-                x={city.x - 30}
-                y={city.y + 10}
-                width={60}
-                height={14}
-                rx={2}
-                fill="hsl(30 20% 15% / 0.75)"
-                style={{ pointerEvents: 'none' }}
-              />
-              <text
-                x={city.x}
-                y={city.y + 20}
-                textAnchor="middle"
-                style={{
-                  fontSize: '10px',
-                  fill: '#ffffff',
-                  fontWeight: 700,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {city.name}
-              </text>
+              {/* City name - only shown when toggled */}
+              {showCityNames && (
+                <>
+                  <rect
+                    x={city.x - 30}
+                    y={city.y + 10}
+                    width={60}
+                    height={14}
+                    rx={2}
+                    fill="hsl(30 20% 15% / 0.85)"
+                    style={{ pointerEvents: 'none' }}
+                  />
+                  <text
+                    x={city.x}
+                    y={city.y + 20}
+                    textAnchor="middle"
+                    style={{
+                      fontSize: '10px',
+                      fill: '#ffffff',
+                      fontWeight: 700,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {city.name}
+                  </text>
+                </>
+              )}
             </g>
           ))}
         </g>
