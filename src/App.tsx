@@ -18,8 +18,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MapCalibration />} />
-          <Route path="/home" element={<Index />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/calibration" element={<MapCalibration />} />
           <Route path="/waiting" element={<WaitingRoom />} />
           <Route path="/game" element={<Game />} />
           <Route path="*" element={<NotFound />} />
