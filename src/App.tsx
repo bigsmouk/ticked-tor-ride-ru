@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import WaitingRoom from "./pages/WaitingRoom";
 import Game from "./pages/Game";
 import MapCalibration from "./pages/MapCalibration";
+import RouteCalibration from "./pages/RouteCalibration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/calibration" element={<MapCalibration />} />
+          <Route path="/routes" element={<RouteCalibration />} />
           <Route path="/waiting" element={<WaitingRoom />} />
           <Route path="/game" element={<Game />} />
           <Route path="*" element={<NotFound />} />
