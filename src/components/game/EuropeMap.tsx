@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
+import europeMapImage from '@/assets/europe-map.jpg';
 
 interface EuropeMapProps {
   cities: City[];
@@ -182,21 +183,13 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         viewBox="0 0 800 550"
         className="w-full h-full"
         style={{ 
-          background: 'linear-gradient(180deg, hsl(40 30% 88%) 0%, hsl(38 25% 82%) 100%)',
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
           transformOrigin: 'center center',
           transition: isDragging ? 'none' : 'transform 0.1s ease-out',
         }}
       >
-        {/* Map background pattern */}
+        {/* Map background image */}
         <defs>
-          {/* Parchment texture pattern */}
-          <pattern id="parchment" width="100" height="100" patternUnits="userSpaceOnUse">
-            <rect width="100" height="100" fill="hsl(38 30% 87%)" />
-            <circle cx="20" cy="20" r="30" fill="hsl(40 25% 85%)" opacity="0.3" />
-            <circle cx="80" cy="70" r="40" fill="hsl(36 28% 84%)" opacity="0.2" />
-          </pattern>
-          
           {/* Tunnel pattern */}
           <pattern id="tunnel" width="8" height="8" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="none" />
@@ -218,29 +211,15 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           </filter>
         </defs>
         
-        {/* Background */}
-        <rect width="100%" height="100%" fill="url(#parchment)" />
-        
-        {/* Water areas (simplified) */}
-        <ellipse cx="100" cy="350" rx="80" ry="100" fill="hsl(200 40% 80%)" opacity="0.4" />
-        <ellipse cx="400" cy="520" rx="150" ry="50" fill="hsl(200 40% 80%)" opacity="0.4" />
-        <ellipse cx="700" cy="450" rx="100" ry="80" fill="hsl(200 40% 80%)" opacity="0.4" />
-        <ellipse cx="130" cy="150" rx="70" ry="60" fill="hsl(200 40% 80%)" opacity="0.4" />
-        
-        {/* Title */}
-        <text 
-          x="400" 
-          y="35" 
-          textAnchor="middle" 
-          className="font-display"
-          style={{ 
-            fontSize: '28px', 
-            fill: 'hsl(30 50% 25%)',
-            fontWeight: 600,
-          }}
-        >
-          ЕВРОПА
-        </text>
+        {/* Background image */}
+        <image
+          href={europeMapImage}
+          x="0"
+          y="0"
+          width="800"
+          height="550"
+          preserveAspectRatio="xMidYMid slice"
+        />
         
         {/* Routes */}
         <g className="routes">
