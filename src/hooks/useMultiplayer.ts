@@ -6,16 +6,6 @@ import { toast } from 'sonner';
 
 const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
 
-// Генерация уникального ID игрока (сохраняется в localStorage)
-const getOrCreatePlayerId = (): string => {
-  const stored = localStorage.getItem('ttr_player_id');
-  if (stored) return stored;
-  
-  const newId = crypto.randomUUID();
-  localStorage.setItem('ttr_player_id', newId);
-  return newId;
-};
-
 // Генерация короткого кода комнаты
 const generateRoomCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -29,12 +19,51 @@ const generateRoomCode = (): string => {
 export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
 
-  const playerId = getOrCreatePlayerId();
+  // Инициализация анонимной аутентификации
+  useEffect(() => {
+    const initAuth = async () => {
+      // Проверяем текущую сессию
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setPlayerId(session.user.id);
+        setLocalPlayerId(session.user.id);
+      } else {
+        // Создаём анонимную сессию
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error('Error signing in anonymously:', error);
+          toast.error('Ошибка подключения к серверу');
+        } else if (data.user) {
+          setPlayerId(data.user.id);
+          setLocalPlayerId(data.user.id);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Подписка на изменения состояния аутентификации
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setPlayerId(session.user.id);
+        setLocalPlayerId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocalPlayerId]);
 
   // Создание комнаты
   const createRoom = useCallback(async (roomName: string, playerName: string) => {
+    if (!playerId) {
+      toast.error('Подождите, идёт подключение...');
+      return null;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -71,7 +100,6 @@ export const useMultiplayer = () => {
 
       if (playerError) throw playerError;
 
-      setLocalPlayerId(playerId);
       setCurrentRoom({
         id: room.id,
         code: roomCode,
@@ -104,10 +132,15 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, setCurrentRoom, setLocalPlayerId, setView]);
+  }, [playerId, setCurrentRoom, setView]);
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
+    if (!playerId) {
+      toast.error('Подождите, идёт подключение...');
+      return null;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -115,7 +148,7 @@ export const useMultiplayer = () => {
       // Находим комнату по коду
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .select('*')
+        .select('id, code, name, host_id, status, max_players, is_private, created_at, updated_at')
         .eq('code', roomCode.toUpperCase())
         .eq('status', 'waiting')
         .maybeSingle();
@@ -141,9 +174,7 @@ export const useMultiplayer = () => {
 
       // Проверяем, не присоединился ли уже этот игрок
       const alreadyJoined = existingPlayers.find(p => p.player_id === playerId);
-      if (alreadyJoined) {
-        // Уже в комнате, просто обновляем состояние
-      } else {
+      if (!alreadyJoined) {
         // Определяем свободный цвет
         const usedColors = existingPlayers.map(p => p.color);
         const availableColor = PLAYER_COLORS.find(c => !usedColors.includes(c)) || PLAYER_COLORS[0];
@@ -185,7 +216,6 @@ export const useMultiplayer = () => {
         isConnected: true,
       }));
 
-      setLocalPlayerId(playerId);
       setCurrentRoom({
         id: room.id,
         code: room.code,
@@ -208,10 +238,12 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, setCurrentRoom, setLocalPlayerId, setView]);
+  }, [playerId, setCurrentRoom, setView]);
 
   // Выход из комнаты
   const leaveRoom = useCallback(async (roomId: string) => {
+    if (!playerId) return;
+    
     try {
       await supabase
         .from('room_players')
@@ -228,6 +260,8 @@ export const useMultiplayer = () => {
 
   // Начать игру (только для хоста)
   const startGame = useCallback(async (roomId: string) => {
+    if (!playerId) return false;
+    
     try {
       const { error } = await supabase
         .from('rooms')
@@ -249,6 +283,7 @@ export const useMultiplayer = () => {
     playerId,
     isLoading,
     error,
+    isReady: !!playerId,
     createRoom,
     joinRoom,
     leaveRoom,
