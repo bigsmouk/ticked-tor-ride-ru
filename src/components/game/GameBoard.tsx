@@ -6,6 +6,7 @@ import { CardDeckArea } from '@/components/game/CardDeckArea';
 import { ActionPanel } from '@/components/game/ActionPanel';
 import { DestinationPickerModal } from '@/components/game/DestinationPickerModal';
 import { GameOverModal } from '@/components/game/GameOverModal';
+import { GameLog } from '@/components/game/GameLog';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
@@ -19,7 +20,7 @@ const GameSyncContext = createContext<{
 export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -183,14 +184,25 @@ export const GameBoard: React.FC = () => {
 
         {/* Main game area */}
         <main className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
-          {/* Map */}
-          <div className="flex-1 game-board rounded-lg overflow-hidden">
-            <EuropeMap
-              cities={gameState.cities}
-              routes={gameState.routes}
-              onRouteClick={handleRouteClick}
-              selectedRoute={selectedRoute}
-            />
+          {/* Map and logs row */}
+          <div className="flex-1 flex gap-4 overflow-hidden">
+            {/* Map */}
+            <div className="flex-1 game-board rounded-lg overflow-hidden">
+              <EuropeMap
+                cities={gameState.cities}
+                routes={gameState.routes}
+                onRouteClick={handleRouteClick}
+                selectedRoute={selectedRoute}
+              />
+            </div>
+            
+            {/* Game logs panel */}
+            <div className="w-72 bg-sidebar rounded-lg border border-ornament/30 overflow-hidden flex flex-col">
+              <GameLog 
+                logs={gameState.logs} 
+                players={gameState.players}
+              />
+            </div>
           </div>
 
           {/* Bottom controls */}
