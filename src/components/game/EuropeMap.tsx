@@ -3,6 +3,7 @@ import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import europeMapImage from '@/assets/europe-map.jpg';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
+import redWagonImage from '@/assets/wagons/red.png';
 
 interface EuropeMapProps {
   cities: City[];
@@ -299,36 +300,53 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                       ? PLAYER_COLORS[claimingPlayer.color]
                       : color;
                     
+                    // Check if this is a claimed wagon by red player
+                    const isRedPlayerWagon = isClaimed && claimingPlayer?.color === 'red';
+                    
                     return (
                       <g 
                         key={i} 
                         transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                         className="wagon-slot"
                       >
-                        {/* Slot background - player color border for claimed */}
-                        <rect
-                          x={-12}
-                          y={-5}
-                          width={24}
-                          height={10}
-                          rx={2}
-                          fill={isClaimed ? wagonColor : color}
-                          stroke={isClaimed ? wagonColor : 'hsl(30 30% 50%)'}
-                          strokeWidth={isClaimed ? 3 : 1.5}
-                          opacity={isClaimed ? 1 : 0.9}
-                          className="wagon-rect"
-                        />
-                        
-                        {/* Inner fill for claimed wagons */}
-                        {isClaimed && (
-                          <rect
-                            x={-9}
-                            y={-3}
-                            width={18}
-                            height={6}
-                            rx={1}
-                            fill="hsl(40 30% 95%)"
+                        {/* Use wagon image for red player, rectangles for others */}
+                        {isRedPlayerWagon ? (
+                          <image
+                            href={redWagonImage}
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            preserveAspectRatio="xMidYMid meet"
                           />
+                        ) : (
+                          <>
+                            {/* Slot background - player color border for claimed */}
+                            <rect
+                              x={-12}
+                              y={-5}
+                              width={24}
+                              height={10}
+                              rx={2}
+                              fill={isClaimed ? wagonColor : color}
+                              stroke={isClaimed ? wagonColor : 'hsl(30 30% 50%)'}
+                              strokeWidth={isClaimed ? 3 : 1.5}
+                              opacity={isClaimed ? 1 : 0.9}
+                              className="wagon-rect"
+                            />
+                            
+                            {/* Inner fill for claimed wagons */}
+                            {isClaimed && (
+                              <rect
+                                x={-9}
+                                y={-3}
+                                width={18}
+                                height={6}
+                                rx={1}
+                                fill="hsl(40 30% 95%)"
+                              />
+                            )}
+                          </>
                         )}
                         
                         {/* Tunnel indicator */}
