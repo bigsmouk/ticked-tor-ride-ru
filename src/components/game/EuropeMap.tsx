@@ -7,6 +7,7 @@ import redWagonImage from '@/assets/wagons/red.png';
 import blueWagonImage from '@/assets/wagons/blue.png';
 import greenWagonImage from '@/assets/wagons/green.png';
 import blackWagonImage from '@/assets/wagons/black.png';
+import yellowWagonImage from '@/assets/wagons/yellow.png';
 
 interface EuropeMapProps {
   cities: City[];
@@ -308,6 +309,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                     const isBluePlayerWagon = isClaimed && claimingPlayer?.color === 'blue';
                     const isGreenPlayerWagon = isClaimed && claimingPlayer?.color === 'green';
                     const isBlackPlayerWagon = isClaimed && claimingPlayer?.color === 'black';
+                    const isYellowPlayerWagon = isClaimed && claimingPlayer?.color === 'yellow';
                     
                     return (
                       <g 
@@ -346,6 +348,15 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         ) : isBlackPlayerWagon ? (
                           <image
                             href={blackWagonImage}
+                            x={-14}
+                            y={-7}
+                            width={28}
+                            height={14}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        ) : isYellowPlayerWagon ? (
+                          <image
+                            href={yellowWagonImage}
                             x={-14}
                             y={-7}
                             width={28}
