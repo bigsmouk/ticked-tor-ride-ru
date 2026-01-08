@@ -53,76 +53,53 @@ export const CITY_NAMES_RU: Record<string, string> = {
 
 // All 46 cities from Ticket to Ride: Europe - fine-tuned to map image
 export const EUROPE_CITIES: City[] = [
-  // British Isles & Scandinavia
-  { id: 'edinburgh', name: 'Эдинбург', x: 118, y: 28 },
-  { id: 'london', name: 'Лондон', x: 155, y: 95 },
-  
-  // Low Countries & France
-  { id: 'amsterdam', name: 'Амстердам', x: 230, y: 78 },
-  { id: 'bruxelles', name: 'Брюссель', x: 218, y: 108 },
-  { id: 'dieppe', name: 'Дьепп', x: 175, y: 132 },
-  { id: 'brest', name: 'Брест', x: 105, y: 155 },
-  { id: 'paris', name: 'Париж', x: 205, y: 165 },
-  
-  // Iberian Peninsula
-  { id: 'pamplona', name: 'Памплона', x: 152, y: 268 },
-  { id: 'madrid', name: 'Мадрид', x: 108, y: 340 },
-  { id: 'lisboa', name: 'Лиссабон', x: 55, y: 365 },
-  { id: 'cadiz', name: 'Кадис', x: 82, y: 412 },
-  { id: 'barcelona', name: 'Барселона', x: 178, y: 325 },
-  
-  // Central Europe
-  { id: 'marseille', name: 'Марсель', x: 225, y: 298 },
-  { id: 'zurich', name: 'Цюрих', x: 265, y: 222 },
-  { id: 'munchen', name: 'Мюнхен', x: 318, y: 192 },
-  { id: 'frankfurt', name: 'Франкфурт', x: 275, y: 148 },
-  { id: 'essen', name: 'Эссен', x: 262, y: 102 },
-  
-  // Germany & Scandinavia
-  { id: 'berlin', name: 'Берлин', x: 345, y: 95 },
-  { id: 'kobenhavn', name: 'Копенгаген', x: 328, y: 50 },
-  { id: 'stockholm', name: 'Стокгольм', x: 395, y: 22 },
-  
-  // Eastern Baltic & Russia
-  { id: 'petrograd', name: 'Петроград', x: 545, y: 20 },
-  { id: 'riga', name: 'Рига', x: 482, y: 58 },
-  { id: 'wilno', name: 'Вильно', x: 455, y: 118 },
-  { id: 'danzig', name: 'Данциг', x: 395, y: 82 },
-  { id: 'warszawa', name: 'Варшава', x: 430, y: 148 },
-  
-  // Russia & Ukraine
-  { id: 'moskva', name: 'Москва', x: 605, y: 72 },
-  { id: 'smolensk', name: 'Смоленск', x: 542, y: 100 },
-  { id: 'kyiv', name: 'Киев', x: 510, y: 178 },
-  { id: 'kharkov', name: 'Харьков', x: 585, y: 175 },
-  { id: 'rostov', name: 'Ростов', x: 635, y: 222 },
-  
-  // Black Sea region
-  { id: 'sevastopol', name: 'Севастополь', x: 575, y: 282 },
-  { id: 'sochi', name: 'Сочи', x: 645, y: 272 },
-  
-  // Central Europe continued
-  { id: 'wien', name: 'Вена', x: 370, y: 195 },
-  { id: 'budapest', name: 'Будапешт', x: 420, y: 235 },
-  { id: 'zagreb', name: 'Загреб', x: 365, y: 258 },
-  
-  // Italy
-  { id: 'venezia', name: 'Венеция', x: 322, y: 242 },
-  { id: 'roma', name: 'Рим', x: 335, y: 328 },
-  { id: 'palermo', name: 'Палермо', x: 358, y: 408 },
-  { id: 'brindisi', name: 'Бриндизи', x: 400, y: 352 },
-  
-  // Balkans
-  { id: 'sarajevo', name: 'Сараево', x: 402, y: 298 },
-  { id: 'bucuresti', name: 'Бухарест', x: 498, y: 285 },
-  { id: 'sofia', name: 'София', x: 468, y: 315 },
-  { id: 'athina', name: 'Афины', x: 462, y: 395 },
-  
-  // Turkey & Asia Minor
-  { id: 'constantinople', name: 'Константинополь', x: 535, y: 338 },
-  { id: 'smyrna', name: 'Смирна', x: 528, y: 385 },
-  { id: 'angora', name: 'Анкара', x: 605, y: 348 },
-  { id: 'erzurum', name: 'Эрзурум', x: 680, y: 312 },
+  { id: 'edinburgh', name: 'Эдинбург', x: 125, y: 45 },
+  { id: 'london', name: 'Лондон', x: 175, y: 166 },
+  { id: 'amsterdam', name: 'Амстердам', x: 251, y: 167 },
+  { id: 'bruxelles', name: 'Брюссель', x: 232, y: 205 },
+  { id: 'dieppe', name: 'Дьепп', x: 166, y: 237 },
+  { id: 'brest', name: 'Брест', x: 95, y: 261 },
+  { id: 'paris', name: 'Париж', x: 206, y: 272 },
+  { id: 'pamplona', name: 'Памплона', x: 155, y: 390 },
+  { id: 'madrid', name: 'Мадрид', x: 78, y: 455 },
+  { id: 'lisboa', name: 'Лиссабон', x: 24, y: 473 },
+  { id: 'cadiz', name: 'Кадис', x: 77, y: 514 },
+  { id: 'barcelona', name: 'Барселона', x: 164, y: 464 },
+  { id: 'marseille', name: 'Марсель', x: 273, y: 388 },
+  { id: 'zurich', name: 'Цюрих', x: 294, y: 316 },
+  { id: 'munchen', name: 'Мюнхен', x: 348, y: 265 },
+  { id: 'frankfurt', name: 'Франкфурт', x: 302, y: 230 },
+  { id: 'essen', name: 'Эссен', x: 316, y: 176 },
+  { id: 'berlin', name: 'Берлин', x: 393, y: 187 },
+  { id: 'kobenhavn', name: 'Копенгаген', x: 371, y: 93 },
+  { id: 'stockholm', name: 'Стокгольм', x: 453, y: 31 },
+  { id: 'petrograd', name: 'Петроград', x: 679, y: 51 },
+  { id: 'riga', name: 'Рига', x: 547, y: 54 },
+  { id: 'wilno', name: 'Вильно', x: 609, y: 161 },
+  { id: 'danzig', name: 'Данциг', x: 481, y: 126 },
+  { id: 'warszawa', name: 'Варшава', x: 521, y: 181 },
+  { id: 'moskva', name: 'Москва', x: 756, y: 146 },
+  { id: 'smolensk', name: 'Смоленск', x: 689, y: 166 },
+  { id: 'kyiv', name: 'Киев', x: 634, y: 224 },
+  { id: 'kharkov', name: 'Харьков', x: 745, y: 263 },
+  { id: 'rostov', name: 'Ростов', x: 776, y: 306 },
+  { id: 'sevastopol', name: 'Севастополь', x: 703, y: 363 },
+  { id: 'sochi', name: 'Сочи', x: 772, y: 375 },
+  { id: 'wien', name: 'Вена', x: 438, y: 279 },
+  { id: 'budapest', name: 'Будапешт', x: 476, y: 298 },
+  { id: 'zagreb', name: 'Загреб', x: 427, y: 350 },
+  { id: 'venezia', name: 'Венеция', x: 360, y: 339 },
+  { id: 'roma', name: 'Рим', x: 367, y: 411 },
+  { id: 'palermo', name: 'Палермо', x: 396, y: 514 },
+  { id: 'brindisi', name: 'Бриндизи', x: 435, y: 431 },
+  { id: 'sarajevo', name: 'Сараево', x: 493, y: 396 },
+  { id: 'bucuresti', name: 'Бухарест', x: 593, y: 353 },
+  { id: 'sofia', name: 'София', x: 546, y: 403 },
+  { id: 'athina', name: 'Афины', x: 532, y: 493 },
+  { id: 'constantinople', name: 'Константинополь', x: 634, y: 450 },
+  { id: 'smyrna', name: 'Смирна', x: 600, y: 513 },
+  { id: 'angora', name: 'Анкара', x: 695, y: 493 },
+  { id: 'erzurum', name: 'Эрзурум', x: 757, y: 474 }
 ];
 
 // All routes between cities
