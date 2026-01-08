@@ -5,18 +5,19 @@ import { useGameStore } from '@/stores/gameStore';
 
 const Game = () => {
   const navigate = useNavigate();
-  const { currentRoom, gameState, startGame, localPlayerId } = useGameStore();
+  const { currentRoom, gameState } = useGameStore();
 
   useEffect(() => {
+    // Redirect if no room or game not started
     if (!currentRoom) {
       navigate('/');
       return;
     }
-    // Auto-start if room exists but game hasn't started
-    if (currentRoom && !gameState) {
-      startGame();
+    if (currentRoom.status === 'waiting') {
+      navigate('/waiting');
+      return;
     }
-  }, [currentRoom, gameState, navigate, startGame]);
+  }, [currentRoom, navigate]);
 
   if (!gameState) {
     return (

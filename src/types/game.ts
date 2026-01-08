@@ -49,6 +49,7 @@ export interface Player {
   score: number;
   isActive: boolean;
   isConnected: boolean;
+  isBot?: boolean; // AI controlled player
 }
 
 // Game phases

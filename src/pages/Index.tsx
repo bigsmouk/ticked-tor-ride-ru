@@ -6,23 +6,31 @@ import { Input } from '@/components/ui/input';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { createRoom, startGame, currentRoom } = useGameStore();
+  const { createRoom, joinRoom, currentRoom } = useGameStore();
   const [playerName, setPlayerName] = useState('');
   const [roomName, setRoomName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
 
   const handleCreateGame = () => {
     if (playerName.trim() && roomName.trim()) {
       createRoom(roomName.trim(), playerName.trim());
-      navigate('/game');
+      navigate('/waiting');
+    }
+  };
+
+  const handleJoinGame = () => {
+    if (playerName.trim() && joinCode.trim()) {
+      joinRoom(joinCode.trim().toLowerCase(), playerName.trim());
+      navigate('/waiting');
     }
   };
 
   const handleQuickStart = () => {
     const name = playerName.trim() || 'Игрок';
     createRoom('Быстрая игра', name);
-    // Add a bot for testing
-    navigate('/game');
+    navigate('/waiting');
   };
 
   return (
@@ -56,20 +64,36 @@ const Index = () => {
               />
             </div>
 
-            {!showCreate ? (
+            {!showCreate && !showJoin ? (
               <div className="space-y-4">
                 <button
                   className="btn-gold w-full rounded-lg py-4 text-lg"
-                  onClick={handleQuickStart}
+                  onClick={() => setShowCreate(true)}
                 >
-                  🎮 Быстрый старт
+                  ➕ Создать комнату
                 </button>
                 
                 <button
                   className="btn-vintage w-full rounded-lg"
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => setShowJoin(true)}
                 >
-                  ➕ Создать комнату
+                  🔗 Присоединиться по коду
+                </button>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-ornament" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">или</span>
+                  </div>
+                </div>
+
+                <button
+                  className="w-full rounded-lg py-3 border-2 border-ornament text-foreground hover:bg-muted transition-colors"
+                  onClick={handleQuickStart}
+                >
+                  🎮 Быстрая игра (с ботом)
                 </button>
 
                 <div className="text-center text-sm text-muted-foreground mt-6">
@@ -77,7 +101,7 @@ const Index = () => {
                   <p className="mt-1">Постройте железнодорожную империю в Европе!</p>
                 </div>
               </div>
-            ) : (
+            ) : showCreate ? (
               <div className="space-y-4">
                 <div>
                   <label className="block font-display text-sm font-semibold mb-2 text-foreground">
@@ -96,12 +120,42 @@ const Index = () => {
                   onClick={handleCreateGame}
                   disabled={!playerName.trim() || !roomName.trim()}
                 >
-                  ✓ Создать игру
+                  ✓ Создать комнату
                 </button>
 
                 <button
                   className="btn-vintage w-full rounded-lg"
                   onClick={() => setShowCreate(false)}
+                >
+                  ← Назад
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-display text-sm font-semibold mb-2 text-foreground">
+                    Код комнаты
+                  </label>
+                  <Input
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Введите код..."
+                    className="w-full bg-background border-ornament font-mono text-center text-lg tracking-widest"
+                    maxLength={7}
+                  />
+                </div>
+
+                <button
+                  className="btn-gold w-full rounded-lg py-3"
+                  onClick={handleJoinGame}
+                  disabled={!playerName.trim() || !joinCode.trim()}
+                >
+                  🚂 Присоединиться
+                </button>
+
+                <button
+                  className="btn-vintage w-full rounded-lg"
+                  onClick={() => setShowJoin(false)}
                 >
                   ← Назад
                 </button>
