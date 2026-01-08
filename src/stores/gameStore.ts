@@ -15,7 +15,7 @@ import {
   INITIAL_TRAIN_CARDS,
   END_GAME_TRAINS_THRESHOLD,
 } from '@/types/game';
-import { playRouteClaimSound, playCardDrawSound } from '@/hooks/useGameSounds';
+import { playRouteClaimSound, playCardDrawSound, playSuccessSound } from '@/hooks/useGameSounds';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -700,6 +700,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         })),
       };
     });
+    
+    // Play game over sound
+    playSuccessSound();
     
     set({
       gameState: {
