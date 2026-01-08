@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
+import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { Copy, Users, Crown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const WaitingRoom = () => {
   const navigate = useNavigate();
-  const { currentRoom, localPlayerId, leaveRoom, startGame, addBotPlayer } = useGameStore();
+  const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
+  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb } = useMultiplayer();
   const [copied, setCopied] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+
+  // Подписка на realtime обновления комнаты
+  useRoomSubscription(currentRoom?.id || null);
+
+  // Редирект если игра началась
+  useEffect(() => {
+    if (currentRoom?.status === 'playing') {
+      initializeGame();
+      navigate('/game');
+    }
+  }, [currentRoom?.status, navigate, initializeGame]);
 
   // Redirect if no room
-  React.useEffect(() => {
+  useEffect(() => {
     if (!currentRoom) {
       navigate('/');
     }
@@ -22,7 +36,7 @@ const WaitingRoom = () => {
 
   const isHost = currentRoom.hostId === localPlayerId;
   const canStart = currentRoom.players.length >= 2;
-  const roomCode = currentRoom.id.toUpperCase();
+  const roomCode = currentRoom.code || currentRoom.id.toUpperCase().slice(0, 6);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(roomCode);
@@ -31,20 +45,20 @@ const WaitingRoom = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleStartGame = () => {
-    startGame();
-    navigate('/game');
+  const handleStartGame = async () => {
+    setIsStarting(true);
+    const success = await startGameInDb(currentRoom.id);
+    if (success) {
+      initializeGame();
+      navigate('/game');
+    }
+    setIsStarting(false);
   };
 
-  const handleLeave = () => {
+  const handleLeave = async () => {
+    await leaveRoomFromDb(currentRoom.id);
     leaveRoom();
     navigate('/');
-  };
-
-  const handleAddBot = () => {
-    if (currentRoom.players.length < 4) {
-      addBotPlayer();
-    }
   };
 
   const playerColors: Record<string, string> = {
@@ -145,11 +159,6 @@ const WaitingRoom = () => {
                             Вы
                           </span>
                         )}
-                        {player.isBot && (
-                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
-                            Бот
-                          </span>
-                        )}
                       </div>
                       <span className="text-sm text-muted-foreground capitalize">
                         {player.color === 'red' && '🔴 Красный'}
@@ -187,24 +196,13 @@ const WaitingRoom = () => {
             {/* Action buttons */}
             <div className="space-y-3">
               {isHost ? (
-                <>
-                  <button
-                    className="btn-gold w-full rounded-lg py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleStartGame}
-                    disabled={!canStart}
-                  >
-                    {canStart ? '🎮 Начать игру' : `Ожидание игроков (минимум 2)`}
-                  </button>
-                  
-                  {currentRoom.players.length < 4 && (
-                    <button
-                      className="btn-vintage w-full rounded-lg"
-                      onClick={handleAddBot}
-                    >
-                      🤖 Добавить бота
-                    </button>
-                  )}
-                </>
+                <button
+                  className="btn-gold w-full rounded-lg py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleStartGame}
+                  disabled={!canStart || isStarting}
+                >
+                  {isStarting ? '⏳ Запуск...' : canStart ? '🎮 Начать игру' : `Ожидание игроков (минимум 2)`}
+                </button>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-lg text-muted-foreground">
@@ -219,7 +217,7 @@ const WaitingRoom = () => {
           {/* Tips */}
           <div className="text-center text-sm text-muted-foreground">
             <p>💡 Для игры нужно от 2 до 4 игроков</p>
-            <p className="mt-1">Хост может добавить ботов для заполнения мест</p>
+            <p className="mt-1">Другие игроки могут присоединиться по коду комнаты</p>
           </div>
         </div>
       </main>
