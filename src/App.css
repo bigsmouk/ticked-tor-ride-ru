@@ -40,3 +40,33 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Wagon appearance animation */
+@keyframes wagon-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-10deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.wagon-image {
+  animation: wagon-appear 0.4s ease-out forwards;
+}
+
+/* Stagger animation for multiple wagons */
+.wagon-image:nth-child(1) { animation-delay: 0ms; }
+.wagon-image:nth-child(2) { animation-delay: 80ms; }
+.wagon-image:nth-child(3) { animation-delay: 160ms; }
+.wagon-image:nth-child(4) { animation-delay: 240ms; }
+.wagon-image:nth-child(5) { animation-delay: 320ms; }
+.wagon-image:nth-child(6) { animation-delay: 400ms; }
+.wagon-image:nth-child(7) { animation-delay: 480ms; }
+.wagon-image:nth-child(8) { animation-delay: 560ms; }

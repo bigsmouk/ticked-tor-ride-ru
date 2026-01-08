@@ -332,6 +332,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
                             filter="url(#wagon-shadow)"
+                            className="wagon-image"
+                            style={{ animationDelay: `${i * 80}ms` }}
                           />
                         ) : isBluePlayerWagon ? (
                           <image
@@ -342,6 +344,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
                             filter="url(#wagon-shadow)"
+                            className="wagon-image"
+                            style={{ animationDelay: `${i * 80}ms` }}
                           />
                         ) : isGreenPlayerWagon ? (
                           <image
@@ -352,6 +356,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
                             filter="url(#wagon-shadow)"
+                            className="wagon-image"
+                            style={{ animationDelay: `${i * 80}ms` }}
                           />
                         ) : isBlackPlayerWagon ? (
                           <image
@@ -362,6 +368,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
                             filter="url(#wagon-shadow)"
+                            className="wagon-image"
+                            style={{ animationDelay: `${i * 80}ms` }}
                           />
                         ) : isYellowPlayerWagon ? (
                           <image
@@ -372,6 +380,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                             height={14}
                             preserveAspectRatio="xMidYMid meet"
                             filter="url(#wagon-shadow)"
+                            className="wagon-image"
+                            style={{ animationDelay: `${i * 80}ms` }}
                           />
                         ) : (
                           <>
