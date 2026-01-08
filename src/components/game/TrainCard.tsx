@@ -38,9 +38,9 @@ const CARD_IMAGES: Record<TrainCardType, string> = {
 };
 
 const SIZES = {
-  small: { width: 45, height: 70 },
-  medium: { width: 70, height: 105 },
-  large: { width: 100, height: 150 },
+  small: { width: 50, height: 70 },
+  medium: { width: 60, height: 84 },
+  large: { width: 90, height: 126 },
 };
 
 export const TrainCard: React.FC<TrainCardProps> = ({
@@ -73,7 +73,8 @@ export const TrainCard: React.FC<TrainCardProps> = ({
         <img 
           src={cardBack} 
           alt="Card back"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
+          style={{ transform: 'rotate(90deg) scale(1.4)' }}
           draggable={false}
         />
         
@@ -116,7 +117,8 @@ export const TrainCard: React.FC<TrainCardProps> = ({
       <img 
         src={cardImage} 
         alt={`${type} card`}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
+        style={{ transform: 'rotate(90deg) scale(1.4)' }}
         draggable={false}
       />
       
