@@ -5,6 +5,7 @@ import { PlayerHand } from '@/components/game/PlayerHand';
 import { CardDeckArea } from '@/components/game/CardDeckArea';
 import { ActionPanel } from '@/components/game/ActionPanel';
 import { DestinationPickerModal } from '@/components/game/DestinationPickerModal';
+import { GameOverModal } from '@/components/game/GameOverModal';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
@@ -18,7 +19,7 @@ const GameSyncContext = createContext<{
 export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -27,6 +28,17 @@ export const GameBoard: React.FC = () => {
   
   // Получаем функцию синхронизации
   const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
+
+  // Сбрасываем выделение при смене хода
+  const prevCurrentPlayerId = React.useRef(gameState?.currentPlayerId);
+  React.useEffect(() => {
+    if (gameState?.currentPlayerId !== prevCurrentPlayerId.current) {
+      setSelectedRoute(null);
+      setSelectedCards([]);
+      setSelectedCardIndices([]);
+      prevCurrentPlayerId.current = gameState?.currentPlayerId;
+    }
+  }, [gameState?.currentPlayerId]);
 
   if (!gameState) return <div className="flex items-center justify-center h-screen">Загрузка...</div>;
 
@@ -107,6 +119,17 @@ export const GameBoard: React.FC = () => {
       sendActionToHost({ type: 'keepDestinations', ticketIds });
     }
     
+    setShowDestinationPicker(false);
+    setAvailableDestinations([]);
+  };
+
+  const handleCancelDestinations = () => {
+    // Отменяем действие и сбрасываем состояние
+    if (isHost) {
+      cancelDestinationDraw();
+    } else {
+      sendActionToHost({ type: 'cancelDestinationDraw' });
+    }
     setShowDestinationPicker(false);
     setAvailableDestinations([]);
   };
@@ -234,9 +257,12 @@ export const GameBoard: React.FC = () => {
           destinations={availableDestinations}
           minKeep={1}
           onConfirm={handleKeepDestinations}
-          onCancel={() => setShowDestinationPicker(false)}
+          onCancel={handleCancelDestinations}
         />
       )}
+      
+      {/* Game over modal */}
+      <GameOverModal />
     </div>
   );
 };
