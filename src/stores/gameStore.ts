@@ -24,7 +24,7 @@ import {
 
 interface GameStore {
   // Current view
-  currentView: 'lobby' | 'game';
+  currentView: 'lobby' | 'waiting' | 'game';
   
   // Game room
   currentRoom: GameRoom | null;
@@ -37,10 +37,11 @@ interface GameStore {
   localPlayerId: string | null;
   
   // Actions
-  setView: (view: 'lobby' | 'game') => void;
+  setView: (view: 'lobby' | 'waiting' | 'game') => void;
   createRoom: (roomName: string, hostName: string) => void;
   joinRoom: (roomId: string, playerName: string) => void;
   leaveRoom: () => void;
+  addBotPlayer: () => void;
   startGame: () => void;
   
   // Game actions
@@ -98,7 +99,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       currentRoom: room,
       localPlayerId: playerId,
-      currentView: 'game',
+      currentView: 'waiting',
+    });
+  },
+  
+  addBotPlayer: () => {
+    const { currentRoom } = get();
+    if (!currentRoom || currentRoom.players.length >= 4) return;
+    
+    const botId = generateId();
+    const botNames = ['Бот Алексей', 'Бот Мария', 'Бот Иван', 'Бот Анна'];
+    const usedNames = currentRoom.players.map(p => p.name);
+    const availableName = botNames.find(n => !usedNames.includes(n)) || `Бот ${currentRoom.players.length + 1}`;
+    
+    const botPlayer: Player = {
+      id: botId,
+      name: availableName,
+      color: PLAYER_COLORS[currentRoom.players.length],
+      trainCards: [],
+      destinationTickets: [],
+      trainsRemaining: INITIAL_TRAINS,
+      stations: 3,
+      score: 0,
+      isActive: false,
+      isConnected: true,
+      isBot: true,
+    };
+    
+    set({
+      currentRoom: {
+        ...currentRoom,
+        players: [...currentRoom.players, botPlayer],
+      },
     });
   },
   
