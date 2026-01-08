@@ -15,6 +15,7 @@ import {
   INITIAL_TRAIN_CARDS,
   END_GAME_TRAINS_THRESHOLD,
 } from '@/types/game';
+import { playRouteClaimSound } from '@/hooks/useGameSounds';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -347,11 +348,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Calculate points
     const points = ROUTE_POINTS[route.length] || 0;
     
+    // Play sound effect
+    playRouteClaimSound();
+    
     // Update route
     const newRoutes = gameState.routes.map(r => 
       r.id === routeId ? { ...r, claimedBy: localPlayerId } : r
     );
-    
     // Check for end game condition
     const newTrainsRemaining = player.trainsRemaining - route.length;
     let newPhase = gameState.phase;

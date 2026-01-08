@@ -1,0 +1,109 @@
+// Game sound effects using Web Audio API
+
+let audioContext: AudioContext | null = null;
+
+const getAudioContext = (): AudioContext => {
+  if (!audioContext) {
+    audioContext = new AudioContext();
+  }
+  return audioContext;
+};
+
+// Train whistle / route claim sound
+export const playRouteClaimSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    // Create oscillators for a train-like whistle
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    // Connect nodes
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Set frequencies for a pleasant chord
+    osc1.frequency.setValueAtTime(523.25, now); // C5
+    osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+    osc2.frequency.setValueAtTime(392, now); // G4
+    osc2.frequency.exponentialRampToValueAtTime(523.25, now + 0.1); // C5
+    
+    // Waveform
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    
+    // Volume envelope
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.12, now + 0.15);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    // Start and stop
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.45);
+    osc2.stop(now + 0.45);
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};
+
+// Card draw sound
+export const playCardDrawSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+    osc.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};
+
+// Success / destination complete sound
+export const playSuccessSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, now + i * 0.1);
+      osc.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, now + i * 0.1);
+      gainNode.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
+      
+      osc.start(now + i * 0.1);
+      osc.stop(now + i * 0.1 + 0.35);
+    });
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};
