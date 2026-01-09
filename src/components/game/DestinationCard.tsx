@@ -12,9 +12,9 @@ interface DestinationCardProps {
 }
 
 const SIZES = {
-  small: { width: 140, height: 50, fontSize: 10, routeFontSize: 11 },
-  medium: { width: 180, height: 60, fontSize: 12, routeFontSize: 13 },
-  large: { width: 220, height: 70, fontSize: 14, routeFontSize: 15 },
+  small: { width: 160, height: 55, fontSize: 11, routeFontSize: 12 },
+  medium: { width: 200, height: 65, fontSize: 12, routeFontSize: 14 },
+  large: { width: 240, height: 80, fontSize: 14, routeFontSize: 16 },
 };
 
 export const DestinationCard: React.FC<DestinationCardProps> = ({
