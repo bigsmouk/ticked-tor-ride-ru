@@ -66,7 +66,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-ornament/30 bg-primary/10">
-        <h3 className="font-display font-bold text-sm text-foreground flex items-center gap-2">
+        <h3 className="font-display font-bold text-sm text-white flex items-center gap-2">
           📜 История игры
         </h3>
       </div>
