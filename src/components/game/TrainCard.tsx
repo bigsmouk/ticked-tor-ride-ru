@@ -76,6 +76,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
           className="w-full h-full object-contain"
           style={{ transform: 'rotate(90deg) scale(1.4)' }}
           draggable={false}
+          loading="eager"
         />
         
         {/* Card count badge */}
@@ -120,6 +121,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
         className="w-full h-full object-contain"
         style={{ transform: 'rotate(90deg) scale(1.4)' }}
         draggable={false}
+        loading="eager"
       />
       
       {/* Selection glow overlay */}

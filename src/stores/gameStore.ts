@@ -70,6 +70,7 @@ interface GameStore {
   // Helpers
   canClaimRoute: (routeId: string) => boolean;
   getRouteCardRequirement: (routeId: string) => { color: string; count: number } | null;
+  getClaimRouteError: (routeId: string) => string | null;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -196,9 +197,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const player = gameState.players[playerIndex];
     let newDeck = [...gameState.trainCardDeck];
+    let newDiscard = [...gameState.trainCardDiscard];
     let newFaceUp = [...gameState.faceUpCards];
     let newHand = [...player.trainCards];
     const isFirstCard = gameState.currentAction === 'selectingFirstCard';
+    
+    // Helper to reshuffle discard into deck if needed
+    const reshuffleIfNeeded = () => {
+      if (newDeck.length === 0 && newDiscard.length > 0) {
+        newDeck = shuffleArray([...newDiscard]) as TrainCardType[];
+        newDiscard = [];
+      }
+    };
     
     if (fromFaceUp && cardIndex !== undefined) {
       // Take from face-up cards
@@ -218,6 +228,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         newHand.push(card);
         
         // Replace the face-up card
+        reshuffleIfNeeded();
         const replacement = newDeck.pop();
         if (replacement) {
           newFaceUp[cardIndex] = replacement as TrainCardType;
@@ -240,6 +251,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             currentPlayerId: nextPlayer.id,
             currentAction: 'none',
             trainCardDeck: newDeck,
+            trainCardDiscard: newDiscard,
             faceUpCards: newFaceUp,
             turnNumber: gameState.turnNumber + 1,
             logs: [
@@ -255,6 +267,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newHand.push(card);
       
       // Replace the face-up card
+      reshuffleIfNeeded();
       const replacement = newDeck.pop();
       if (replacement) {
         newFaceUp[cardIndex] = replacement as TrainCardType;
@@ -262,7 +275,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         newFaceUp = newFaceUp.filter((_, i) => i !== cardIndex);
       }
     } else {
-      // Take from deck
+      // Take from deck - reshuffle if needed first
+      reshuffleIfNeeded();
       const card = newDeck.pop();
       if (!card) return;
       newHand.push(card as TrainCardType);
@@ -282,6 +296,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           players: updatedPlayers,
           currentAction: 'drawTrainCards', // Теперь ждём вторую карту
           trainCardDeck: newDeck,
+          trainCardDiscard: newDiscard,
           faceUpCards: newFaceUp,
         },
       });
@@ -324,6 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           currentPlayerId: nextPlayer.id,
           currentAction: 'none',
           trainCardDeck: newDeck,
+          trainCardDiscard: newDiscard,
           faceUpCards: newFaceUp,
           turnNumber: gameState.turnNumber + 1,
           turnsRemainingInLastRound,
@@ -807,5 +823,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
       color: route.color,
       count: route.length,
     };
+  },
+  
+  getClaimRouteError: (routeId) => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return 'Не ваш ход';
+    
+    const route = gameState.routes.find(r => r.id === routeId);
+    if (!route) return 'Маршрут не найден';
+    if (route.claimedBy) return 'Маршрут уже занят';
+    
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player) return 'Игрок не найден';
+    
+    if (player.trainsRemaining < route.length) return 'Недостаточно вагонов';
+    
+    // Check if player already claimed the parallel route
+    if (route.parallelRouteId) {
+      const parallelRoute = gameState.routes.find(r => r.id === route.parallelRouteId);
+      if (parallelRoute?.claimedBy === localPlayerId) return 'Вы уже заняли параллельный маршрут';
+    }
+    // Also check reverse - if this route is someone's parallel
+    const routeAsParallel = gameState.routes.find(r => r.parallelRouteId === routeId);
+    if (routeAsParallel?.claimedBy === localPlayerId) return 'Вы уже заняли параллельный маршрут';
+    
+    // Count cards
+    const cardCounts: Record<string, number> = {};
+    player.trainCards.forEach(card => {
+      cardCounts[card] = (cardCounts[card] || 0) + 1;
+    });
+    
+    const locomotives = cardCounts['locomotive'] || 0;
+    const ferryRequired = route.ferryLocomotives || 0;
+    
+    if (ferryRequired > 0 && locomotives < ferryRequired) {
+      return `Нужно минимум ${ferryRequired} локомотивов для парома`;
+    }
+    
+    if (route.color === 'gray') {
+      const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
+      const hasEnough = colors.some(color => {
+        const colorCount = cardCounts[color] || 0;
+        return colorCount + locomotives >= route.length;
+      });
+      if (!hasEnough) return 'Недостаточно карт одного цвета';
+    } else {
+      const colorCount = cardCounts[route.color] || 0;
+      if (colorCount + locomotives < route.length) return 'Недостаточно карт нужного цвета';
+    }
+    
+    return null;
   },
 }));

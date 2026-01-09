@@ -55,7 +55,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   return (
     <div 
       className={`
-        player-panel relative w-48 transition-all duration-300
+        player-panel relative w-44 min-w-0 transition-all duration-300
         ${isCurrentPlayer ? 'active glow-gold scale-105' : 'opacity-90'}
         ${isLocalPlayer ? 'ring-2 ring-gold/50' : ''}
       `}
@@ -149,10 +149,10 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       {isLocalPlayer && Object.keys(cardCounts).length > 0 && (
         <div className="mt-2 pt-2 border-t border-white/20">
           <div 
-            className="text-xs mb-1 font-display"
+            className="text-[10px] mb-1 font-display"
             style={{ color: colors.text, opacity: 0.7 }}
           >
-            Ваши карты:
+            Карты:
           </div>
           <div className="flex flex-wrap gap-1">
             {Object.entries(cardCounts).map(([cardType, count]) => (

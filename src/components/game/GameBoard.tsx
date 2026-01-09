@@ -21,7 +21,7 @@ const GameSyncContext = createContext<{
 export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -193,6 +193,7 @@ export const GameBoard: React.FC = () => {
 
   // Получаем требования выбранного маршрута
   const routeRequirement = selectedRoute ? getRouteCardRequirement(selectedRoute) : null;
+  const claimError = selectedRoute ? getClaimRouteError(selectedRoute) : null;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -262,6 +263,7 @@ export const GameBoard: React.FC = () => {
               onCancelAction={handleCancelDrawingCards}
               trainsRemaining={localPlayer?.trainsRemaining || 0}
               routeRequirement={routeRequirement}
+              claimError={claimError}
             />
           </div>
         </main>
