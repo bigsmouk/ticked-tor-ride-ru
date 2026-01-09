@@ -14,6 +14,7 @@ interface ActionPanelProps {
   onCancelAction: () => void;
   trainsRemaining: number;
   routeRequirement?: { color: string; count: number } | null;
+  claimError?: string | null;
 }
 
 export const ActionPanel: React.FC<ActionPanelProps> = ({
@@ -28,6 +29,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
   onCancelAction,
   trainsRemaining,
   routeRequirement,
+  claimError,
 }) => {
   if (!isMyTurn) {
     return (
@@ -83,7 +85,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
           
           {selectedRouteId && !canClaimSelectedRoute && (
             <div className="flex items-center px-4 py-2 bg-destructive/20 rounded-lg text-sm text-destructive">
-              ⚠️ Недостаточно карт для этого маршрута
+              ⚠️ {claimError || 'Недостаточно карт для этого маршрута'}
             </div>
           )}
         </div>

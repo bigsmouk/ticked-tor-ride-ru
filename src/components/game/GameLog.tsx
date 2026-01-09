@@ -29,12 +29,12 @@ const ACTION_ICONS: Record<string, string> = {
 };
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollEndRef.current) {
+      scrollEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs.length]);
 
@@ -72,7 +72,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
       </div>
       
       <ScrollArea className="flex-1">
-        <div ref={scrollRef} className="p-2 space-y-1.5">
+        <div className="p-2 space-y-1.5">
           {logs.length === 0 ? (
             <div className="text-muted-foreground text-xs text-center py-4">
               Ожидание действий...
@@ -106,6 +106,8 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
               </div>
             ))
           )}
+          {/* Anchor for auto-scroll */}
+          <div ref={scrollEndRef} />
         </div>
       </ScrollArea>
     </div>

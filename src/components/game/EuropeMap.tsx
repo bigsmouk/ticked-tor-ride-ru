@@ -257,9 +257,16 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
           </filter>
           
-          {/* Wagon shadow for better contrast */}
-          <filter id="wagon-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.6"/>
+          {/* Wagon shadow for better contrast - enhanced */}
+          <filter id="wagon-shadow" x="-100%" y="-100%" width="300%" height="300%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.8"/>
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fff" floodOpacity="0.4"/>
+          </filter>
+          
+          {/* Extra strong contrast filter for player wagons */}
+          <filter id="wagon-contrast" x="-100%" y="-100%" width="300%" height="300%">
+            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#fff" floodOpacity="0.6"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.9"/>
           </filter>
         </defs>
         
@@ -324,65 +331,81 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                       >
                         {/* Use wagon image for red/blue player, rectangles for others */}
                         {isRedPlayerWagon ? (
-                          <image
-                            href={redWagonImage}
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            preserveAspectRatio="xMidYMid meet"
-                            filter="url(#wagon-shadow)"
-                            className="wagon-image"
-                            style={{ animationDelay: `${i * 80}ms` }}
-                          />
+                          <g>
+                            {/* White outline for contrast */}
+                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
+                            <image
+                              href={redWagonImage}
+                              x={-14}
+                              y={-7}
+                              width={28}
+                              height={14}
+                              preserveAspectRatio="xMidYMid meet"
+                              filter="url(#wagon-contrast)"
+                              className="wagon-image"
+                              style={{ animationDelay: `${i * 80}ms` }}
+                            />
+                          </g>
                         ) : isBluePlayerWagon ? (
-                          <image
-                            href={blueWagonImage}
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            preserveAspectRatio="xMidYMid meet"
-                            filter="url(#wagon-shadow)"
-                            className="wagon-image"
-                            style={{ animationDelay: `${i * 80}ms` }}
-                          />
+                          <g>
+                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
+                            <image
+                              href={blueWagonImage}
+                              x={-14}
+                              y={-7}
+                              width={28}
+                              height={14}
+                              preserveAspectRatio="xMidYMid meet"
+                              filter="url(#wagon-contrast)"
+                              className="wagon-image"
+                              style={{ animationDelay: `${i * 80}ms` }}
+                            />
+                          </g>
                         ) : isGreenPlayerWagon ? (
-                          <image
-                            href={greenWagonImage}
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            preserveAspectRatio="xMidYMid meet"
-                            filter="url(#wagon-shadow)"
-                            className="wagon-image"
-                            style={{ animationDelay: `${i * 80}ms` }}
-                          />
+                          <g>
+                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
+                            <image
+                              href={greenWagonImage}
+                              x={-14}
+                              y={-7}
+                              width={28}
+                              height={14}
+                              preserveAspectRatio="xMidYMid meet"
+                              filter="url(#wagon-contrast)"
+                              className="wagon-image"
+                              style={{ animationDelay: `${i * 80}ms` }}
+                            />
+                          </g>
                         ) : isBlackPlayerWagon ? (
-                          <image
-                            href={blackWagonImage}
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            preserveAspectRatio="xMidYMid meet"
-                            filter="url(#wagon-shadow)"
-                            className="wagon-image"
-                            style={{ animationDelay: `${i * 80}ms` }}
-                          />
+                          <g>
+                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
+                            <image
+                              href={blackWagonImage}
+                              x={-14}
+                              y={-7}
+                              width={28}
+                              height={14}
+                              preserveAspectRatio="xMidYMid meet"
+                              filter="url(#wagon-contrast)"
+                              className="wagon-image"
+                              style={{ animationDelay: `${i * 80}ms` }}
+                            />
+                          </g>
                         ) : isYellowPlayerWagon ? (
-                          <image
-                            href={yellowWagonImage}
-                            x={-14}
-                            y={-7}
-                            width={28}
-                            height={14}
-                            preserveAspectRatio="xMidYMid meet"
-                            filter="url(#wagon-shadow)"
-                            className="wagon-image"
-                            style={{ animationDelay: `${i * 80}ms` }}
-                          />
+                          <g>
+                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#000" strokeWidth={2} opacity={0.6} />
+                            <image
+                              href={yellowWagonImage}
+                              x={-14}
+                              y={-7}
+                              width={28}
+                              height={14}
+                              preserveAspectRatio="xMidYMid meet"
+                              filter="url(#wagon-contrast)"
+                              className="wagon-image"
+                              style={{ animationDelay: `${i * 80}ms` }}
+                            />
+                          </g>
                         ) : (
                           <>
                             {/* Slot background - player color border for claimed */}
