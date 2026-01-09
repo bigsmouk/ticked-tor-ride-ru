@@ -153,8 +153,8 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         <div className="w-px min-h-[120px] bg-ornament/30" />
         
         {/* Destination tickets */}
-        <div className="w-64 flex flex-col max-h-[200px]">
-          <div className="flex items-center gap-2 mb-3 shrink-0">
+        <div className="w-80 flex flex-col" style={{ maxHeight: '160px' }}>
+          <div className="flex items-center gap-2 mb-2 shrink-0">
             <span className="text-sm font-display font-semibold text-foreground">
               Маршруты
             </span>
@@ -163,8 +163,8 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             </span>
           </div>
           
-          <ScrollArea className="flex-1">
-            <div className="flex flex-wrap gap-2 pr-2">
+          <ScrollArea className="flex-1 h-full">
+            <div className="flex flex-wrap gap-2 pr-3 pb-2">
               {destinationTickets.map((ticket) => (
                 <DestinationCard
                   key={ticket.id}
