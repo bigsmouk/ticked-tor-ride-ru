@@ -39,8 +39,8 @@ const CARD_IMAGES: Record<TrainCardType, string> = {
 
 const SIZES = {
   small: { width: 50, height: 70 },
-  medium: { width: 60, height: 84 },
-  large: { width: 90, height: 126 },
+  medium: { width: 80, height: 112 },
+  large: { width: 100, height: 140 },
 };
 
 export const TrainCard: React.FC<TrainCardProps> = ({
