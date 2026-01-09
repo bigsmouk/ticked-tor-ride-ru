@@ -513,15 +513,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
     
+    const nextPlayer = updatedPlayers[nextPlayerIndex];
     set({
       gameState: {
         ...gameState,
         players: updatedPlayers,
-        currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+        currentPlayerId: nextPlayer.id,
         currentAction: 'none',
         destinationDeck: newDestinationDeck,
         turnNumber: gameState.turnNumber + 1,
         turnsRemainingInLastRound,
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Взял маршруты', `${keptTickets.length} шт.`),
+          createLog(nextPlayer.id, 'Начинает ход'),
+        ],
       },
     });
   },
