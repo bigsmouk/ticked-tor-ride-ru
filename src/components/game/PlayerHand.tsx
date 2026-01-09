@@ -80,8 +80,22 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
               const totalCount = indices.length;
               const isValid = isCardValidForRoute(type);
               
+              // Card type names in Russian
+              const cardNames: Record<TrainCardType, string> = {
+                locomotive: 'Локомотив',
+                red: 'Красный',
+                blue: 'Синий',
+                green: 'Зелёный',
+                yellow: 'Жёлтый',
+                orange: 'Оранжевый',
+                pink: 'Розовый',
+                white: 'Белый',
+                black: 'Чёрный',
+                gray: 'Серый',
+              };
+              
               return (
-                <div key={type} className="relative">
+                <div key={type} className="relative flex flex-col items-center">
                   <TrainCard
                     type={type}
                     count={totalCount}
@@ -102,6 +116,11 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                     isSelected={selectedOfType > 0}
                     isDisabled={!isValid && routeRequirement !== null}
                   />
+                  
+                  {/* Card name label */}
+                  <span className="text-[10px] text-muted-foreground mt-1 font-medium truncate max-w-[60px] text-center">
+                    {cardNames[type]}
+                  </span>
                   
                   {/* Selected count indicator */}
                   {selectedOfType > 0 && (
