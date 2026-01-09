@@ -136,6 +136,8 @@ export const ROUTE_POINTS: Record<number, number> = {
   4: 7,
   5: 10,
   6: 15,
+  7: 18,
+  8: 21,
 };
 
 // Initial train count per player
