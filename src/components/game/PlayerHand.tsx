@@ -134,7 +134,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         <div className="w-px min-h-[120px] bg-ornament/30" />
         
         {/* Destination tickets */}
-        <div className="w-80 flex flex-col max-h-[140px]">
+        <div className="w-64 flex flex-col max-h-[140px]">
           <div className="flex items-center gap-2 mb-3 shrink-0">
             <span className="text-sm font-display font-semibold text-foreground">
               Маршруты
