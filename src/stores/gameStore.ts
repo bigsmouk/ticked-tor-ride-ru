@@ -616,6 +616,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { gameState } = get();
     if (!gameState) return;
     
+    console.log('=== НАЧАЛО ПОДСЧЁТА ОЧКОВ ===');
+    
     // Build a graph of claimed routes for each player
     const getPlayerConnections = (playerId: string): Map<string, Set<string>> => {
       const connections = new Map<string, Set<string>>();
@@ -655,40 +657,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return false;
     };
     
-    // Calculate longest path using DFS
+    // Calculate longest path using DFS - each wagon can only be counted once
     const calculateLongestPath = (playerId: string): number => {
       const routes = gameState.routes.filter(r => r.claimedBy === playerId);
       if (routes.length === 0) return 0;
       
-      const connections = new Map<string, { city: string; length: number }[]>();
+      // Build adjacency with route references to track which exact route was used
+      const connections = new Map<string, { city: string; length: number; routeId: string }[]>();
       routes.forEach(route => {
         const [city1, city2] = route.cities;
         if (!connections.has(city1)) connections.set(city1, []);
         if (!connections.has(city2)) connections.set(city2, []);
-        connections.get(city1)!.push({ city: city2, length: route.length });
-        connections.get(city2)!.push({ city: city1, length: route.length });
+        connections.get(city1)!.push({ city: city2, length: route.length, routeId: route.id });
+        connections.get(city2)!.push({ city: city1, length: route.length, routeId: route.id });
       });
       
       let maxPath = 0;
-      const visitedRoutes = new Set<string>();
+      const usedRoutes = new Set<string>();
       
       const dfs = (city: string, pathLength: number) => {
         maxPath = Math.max(maxPath, pathLength);
         const neighbors = connections.get(city) || [];
         
         for (const neighbor of neighbors) {
-          const routeKey = [city, neighbor.city].sort().join('-');
-          if (!visitedRoutes.has(routeKey)) {
-            visitedRoutes.add(routeKey);
+          if (!usedRoutes.has(neighbor.routeId)) {
+            usedRoutes.add(neighbor.routeId);
             dfs(neighbor.city, pathLength + neighbor.length);
-            visitedRoutes.delete(routeKey);
+            usedRoutes.delete(neighbor.routeId);
           }
         }
       };
       
       // Start DFS from each city
       connections.forEach((_, city) => {
-        visitedRoutes.clear();
+        usedRoutes.clear();
         dfs(city, 0);
       });
       
@@ -696,9 +698,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
     
     // Calculate final scores
-    const finalScores: { playerId: string; score: number; longestPath: number; completedTickets: number; failedTickets: number }[] = [];
+    const finalScores: { 
+      playerId: string; 
+      routePoints: number;
+      ticketBonus: number;
+      ticketPenalty: number;
+      longestPathBonus: number;
+      totalScore: number;
+      longestPath: number; 
+      completedTickets: number; 
+      failedTickets: number;
+    }[] = [];
     let maxLongestPath = 0;
     
+    // First pass: calculate all scores except longest path bonus
     gameState.players.forEach(player => {
       const longestPath = calculateLongestPath(player.id);
       maxLongestPath = Math.max(maxLongestPath, longestPath);
@@ -708,8 +721,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       let completedCount = 0;
       let failedCount = 0;
       
+      console.log(`\n--- Игрок: ${player.name} (${player.color}) ---`);
+      console.log(`Очки за построенные маршруты: ${player.score}`);
+      
       player.destinationTickets.forEach(ticket => {
-        if (areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1])) {
+        const isCompleted = areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1]);
+        console.log(`  Маршрут ${ticket.cities[0]} — ${ticket.cities[1]} (${ticket.points} очков): ${isCompleted ? 'ВЫПОЛНЕН ✓' : 'НЕ ВЫПОЛНЕН ✗'}`);
+        
+        if (isCompleted) {
           ticketBonus += ticket.points;
           completedCount++;
         } else {
@@ -718,32 +737,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       });
       
+      console.log(`  Бонус за выполненные маршруты: +${ticketBonus}`);
+      console.log(`  Штраф за невыполненные маршруты: -${ticketPenalty}`);
+      console.log(`  Длина самого длинного пути: ${longestPath}`);
+      
       finalScores.push({
         playerId: player.id,
-        score: player.score + ticketBonus - ticketPenalty,
+        routePoints: player.score,
+        ticketBonus,
+        ticketPenalty,
+        longestPathBonus: 0, // Will be set in second pass
+        totalScore: player.score + ticketBonus - ticketPenalty,
         longestPath,
         completedTickets: completedCount,
         failedTickets: failedCount,
       });
     });
     
-    // Add longest path bonus
+    console.log(`\n--- Бонус за самый длинный путь ---`);
+    console.log(`Максимальная длина пути: ${maxLongestPath}`);
+    
+    // Second pass: Add longest path bonus (+10 for all players with max path)
     finalScores.forEach(fs => {
-      if (fs.longestPath === maxLongestPath) {
-        fs.score += 10; // LONGEST_PATH_BONUS
+      if (fs.longestPath === maxLongestPath && maxLongestPath > 0) {
+        fs.longestPathBonus = 10;
+        fs.totalScore += 10;
+        const playerName = gameState.players.find(p => p.id === fs.playerId)?.name;
+        console.log(`  ${playerName}: получает +10 за самый длинный путь (${fs.longestPath})`);
       }
     });
     
-    // Determine winner
-    const sortedScores = [...finalScores].sort((a, b) => b.score - a.score);
+    // Log final scores
+    console.log(`\n--- ИТОГОВЫЕ ОЧКИ ---`);
+    finalScores.forEach(fs => {
+      const player = gameState.players.find(p => p.id === fs.playerId);
+      console.log(`${player?.name}: ${fs.routePoints} (маршруты) + ${fs.ticketBonus} (билеты) - ${fs.ticketPenalty} (штраф) + ${fs.longestPathBonus} (длинный путь) = ${fs.totalScore}`);
+    });
+    
+    // Determine winner according to Ticket to Ride Europe rules:
+    // 1. Highest score
+    // 2. If tied: most completed destination tickets
+    // 3. If still tied: longest continuous path holder
+    const sortedScores = [...finalScores].sort((a, b) => {
+      // First: by total score (descending)
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
+      }
+      // Second: by completed tickets (descending)
+      if (b.completedTickets !== a.completedTickets) {
+        return b.completedTickets - a.completedTickets;
+      }
+      // Third: by longest path (descending)
+      return b.longestPath - a.longestPath;
+    });
+    
     const winnerId = sortedScores[0]?.playerId;
+    const winnerName = gameState.players.find(p => p.id === winnerId)?.name;
+    console.log(`\n🏆 ПОБЕДИТЕЛЬ: ${winnerName} с ${sortedScores[0]?.totalScore} очками`);
+    console.log('=== КОНЕЦ ПОДСЧЁТА ОЧКОВ ===\n');
     
     // Update players with final scores
     const updatedPlayers = gameState.players.map(player => {
       const fs = finalScores.find(f => f.playerId === player.id);
       return {
         ...player,
-        score: fs?.score || player.score,
+        score: fs?.totalScore || player.score,
         destinationTickets: player.destinationTickets.map(ticket => ({
           ...ticket,
           isCompleted: areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1]),
@@ -762,8 +820,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         winnerId,
         finalScores: finalScores.map(fs => ({
           playerId: fs.playerId,
-          score: fs.score,
+          score: fs.totalScore,
           longestPath: fs.longestPath,
+          completedTickets: fs.completedTickets,
+          failedTickets: fs.failedTickets,
+          ticketBonus: fs.ticketBonus,
+          ticketPenalty: fs.ticketPenalty,
+          longestPathBonus: fs.longestPathBonus,
         })),
       },
     });
