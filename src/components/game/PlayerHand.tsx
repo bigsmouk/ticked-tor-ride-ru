@@ -163,8 +163,8 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             </span>
           </div>
           
-          <ScrollArea className="flex-1">
-            <div className="flex gap-3 pb-2 pr-2">
+          <ScrollArea className="flex-1 h-full">
+            <div className="flex flex-col gap-2 pr-3">
               {destinationTickets.map((ticket) => (
                 <DestinationCard
                   key={ticket.id}
