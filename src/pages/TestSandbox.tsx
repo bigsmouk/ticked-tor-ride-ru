@@ -4,7 +4,7 @@ import { TestMap, TestRouteState } from '@/components/game/TestMap';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map, Move, Download } from 'lucide-react';
+import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map } from 'lucide-react';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -67,8 +67,6 @@ const TestSandbox = () => {
   const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores, claimRoute, canClaimRoute } = useGameStore();
   const [infiniteCards, setInfiniteCards] = useState(false);
   const [mapType, setMapType] = useState<MapType>('test');
-  const [calibrationMode, setCalibrationMode] = useState(false);
-  const [customCityPositions, setCustomCityPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   // Get cities/routes based on map type
   const getMapData = useCallback((type: MapType) => {
@@ -317,32 +315,6 @@ const TestSandbox = () => {
     });
   }, [gameState, localPlayerId, setGameState]);
 
-  // Handle city drag for calibration
-  const handleCityDrag = useCallback((cityId: string, x: number, y: number) => {
-    setCustomCityPositions(prev => ({
-      ...prev,
-      [cityId]: { x, y }
-    }));
-  }, []);
-
-  // Export city positions
-  const exportCityPositions = useCallback(() => {
-    const positions = TEST_CITIES.map(city => {
-      const pos = customCityPositions[city.id] || { x: city.x, y: city.y };
-      return `  { id: '${city.id}', name: '${city.name}', x: ${pos.x}, y: ${pos.y} },`;
-    }).join('\n');
-    
-    const output = `// Updated TEST_CITIES coordinates:\nexport const TEST_CITIES: TestCity[] = [\n${positions}\n];`;
-    console.log(output);
-    navigator.clipboard.writeText(output);
-    alert(`Координаты скопированы! (${Object.keys(customCityPositions).length} изменено)`);
-  }, [customCityPositions]);
-
-  // Reset city positions
-  const resetCityPositions = useCallback(() => {
-    setCustomCityPositions({});
-  }, []);
-
   // Effect: Infinite cards mode - replenish cards after each action
   useEffect(() => {
     if (!infiniteCards || !gameState || !localPlayerId) return;
@@ -557,55 +529,6 @@ const TestSandbox = () => {
           </div>
         </div>
 
-        {/* Calibration section - only for test map */}
-        {mapType === 'test' && (
-          <div className="border-t border-border pt-3 mt-3">
-            <p className="text-xs font-bold text-blue-500 mb-2 flex items-center gap-1">
-              <Move className="w-3 h-3" />
-              Калибровка карты
-            </p>
-            
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">🎯 Режим калибровки</span>
-              <Switch
-                checked={calibrationMode}
-                onCheckedChange={setCalibrationMode}
-              />
-            </div>
-            
-            {calibrationMode && (
-              <>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Перетаскивайте города мышкой
-                </p>
-                <p className="text-xs text-green-500 mb-2">
-                  {Object.keys(customCityPositions).length} изменено
-                </p>
-                <div className="grid grid-cols-2 gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportCityPositions}
-                    className="text-xs border-blue-500/50 text-blue-600 hover:bg-blue-500/10"
-                  >
-                    <Download className="w-3 h-3 mr-1" />
-                    Экспорт
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetCityPositions}
-                    className="text-xs border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
-                  >
-                    <RotateCcw className="w-3 h-3 mr-1" />
-                    Сброс
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
         {/* Cheat section */}
         <div className="border-t border-border pt-3 mt-3">
           <p className="text-xs font-bold text-yellow-500 mb-2 flex items-center gap-1">
@@ -720,11 +643,8 @@ const TestSandbox = () => {
       {mapType === 'test' ? (
         <div className="w-screen h-screen">
           <TestMap 
-            routeStates={calibrationMode ? {} : testRouteStates}
-            onRouteClick={calibrationMode ? undefined : handleTestMapRouteClick}
-            calibrationMode={calibrationMode}
-            customCityPositions={customCityPositions}
-            onCityDrag={handleCityDrag}
+            routeStates={testRouteStates}
+            onRouteClick={handleTestMapRouteClick}
           />
         </div>
       ) : (

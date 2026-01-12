@@ -9,7 +9,6 @@ import WaitingRoom from "./pages/WaitingRoom";
 import Game from "./pages/Game";
 import TestSandbox from "./pages/TestSandbox";
 import MapCalibration from "./pages/MapCalibration";
-import TestMapCalibration from "./pages/TestMapCalibration";
 import RouteCalibration from "./pages/RouteCalibration";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import ResetPassword from "./pages/ResetPassword";
@@ -28,7 +27,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/test" element={<TestSandbox />} />
             <Route path="/calibration" element={<MapCalibration />} />
-            <Route path="/test-calibration" element={<TestMapCalibration />} />
             <Route path="/routes" element={<RouteCalibration />} />
             <Route path="/waiting" element={<WaitingRoom />} />
             <Route path="/game" element={<Game />} />

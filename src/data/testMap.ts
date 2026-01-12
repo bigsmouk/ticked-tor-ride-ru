@@ -29,76 +29,59 @@ export interface TestDestinationTicket {
   isLongRoute?: boolean;
 }
 
-// 46 Cities calibrated to 1920×1080 coordinate system matching the background map
+// Scale factor from 800×550 to 1920×1080
+const SCALE_X = 1920 / 800;
+const SCALE_Y = 1080 / 550;
+
+// 46 Cities scaled to 1920×1080 coordinate system
 export const TEST_CITIES: TestCity[] = [
-  // British Isles
-  { id: 'edinburgh', name: 'Эдинбург', x: 340, y: 165 },
-  { id: 'london', name: 'Лондон', x: 400, y: 310 },
-  
-  // Western Europe
-  { id: 'amsterdam', name: 'Амстердам', x: 510, y: 285 },
-  { id: 'bruxelles', name: 'Брюссель', x: 490, y: 330 },
-  { id: 'dieppe', name: 'Дьепп', x: 400, y: 345 },
-  { id: 'brest', name: 'Брест', x: 290, y: 370 },
-  { id: 'paris', name: 'Париж', x: 450, y: 385 },
-  
-  // Iberian Peninsula
-  { id: 'pamplona', name: 'Памплона', x: 340, y: 505 },
-  { id: 'madrid', name: 'Мадрид', x: 255, y: 580 },
-  { id: 'lisboa', name: 'Лиссабон', x: 150, y: 595 },
-  { id: 'cadiz', name: 'Кадис', x: 210, y: 680 },
-  { id: 'barcelona', name: 'Барселона', x: 385, y: 560 },
-  
-  // France & Switzerland
-  { id: 'marseille', name: 'Марсель', x: 480, y: 520 },
-  { id: 'zurich', name: 'Цюрих', x: 560, y: 420 },
-  
-  // Germany & Central Europe
-  { id: 'munchen', name: 'Мюнхен', x: 620, y: 400 },
-  { id: 'frankfurt', name: 'Франкфурт', x: 565, y: 345 },
-  { id: 'essen', name: 'Эссен', x: 545, y: 295 },
-  { id: 'berlin', name: 'Берлин', x: 680, y: 280 },
-  
-  // Scandinavia
-  { id: 'kobenhavn', name: 'Копенгаген', x: 630, y: 200 },
-  { id: 'stockholm', name: 'Стокгольм', x: 740, y: 130 },
-  
-  // Eastern Europe & Russia
-  { id: 'petrograd', name: 'Петроград', x: 1050, y: 85 },
-  { id: 'riga', name: 'Рига', x: 880, y: 165 },
-  { id: 'wilno', name: 'Вильно', x: 920, y: 245 },
-  { id: 'danzig', name: 'Данциг', x: 780, y: 220 },
-  { id: 'warszawa', name: 'Варшава', x: 830, y: 290 },
-  { id: 'moskva', name: 'Москва', x: 1230, y: 190 },
-  { id: 'smolensk', name: 'Смоленск', x: 1080, y: 245 },
-  { id: 'kyiv', name: 'Киев', x: 1000, y: 340 },
-  { id: 'kharkov', name: 'Харьков', x: 1150, y: 370 },
-  { id: 'rostov', name: 'Ростов', x: 1240, y: 420 },
-  { id: 'sevastopol', name: 'Севастополь', x: 1100, y: 490 },
-  { id: 'sochi', name: 'Сочи', x: 1240, y: 520 },
-  
-  // Austria & Balkans
-  { id: 'wien', name: 'Вена', x: 710, y: 380 },
-  { id: 'budapest', name: 'Будапешт', x: 790, y: 410 },
-  { id: 'zagreb', name: 'Загреб', x: 720, y: 450 },
-  
-  // Italy
-  { id: 'venezia', name: 'Венеция', x: 640, y: 455 },
-  { id: 'roma', name: 'Рим', x: 630, y: 550 },
-  { id: 'palermo', name: 'Палермо', x: 670, y: 680 },
-  { id: 'brindisi', name: 'Бриндизи', x: 730, y: 590 },
-  
-  // Balkans & Greece
-  { id: 'sarajevo', name: 'Сараево', x: 770, y: 495 },
-  { id: 'bucuresti', name: 'Бухарест', x: 920, y: 470 },
-  { id: 'sofia', name: 'София', x: 880, y: 520 },
-  { id: 'athina', name: 'Афины', x: 870, y: 650 },
-  
-  // Turkey & Near East
-  { id: 'constantinople', name: 'Константинополь', x: 990, y: 560 },
-  { id: 'smyrna', name: 'Смирна', x: 970, y: 650 },
-  { id: 'angora', name: 'Анкара', x: 1110, y: 600 },
-  { id: 'erzurum', name: 'Эрзурум', x: 1250, y: 580 },
+  { id: 'edinburgh', name: 'Эдинбург', x: Math.round(125 * SCALE_X), y: Math.round(45 * SCALE_Y) },
+  { id: 'london', name: 'Лондон', x: Math.round(175 * SCALE_X), y: Math.round(166 * SCALE_Y) },
+  { id: 'amsterdam', name: 'Амстердам', x: Math.round(251 * SCALE_X), y: Math.round(167 * SCALE_Y) },
+  { id: 'bruxelles', name: 'Брюссель', x: Math.round(232 * SCALE_X), y: Math.round(205 * SCALE_Y) },
+  { id: 'dieppe', name: 'Дьепп', x: Math.round(166 * SCALE_X), y: Math.round(237 * SCALE_Y) },
+  { id: 'brest', name: 'Брест', x: Math.round(95 * SCALE_X), y: Math.round(261 * SCALE_Y) },
+  { id: 'paris', name: 'Париж', x: Math.round(206 * SCALE_X), y: Math.round(272 * SCALE_Y) },
+  { id: 'pamplona', name: 'Памплона', x: Math.round(155 * SCALE_X), y: Math.round(390 * SCALE_Y) },
+  { id: 'madrid', name: 'Мадрид', x: Math.round(78 * SCALE_X), y: Math.round(455 * SCALE_Y) },
+  { id: 'lisboa', name: 'Лиссабон', x: Math.round(24 * SCALE_X), y: Math.round(473 * SCALE_Y) },
+  { id: 'cadiz', name: 'Кадис', x: Math.round(77 * SCALE_X), y: Math.round(514 * SCALE_Y) },
+  { id: 'barcelona', name: 'Барселона', x: Math.round(164 * SCALE_X), y: Math.round(464 * SCALE_Y) },
+  { id: 'marseille', name: 'Марсель', x: Math.round(273 * SCALE_X), y: Math.round(388 * SCALE_Y) },
+  { id: 'zurich', name: 'Цюрих', x: Math.round(294 * SCALE_X), y: Math.round(316 * SCALE_Y) },
+  { id: 'munchen', name: 'Мюнхен', x: Math.round(348 * SCALE_X), y: Math.round(265 * SCALE_Y) },
+  { id: 'frankfurt', name: 'Франкфурт', x: Math.round(302 * SCALE_X), y: Math.round(230 * SCALE_Y) },
+  { id: 'essen', name: 'Эссен', x: Math.round(316 * SCALE_X), y: Math.round(176 * SCALE_Y) },
+  { id: 'berlin', name: 'Берлин', x: Math.round(393 * SCALE_X), y: Math.round(187 * SCALE_Y) },
+  { id: 'kobenhavn', name: 'Копенгаген', x: Math.round(371 * SCALE_X), y: Math.round(93 * SCALE_Y) },
+  { id: 'stockholm', name: 'Стокгольм', x: Math.round(453 * SCALE_X), y: Math.round(31 * SCALE_Y) },
+  { id: 'petrograd', name: 'Петроград', x: Math.round(679 * SCALE_X), y: Math.round(51 * SCALE_Y) },
+  { id: 'riga', name: 'Рига', x: Math.round(547 * SCALE_X), y: Math.round(54 * SCALE_Y) },
+  { id: 'wilno', name: 'Вильно', x: Math.round(609 * SCALE_X), y: Math.round(161 * SCALE_Y) },
+  { id: 'danzig', name: 'Данциг', x: Math.round(481 * SCALE_X), y: Math.round(126 * SCALE_Y) },
+  { id: 'warszawa', name: 'Варшава', x: Math.round(521 * SCALE_X), y: Math.round(181 * SCALE_Y) },
+  { id: 'moskva', name: 'Москва', x: Math.round(756 * SCALE_X), y: Math.round(146 * SCALE_Y) },
+  { id: 'smolensk', name: 'Смоленск', x: Math.round(689 * SCALE_X), y: Math.round(166 * SCALE_Y) },
+  { id: 'kyiv', name: 'Киев', x: Math.round(634 * SCALE_X), y: Math.round(224 * SCALE_Y) },
+  { id: 'kharkov', name: 'Харьков', x: Math.round(745 * SCALE_X), y: Math.round(263 * SCALE_Y) },
+  { id: 'rostov', name: 'Ростов', x: Math.round(776 * SCALE_X), y: Math.round(306 * SCALE_Y) },
+  { id: 'sevastopol', name: 'Севастополь', x: Math.round(703 * SCALE_X), y: Math.round(363 * SCALE_Y) },
+  { id: 'sochi', name: 'Сочи', x: Math.round(772 * SCALE_X), y: Math.round(375 * SCALE_Y) },
+  { id: 'wien', name: 'Вена', x: Math.round(438 * SCALE_X), y: Math.round(279 * SCALE_Y) },
+  { id: 'budapest', name: 'Будапешт', x: Math.round(476 * SCALE_X), y: Math.round(298 * SCALE_Y) },
+  { id: 'zagreb', name: 'Загреб', x: Math.round(427 * SCALE_X), y: Math.round(350 * SCALE_Y) },
+  { id: 'venezia', name: 'Венеция', x: Math.round(360 * SCALE_X), y: Math.round(339 * SCALE_Y) },
+  { id: 'roma', name: 'Рим', x: Math.round(367 * SCALE_X), y: Math.round(411 * SCALE_Y) },
+  { id: 'palermo', name: 'Палермо', x: Math.round(396 * SCALE_X), y: Math.round(514 * SCALE_Y) },
+  { id: 'brindisi', name: 'Бриндизи', x: Math.round(435 * SCALE_X), y: Math.round(431 * SCALE_Y) },
+  { id: 'sarajevo', name: 'Сараево', x: Math.round(493 * SCALE_X), y: Math.round(396 * SCALE_Y) },
+  { id: 'bucuresti', name: 'Бухарест', x: Math.round(593 * SCALE_X), y: Math.round(353 * SCALE_Y) },
+  { id: 'sofia', name: 'София', x: Math.round(546 * SCALE_X), y: Math.round(403 * SCALE_Y) },
+  { id: 'athina', name: 'Афины', x: Math.round(532 * SCALE_X), y: Math.round(493 * SCALE_Y) },
+  { id: 'constantinople', name: 'Константинополь', x: Math.round(634 * SCALE_X), y: Math.round(450 * SCALE_Y) },
+  { id: 'smyrna', name: 'Смирна', x: Math.round(600 * SCALE_X), y: Math.round(513 * SCALE_Y) },
+  { id: 'angora', name: 'Анкара', x: Math.round(695 * SCALE_X), y: Math.round(493 * SCALE_Y) },
+  { id: 'erzurum', name: 'Эрзурум', x: Math.round(757 * SCALE_X), y: Math.round(474 * SCALE_Y) },
 ];
 
 // Helper to generate route ID
