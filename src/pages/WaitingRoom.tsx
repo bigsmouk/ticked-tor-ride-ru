@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
-import { Copy, Users, Crown, Check } from 'lucide-react';
+import { usePresence } from '@/hooks/usePresence';
+import { Copy, Users, Crown, Check, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
-
 const WaitingRoom = () => {
   const navigate = useNavigate();
   const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
   const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb } = useMultiplayer();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+
+  // Отслеживание онлайн-статуса игроков
+  const { isPlayerOnline } = usePresence(currentRoom?.id || null);
 
   // Подписка на realtime обновления комнаты
   useRoomSubscription(currentRoom?.id || null);
@@ -168,12 +171,19 @@ const WaitingRoom = () => {
                       </span>
                     </div>
 
-                    {/* Ready status */}
+                    {/* Online status */}
                     <div className="flex items-center gap-2">
-                      <span className="text-green-500 flex items-center gap-1">
-                        <Check className="w-4 h-4" />
-                        Готов
-                      </span>
+                      {isPlayerOnline(player.id) ? (
+                        <span className="text-green-500 flex items-center gap-1">
+                          <Wifi className="w-4 h-4" />
+                          <span className="text-xs">Онлайн</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <WifiOff className="w-4 h-4" />
+                          <span className="text-xs">Оффлайн</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}

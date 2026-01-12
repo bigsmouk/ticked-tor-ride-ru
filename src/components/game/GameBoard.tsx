@@ -10,6 +10,7 @@ import { GameLog } from '@/components/game/GameLog';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
+import { usePresence } from '@/hooks/usePresence';
 import { playTurnNotificationSound } from '@/hooks/useGameSounds';
 
 // Context для передачи sendActionToHost в дочерние компоненты
@@ -30,6 +31,9 @@ export const GameBoard: React.FC = () => {
   
   // Получаем функцию синхронизации
   const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
+  
+  // Отслеживание онлайн-статуса игроков
+  const { isPlayerOnline } = usePresence(currentRoom?.id || null);
 
   // Сбрасываем выделение при смене хода и проигрываем звук если ход перешёл к нам
   const prevCurrentPlayerId = useRef(gameState?.currentPlayerId);
@@ -212,6 +216,7 @@ export const GameBoard: React.FC = () => {
               player={player}
               isCurrentPlayer={player.id === gameState.currentPlayerId}
               isLocalPlayer={player.id === localPlayerId}
+              isOnline={isPlayerOnline(player.id)}
               position="left"
               index={i}
             />
@@ -276,6 +281,7 @@ export const GameBoard: React.FC = () => {
               player={player}
               isCurrentPlayer={player.id === gameState.currentPlayerId}
               isLocalPlayer={player.id === localPlayerId}
+              isOnline={isPlayerOnline(player.id)}
               position="right"
               index={i + 2}
             />

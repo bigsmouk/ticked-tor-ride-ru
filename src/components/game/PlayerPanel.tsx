@@ -1,10 +1,12 @@
 import React from 'react';
 import { Player, PlayerColor } from '@/types/game';
+import { Wifi, WifiOff } from 'lucide-react';
 
 interface PlayerPanelProps {
   player: Player;
   isCurrentPlayer: boolean;
   isLocalPlayer: boolean;
+  isOnline?: boolean;
   position: 'left' | 'right';
   index: number;
 }
@@ -41,6 +43,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   player,
   isCurrentPlayer,
   isLocalPlayer,
+  isOnline = true,
   position,
   index,
 }) => {
@@ -81,7 +84,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       <div className="flex items-center gap-2 mb-2">
         {/* Avatar placeholder */}
         <div 
-          className="w-10 h-10 rounded-full flex items-center justify-center font-display text-lg font-bold"
+          className="w-10 h-10 rounded-full flex items-center justify-center font-display text-lg font-bold relative"
           style={{ 
             background: 'hsl(40 30% 90%)',
             border: `2px solid ${colors.border}`,
@@ -89,15 +92,26 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
           }}
         >
           {player.name.charAt(0).toUpperCase()}
+          
+          {/* Online indicator dot */}
+          <div 
+            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${
+              isOnline ? 'bg-green-500 border-green-600' : 'bg-gray-400 border-gray-500'
+            }`}
+            title={isOnline ? 'Онлайн' : 'Оффлайн'}
+          />
         </div>
         
         <div className="flex-1 min-w-0">
           <div 
-            className="font-display font-semibold text-sm truncate"
+            className="font-display font-semibold text-sm truncate flex items-center gap-1"
             style={{ color: colors.text }}
           >
             {player.name}
-            {isLocalPlayer && <span className="text-xs opacity-70 ml-1">(Вы)</span>}
+            {isLocalPlayer && <span className="text-xs opacity-70">(Вы)</span>}
+            {!isOnline && !isLocalPlayer && (
+              <WifiOff className="w-3 h-3 opacity-50" />
+            )}
           </div>
           
           {/* Score */}
