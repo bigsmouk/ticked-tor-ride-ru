@@ -14,7 +14,7 @@ export type GameAction =
   | { type: 'cancelDestinationDraw' }
   | { type: 'endTurn' };
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'degraded' | 'disconnected';
+export type ConnectionStatus = 'connecting' | 'connected' | 'degraded' | 'disconnected' | 'reconnecting';
 
 // Конфигурация синхронизации
 const SYNC_CONFIG = {
@@ -24,6 +24,9 @@ const SYNC_CONFIG = {
   MAX_RETRIES: 10,                // Максимум попыток
   HOST_BROADCAST_INTERVAL: 5000,  // Периодическая синхронизация хоста (мс)
   HEARTBEAT_INTERVAL: 3000,       // Heartbeat для проверки связи
+  RECONNECT_DELAY: 2000,          // Задержка перед переподключением
+  MAX_RECONNECT_ATTEMPTS: 5,      // Максимум попыток переподключения
+  STALE_THRESHOLD: 15000,         // Порог "устаревшего" состояния (мс)
 };
 
 export const useGameSync = (roomId: string | null) => {
@@ -36,11 +39,15 @@ export const useGameSync = (roomId: string | null) => {
   // Состояние подключения
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const hostOnlineRef = useRef(false);
   const usingRestFallbackRef = useRef(false);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const staleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  const reconnectAttemptsRef = useRef(0);
   
   // Game actions from store (host will execute these)
   const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
@@ -59,13 +66,33 @@ export const useGameSync = (roomId: string | null) => {
   const hostIdRef = useRef<string | null>(null);
   hostIdRef.current = currentRoom?.hostId || null;
 
-  // Очистка таймера
+  // Очистка таймеров
   const clearRetryTimer = useCallback(() => {
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
     }
   }, []);
+
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+  }, []);
+
+  const clearStaleCheckTimer = useCallback(() => {
+    if (staleCheckTimerRef.current) {
+      clearTimeout(staleCheckTimerRef.current);
+      staleCheckTimerRef.current = null;
+    }
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
+    clearRetryTimer();
+    clearReconnectTimer();
+    clearStaleCheckTimer();
+  }, [clearRetryTimer, clearReconnectTimer, clearStaleCheckTimer]);
 
   // Унифицированная отправка broadcast (предпочитаем REST-доставку)
   const sendBroadcast = useCallback(async (event: string, payload: Record<string, any>) => {
@@ -151,8 +178,43 @@ export const useGameSync = (roomId: string | null) => {
     
     retryCountRef.current = 0;
     clearRetryTimer();
+    setConnectionStatus('reconnecting');
+    setReconnectAttempt(prev => prev + 1);
     requestSyncWithRetry();
   }, [requestSyncWithRetry, clearRetryTimer]);
+
+  // Автоматическое переподключение при потере связи
+  const attemptReconnect = useCallback(() => {
+    if (!roomId || !localPlayerId || isHostRef.current || !mountedRef.current) return;
+
+    if (reconnectAttemptsRef.current >= SYNC_CONFIG.MAX_RECONNECT_ATTEMPTS) {
+      console.log('[GameSync] Max reconnect attempts reached');
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    reconnectAttemptsRef.current += 1;
+    setReconnectAttempt(reconnectAttemptsRef.current);
+    setConnectionStatus('reconnecting');
+    
+    console.log('[GameSync] Attempting reconnect, attempt:', reconnectAttemptsRef.current);
+    
+    // Пересоздаём канал
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Небольшая задержка перед переподключением
+    clearReconnectTimer();
+    reconnectTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) {
+        // Эффект перезапустится из-за изменения зависимости
+        retryCountRef.current = 0;
+        requestSyncWithRetry();
+      }
+    }, SYNC_CONFIG.RECONNECT_DELAY);
+  }, [roomId, localPlayerId, requestSyncWithRetry, clearReconnectTimer]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -400,7 +462,18 @@ export const useGameSync = (roomId: string | null) => {
         console.log('[GameSync] Subscription status:', status);
 
         if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          console.log('[GameSync] Connection lost, attempting reconnect...');
           setConnectionStatus('disconnected');
+          
+          // Автоматически пытаемся переподключиться (для не-хостов)
+          if (!isHostRef.current && mountedRef.current) {
+            clearReconnectTimer();
+            reconnectTimerRef.current = setTimeout(() => {
+              if (mountedRef.current && reconnectAttemptsRef.current < SYNC_CONFIG.MAX_RECONNECT_ATTEMPTS) {
+                attemptReconnect();
+              }
+            }, SYNC_CONFIG.RECONNECT_DELAY);
+          }
           return;
         }
 
@@ -454,12 +527,12 @@ export const useGameSync = (roomId: string | null) => {
     return () => {
       console.log('[GameSync] Cleaning up channel');
       mountedRef.current = false;
-      clearRetryTimer();
+      clearAllTimers();
       supabase.removeChannel(channel);
       channelRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, requestSyncWithRetry, clearRetryTimer]);
+  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer]);
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {
@@ -506,5 +579,32 @@ export const useGameSync = (roomId: string | null) => {
     return () => clearInterval(interval);
   }, [isHost, sendBroadcast]);
 
-  return { sendActionToHost, requestSync, isHost, connectionStatus, lastSyncTime };
+  // Проверка "устаревшего" состояния для не-хостов
+  useEffect(() => {
+    if (isHost || !lastSyncTime) return;
+
+    const checkStale = () => {
+      const timeSinceSync = Date.now() - (lastSyncTime || 0);
+      if (timeSinceSync > SYNC_CONFIG.STALE_THRESHOLD && mountedRef.current) {
+        console.log('[GameSync] State is stale, requesting sync...');
+        setConnectionStatus('degraded');
+        requestSync();
+      }
+    };
+
+    clearStaleCheckTimer();
+    staleCheckTimerRef.current = setTimeout(checkStale, SYNC_CONFIG.STALE_THRESHOLD);
+
+    return () => clearStaleCheckTimer();
+  }, [isHost, lastSyncTime, requestSync, clearStaleCheckTimer]);
+
+  return { 
+    sendActionToHost, 
+    requestSync, 
+    attemptReconnect,
+    isHost, 
+    connectionStatus, 
+    lastSyncTime,
+    reconnectAttempt,
+  };
 };
