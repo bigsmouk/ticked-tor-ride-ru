@@ -1,9 +1,10 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { GameBoard } from '@/components/game/GameBoard';
+import { TestMap, TestRouteState } from '@/components/game/TestMap';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { RotateCcw, Users, Zap, Trophy, CreditCard, Train } from 'lucide-react';
+import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map } from 'lucide-react';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -11,12 +12,15 @@ import {
   createTrainCardDeck, 
   shuffleArray 
 } from '@/data/europeMap';
+import { TEST_CITIES, TEST_ROUTES, TEST_DESTINATION_TICKETS } from '@/data/testMap';
 import { 
   GameState, 
   TrainCardType, 
   DestinationTicket,
   Player,
   PlayerColor,
+  City,
+  Route,
   INITIAL_TRAINS,
   INITIAL_TRAIN_CARDS,
 } from '@/types/game';
@@ -24,19 +28,73 @@ import {
 const SANDBOX_PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
 const ALL_CARD_TYPES: TrainCardType[] = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black', 'locomotive'];
 
+type MapType = 'europe' | 'test';
+
+// Convert test map data to game format
+const convertTestCitiesToGame = (): City[] => {
+  return TEST_CITIES.map(c => ({
+    id: c.id,
+    name: c.name,
+    x: c.x,
+    y: c.y,
+  }));
+};
+
+const convertTestRoutesToGame = (): Route[] => {
+  return TEST_ROUTES.map(r => ({
+    id: r.id,
+    cities: [r.from, r.to] as [string, string],
+    length: r.length,
+    color: r.color as Route['color'],
+    isTunnel: r.type === 'tunnel',
+    ferryLocomotives: r.ferryLocomotives,
+    parallelRouteId: r.parallel === 1 ? TEST_ROUTES.find(
+      pr => pr.from === r.from && pr.to === r.to && pr.parallel === 0
+    )?.id : undefined,
+  }));
+};
+
+const convertTestTicketsToGame = (): DestinationTicket[] => {
+  return TEST_DESTINATION_TICKETS.map(t => ({
+    id: t.id,
+    cities: [t.from, t.to] as [string, string],
+    points: t.points,
+    isLongRoute: t.isLongRoute,
+  }));
+};
+
 const TestSandbox = () => {
-  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores } = useGameStore();
+  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores, claimRoute, canClaimRoute } = useGameStore();
   const [infiniteCards, setInfiniteCards] = useState(false);
+  const [mapType, setMapType] = useState<MapType>('test');
+
+  // Get cities/routes based on map type
+  const getMapData = useCallback((type: MapType) => {
+    if (type === 'test') {
+      return {
+        cities: convertTestCitiesToGame(),
+        routes: convertTestRoutesToGame(),
+        destinations: convertTestTicketsToGame(),
+      };
+    }
+    return {
+      cities: EUROPE_CITIES,
+      routes: EUROPE_ROUTES.map(r => ({ ...r })),
+      destinations: [...DESTINATION_TICKETS],
+    };
+  }, []);
 
   // Initialize sandbox game with specified number of players
-  const initializeSandbox = useCallback((playerCount: number = 2) => {
+  const initializeSandbox = useCallback((playerCount: number = 2, useMapType?: MapType) => {
     const sandboxRoomId = 'sandbox-test-room';
     const sandboxPlayerId = 'sandbox-player-1';
+    const currentMapType = useMapType ?? mapType;
+    const mapData = getMapData(currentMapType);
     
     // Create sandbox players
     const players: Player[] = [];
     let trainDeck = shuffleArray(createTrainCardDeck()) as TrainCardType[];
-    let destinationDeck = shuffleArray([...DESTINATION_TICKETS]);
+    let destinationDeck = shuffleArray([...mapData.destinations]);
 
     for (let i = 0; i < playerCount; i++) {
       const initialCards: TrainCardType[] = [];
@@ -83,14 +141,14 @@ const TestSandbox = () => {
       trainCardDiscard: [],
       faceUpCards,
       destinationDeck,
-      cities: EUROPE_CITIES,
-      routes: EUROPE_ROUTES.map(route => ({ ...route })),
+      cities: mapData.cities,
+      routes: mapData.routes,
       turnNumber: 1,
       logs: [
         {
           id: crypto.randomUUID(),
           action: '🧪 Песочница запущена',
-          details: `${playerCount} игроков`,
+          details: `${playerCount} игроков • ${currentMapType === 'test' ? 'Тестовая карта' : 'Европа'}`,
           timestamp: new Date(),
         },
       ],
@@ -111,7 +169,13 @@ const TestSandbox = () => {
 
     setLocalPlayerId(sandboxPlayerId);
     setGameState(sandboxState);
-  }, [setCurrentRoom, setLocalPlayerId, setGameState]);
+  }, [setCurrentRoom, setLocalPlayerId, setGameState, mapType, getMapData]);
+
+  // Switch map type
+  const handleMapTypeChange = useCallback((type: MapType) => {
+    setMapType(type);
+    initializeSandbox(gameState?.players.length || 2, type);
+  }, [gameState?.players.length, initializeSandbox]);
 
   // Switch to control a different player
   const switchToPlayer = useCallback((playerId: string) => {
@@ -287,6 +351,103 @@ const TestSandbox = () => {
     }
   }, [gameState, initializeSandbox]);
 
+  // Build route states for TestMap
+  const testRouteStates = useMemo<Record<string, TestRouteState>>(() => {
+    if (!gameState || mapType !== 'test') return {};
+    
+    const states: Record<string, TestRouteState> = {};
+    for (const route of gameState.routes) {
+      const claimingPlayer = route.claimedBy 
+        ? gameState.players.find(p => p.id === route.claimedBy)
+        : undefined;
+      
+      states[route.id] = {
+        claimedBy: route.claimedBy,
+        claimedByColor: claimingPlayer?.color,
+        selectable: canClaimRoute(route.id),
+        disabled: gameState.currentPlayerId !== localPlayerId,
+        highlighted: false,
+      };
+    }
+    return states;
+  }, [gameState, mapType, localPlayerId, canClaimRoute]);
+
+  // Handle route click on test map
+  const handleTestMapRouteClick = useCallback((routeId: string) => {
+    if (!gameState || !localPlayerId) return;
+    if (gameState.currentPlayerId !== localPlayerId) return;
+    
+    // For now, just log it - actual claiming requires card selection
+    console.log('[TestMap] Route clicked:', routeId);
+    
+    // Find the route
+    const route = gameState.routes.find(r => r.id === routeId);
+    if (!route || route.claimedBy) return;
+    
+    // Check if player can claim
+    if (!canClaimRoute(routeId)) {
+      console.log('[TestMap] Cannot claim route - insufficient resources');
+      return;
+    }
+    
+    // For testing purposes - auto-claim with any cards
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player) return;
+    
+    // Get required cards (simplified - just take any matching)
+    const requiredLength = route.length;
+    const routeColor = route.color;
+    
+    // Build cards to use
+    const cardsToUse: TrainCardType[] = [];
+    const handCopy = [...player.trainCards];
+    
+    // First try to use matching color cards
+    if (routeColor !== 'gray') {
+      for (let i = handCopy.length - 1; i >= 0 && cardsToUse.length < requiredLength; i--) {
+        if (handCopy[i] === routeColor) {
+          cardsToUse.push(handCopy[i]);
+          handCopy.splice(i, 1);
+        }
+      }
+    }
+    
+    // Then use locomotives
+    for (let i = handCopy.length - 1; i >= 0 && cardsToUse.length < requiredLength; i--) {
+      if (handCopy[i] === 'locomotive') {
+        cardsToUse.push(handCopy[i]);
+        handCopy.splice(i, 1);
+      }
+    }
+    
+    // For gray routes or if not enough matching, use any single color
+    if (cardsToUse.length < requiredLength) {
+      const colorCounts: Record<string, number> = {};
+      for (const card of handCopy) {
+        if (card !== 'locomotive') {
+          colorCounts[card] = (colorCounts[card] || 0) + 1;
+        }
+      }
+      
+      // Find best color
+      const bestColor = Object.entries(colorCounts)
+        .sort(([, a], [, b]) => b - a)[0]?.[0] as TrainCardType | undefined;
+      
+      if (bestColor) {
+        for (let i = handCopy.length - 1; i >= 0 && cardsToUse.length < requiredLength; i--) {
+          if (handCopy[i] === bestColor) {
+            cardsToUse.push(handCopy[i]);
+            handCopy.splice(i, 1);
+          }
+        }
+      }
+    }
+    
+    if (cardsToUse.length >= requiredLength) {
+      claimRoute(routeId, cardsToUse.slice(0, requiredLength));
+    }
+  }, [gameState, localPlayerId, canClaimRoute, claimRoute]);
+
   if (!gameState) {
     return (
       <div className="min-h-screen parchment flex items-center justify-center">
@@ -307,6 +468,27 @@ const TestSandbox = () => {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🧪</span>
           <span className="font-display text-sm font-bold text-primary">Песочница</span>
+        </div>
+
+        {/* Map type selector */}
+        <div className="flex gap-1 mb-3">
+          <Button
+            variant={mapType === 'test' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleMapTypeChange('test')}
+            className="text-xs flex-1"
+          >
+            <Map className="w-3 h-3 mr-1" />
+            Тестовая
+          </Button>
+          <Button
+            variant={mapType === 'europe' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleMapTypeChange('europe')}
+            className="text-xs flex-1"
+          >
+            🌍 Европа
+          </Button>
         </div>
 
         {/* Player count buttons */}
@@ -457,8 +639,17 @@ const TestSandbox = () => {
         </div>
       </div>
 
-      {/* Game Board */}
-      <GameBoard />
+      {/* Map / Game Board */}
+      {mapType === 'test' ? (
+        <div className="w-screen h-screen">
+          <TestMap 
+            routeStates={testRouteStates}
+            onRouteClick={handleTestMapRouteClick}
+          />
+        </div>
+      ) : (
+        <GameBoard />
+      )}
     </div>
   );
 };
