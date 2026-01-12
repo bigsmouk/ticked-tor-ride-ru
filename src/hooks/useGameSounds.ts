@@ -138,3 +138,65 @@ export const playTurnNotificationSound = () => {
     console.log('Audio not available:', e);
   }
 };
+
+// Player joined sound - welcoming chime (ascending)
+export const playPlayerJoinSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    // Ascending welcoming notes
+    const notes = [440, 554.37, 659.25]; // A4, C#5, E5 (A major chord arpeggio)
+    
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, now + i * 0.08);
+      osc.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, now + i * 0.08);
+      gainNode.gain.linearRampToValueAtTime(0.1, now + i * 0.08 + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.25);
+      
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.3);
+    });
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};
+
+// Player left sound - descending notification
+export const playPlayerLeaveSound = () => {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    // Descending notes (minor feel)
+    const notes = [523.25, 392, 329.63]; // C5, G4, E4 (descending)
+    
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, now + i * 0.1);
+      osc.type = 'triangle';
+      
+      gainNode.gain.setValueAtTime(0, now + i * 0.1);
+      gainNode.gain.linearRampToValueAtTime(0.08, now + i * 0.1 + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
+      
+      osc.start(now + i * 0.1);
+      osc.stop(now + i * 0.1 + 0.25);
+    });
+  } catch (e) {
+    console.log('Audio not available:', e);
+  }
+};
