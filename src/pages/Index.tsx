@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
 
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, isLoading, isReady } = useMultiplayer();
+  const { isRecovering, hasSession } = useSessionRecovery();
   const [playerName, setPlayerName] = useState('');
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+
+  // Показываем загрузку пока идёт восстановление сессии
+  if (isRecovering) {
+    return (
+      <div className="min-h-screen parchment flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">🚂</div>
+          <p className="font-display text-lg text-muted-foreground">Восстановление сессии...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Показываем загрузку пока аутентификация не завершена
   if (!isReady) {
