@@ -57,6 +57,12 @@ export const useMultiplayer = () => {
 
   // Создание комнаты
   const createRoom = useCallback(async (roomName: string, playerName: string) => {
+    // Требуем авторизацию для создания комнаты
+    if (!user) {
+      toast.error('Войдите в аккаунт для создания комнаты');
+      return null;
+    }
+
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -155,6 +161,12 @@ export const useMultiplayer = () => {
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
+    // Требуем авторизацию для присоединения к комнате
+    if (!user) {
+      toast.error('Войдите в аккаунт для присоединения к комнате');
+      return null;
+    }
+
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
