@@ -34,7 +34,7 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile, uploadAvatar, signOut } = useAuth();
+  const { user, profile, profileLoading, refreshProfile, updateProfile, uploadAvatar, signOut } = useAuth();
   const { matches, stats, loading: historyLoading, fetchMatchHistory, fetchPlayerStats, clearMatchHistory } = useMatchHistory();
   
   const [displayName, setDisplayName] = useState('');
@@ -113,7 +113,49 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     }
   };
 
-  if (!profile) return null;
+  if (!user) return null;
+
+  if (!profile) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-lg bg-amber-50 border-amber-900/30 max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-amber-900 text-center">
+              🎫 Профиль игрока
+            </DialogTitle>
+            <DialogDescription className="text-center text-amber-700">
+              {profileLoading ? 'Загружаем профиль…' : 'Профиль пока не загрузился'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 text-center text-amber-800">
+            <div className="text-4xl mb-3">🚂</div>
+            <p className="text-sm">Если это висит долго — нажмите «Повторить».</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() => refreshProfile()}
+              className="w-full bg-amber-700 hover:bg-amber-800 text-white"
+              disabled={profileLoading}
+            >
+              {profileLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Повторить загрузку'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await signOut();
+                onClose();
+              }}
+              className="w-full border-red-300 text-red-700 hover:bg-red-50"
+            >
+              Выйти из аккаунта
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -8,6 +8,7 @@ import { DestinationPickerModal } from '@/components/game/DestinationPickerModal
 import { GameOverModal } from '@/components/game/GameOverModal';
 import { GameLog } from '@/components/game/GameLog';
 import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
+import { AuthControls } from '@/components/auth/AuthControls';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSyncContext } from '@/contexts/gameSyncContext';
@@ -204,6 +205,7 @@ export const GameBoard: React.FC = () => {
             lastSyncTime={lastSyncTime} 
           />
           <div className="text-sm">Ход: {gameState.turnNumber}</div>
+          <AuthControls />
         </div>
       </header>
 

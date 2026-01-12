@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { usePresence } from '@/hooks/usePresence';
+import { AuthControls } from '@/components/auth/AuthControls';
 import { Copy, Users, Crown, Check, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 const WaitingRoom = () => {
@@ -84,7 +85,7 @@ const WaitingRoom = () => {
         <h1 className="font-display text-2xl font-bold text-primary-foreground">
           🚂 Комната ожидания
         </h1>
-        <div className="w-24" />
+        <AuthControls />
       </header>
 
       {/* Main content */}
