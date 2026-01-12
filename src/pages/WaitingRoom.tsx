@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { usePresence } from '@/hooks/usePresence';
+import { useAuth } from '@/hooks/useAuth';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Copy, Users, Crown, Check, Wifi, WifiOff } from 'lucide-react';
+import { Copy, Users, Crown, Check, Wifi, WifiOff, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 const WaitingRoom = () => {
   const navigate = useNavigate();
-  const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
+  const { currentRoom, localPlayerId, leaveRoom, initializeGame, setCurrentRoom } = useGameStore();
   const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb } = useMultiplayer();
+  const { profile, uploadAvatar } = useAuth();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
@@ -70,6 +75,52 @@ const WaitingRoom = () => {
     blue: 'bg-player-blue',
     green: 'bg-player-green',
     yellow: 'bg-player-yellow',
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentRoom || !localPlayerId) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Файл слишком большой (макс. 2MB)');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const { error, url } = await uploadAvatar(file);
+      
+      if (error || !url) {
+        toast.error('Ошибка загрузки аватара');
+        return;
+      }
+
+      // Обновляем avatar_url в room_players
+      const { error: updateError } = await supabase
+        .from('room_players')
+        .update({ avatar_url: url })
+        .eq('room_id', currentRoom.id)
+        .eq('player_id', localPlayerId);
+
+      if (updateError) {
+        console.error('Error updating room player avatar:', updateError);
+      }
+
+      // Обновляем локальное состояние
+      setCurrentRoom({
+        ...currentRoom,
+        players: currentRoom.players.map(p => 
+          p.id === localPlayerId ? { ...p, avatarUrl: url } : p
+        ),
+      });
+
+      toast.success('Аватар обновлён');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -141,26 +192,53 @@ const WaitingRoom = () => {
                     }`}
                   >
                     {/* Player color / avatar */}
-                    {player.avatarUrl ? (
-                      <img
-                        src={player.avatarUrl}
-                        alt=""
-                        className={`w-10 h-10 rounded-full object-cover ring-2 ring-offset-2 ${
-                          player.color === 'red' ? 'ring-player-red' :
-                          player.color === 'blue' ? 'ring-player-blue' :
-                          player.color === 'green' ? 'ring-player-green' :
-                          'ring-player-yellow'
-                        }`}
-                      />
-                    ) : (
-                      <div
-                        className={`w-10 h-10 rounded-full ${playerColors[player.color]} flex items-center justify-center`}
-                      >
-                        <span className="text-white font-bold text-lg">
-                          {player.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                    <div className="relative">
+                      {player.avatarUrl ? (
+                        <img
+                          src={player.avatarUrl}
+                          alt=""
+                          className={`w-10 h-10 rounded-full object-cover ring-2 ring-offset-2 ${
+                            player.color === 'red' ? 'ring-player-red' :
+                            player.color === 'blue' ? 'ring-player-blue' :
+                            player.color === 'green' ? 'ring-player-green' :
+                            'ring-player-yellow'
+                          }`}
+                        />
+                      ) : (
+                        <div
+                          className={`w-10 h-10 rounded-full ${playerColors[player.color]} flex items-center justify-center`}
+                        >
+                          <span className="text-white font-bold text-lg">
+                            {player.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Кнопка смены аватара для локального игрока */}
+                      {player.id === localPlayerId && (
+                        <>
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                            className="absolute -bottom-1 -right-1 p-1 bg-amber-700 text-white rounded-full hover:bg-amber-800 disabled:opacity-50"
+                            title="Изменить аватар"
+                          >
+                            {uploadingAvatar ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Camera className="h-3 w-3" />
+                            )}
+                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
+                        </>
+                      )}
+                    </div>
 
                     {/* Player info */}
                     <div className="flex-1">
