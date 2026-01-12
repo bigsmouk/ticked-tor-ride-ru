@@ -158,6 +158,14 @@ export const useGameSync = (roomId: string | null) => {
       .subscribe(async (status) => {
         console.log('[GameSync] Subscription status:', status);
         if (status === 'SUBSCRIBED') {
+          // ВАЖНО: все клиенты должны "track"-аться в presence, иначе sync может не сработать
+          if (!isHostRef.current) {
+            await channel.track({
+              updatedAt: Date.now(),
+              isHost: false,
+            });
+          }
+
           // Если мы хост и есть состояние игры, транслируем его
           const currentGameState = useGameStore.getState().gameState;
           if (isHostRef.current && currentGameState) {

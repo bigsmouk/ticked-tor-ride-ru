@@ -209,11 +209,19 @@ export const useSessionRecovery = () => {
 
   // Автоматическая попытка восстановления при загрузке
   useEffect(() => {
-    // Только на главной странице или если нет текущей комнаты
-    if (localPlayerId && !currentRoom && !hasAttemptedRecovery && location.pathname === '/') {
+    const skipAutoRecovery = new URLSearchParams(location.search).has('noRecover');
+
+    // Только на главной странице и только если явно не отключили восстановление
+    if (
+      !skipAutoRecovery &&
+      localPlayerId &&
+      !currentRoom &&
+      !hasAttemptedRecovery &&
+      location.pathname === '/'
+    ) {
       attemptRecovery();
     }
-  }, [localPlayerId, currentRoom, hasAttemptedRecovery, location.pathname, attemptRecovery]);
+  }, [localPlayerId, currentRoom, hasAttemptedRecovery, location.pathname, location.search, attemptRecovery]);
 
   return {
     isRecovering,
