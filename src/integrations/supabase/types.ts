@@ -338,7 +338,10 @@ export type Database = {
           id: string
         }[]
       }
+      is_in_same_room: { Args: { _profile_id: string }; Returns: boolean }
+      is_match_participant: { Args: { _match_id: string }; Returns: boolean }
       is_room_member: { Args: { p_room_id: string }; Returns: boolean }
+      is_room_participant: { Args: { _room_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
