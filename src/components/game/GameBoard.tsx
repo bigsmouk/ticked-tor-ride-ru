@@ -7,6 +7,7 @@ import { ActionPanel } from '@/components/game/ActionPanel';
 import { DestinationPickerModal } from '@/components/game/DestinationPickerModal';
 import { GameOverModal } from '@/components/game/GameOverModal';
 import { GameLog } from '@/components/game/GameLog';
+import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
 import { useGameSync, GameAction } from '@/hooks/useGameSync';
@@ -29,8 +30,8 @@ export const GameBoard: React.FC = () => {
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   
-  // Получаем функцию синхронизации
-  const { sendActionToHost, isHost } = useGameSync(currentRoom?.id || null);
+  // Получаем функцию синхронизации и статус подключения
+  const { sendActionToHost, isHost, connectionStatus, lastSyncTime } = useGameSync(currentRoom?.id || null);
   
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
@@ -204,7 +205,14 @@ export const GameBoard: React.FC = () => {
       {/* Header */}
       <header className="h-12 px-4 flex items-center justify-between bg-primary text-primary-foreground border-b-2 border-gold">
         <h1 className="font-display font-bold text-lg">Ticket to Ride: Европа</h1>
-        <div className="text-sm">Ход: {gameState.turnNumber}</div>
+        <div className="flex items-center gap-4">
+          <ConnectionIndicator 
+            status={connectionStatus} 
+            isHost={isHost} 
+            lastSyncTime={lastSyncTime} 
+          />
+          <div className="text-sm">Ход: {gameState.turnNumber}</div>
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
