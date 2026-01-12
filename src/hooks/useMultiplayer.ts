@@ -5,6 +5,7 @@ import { Player, PlayerColor } from '@/types/game';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { saveSession, clearSession } from './useSessionRecovery';
+import { useAuth } from './useAuth';
 
 const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
 
@@ -45,6 +46,7 @@ export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
+  const { user } = useAuth();
 
   const playerId = getOrCreatePlayerId();
 
@@ -82,13 +84,14 @@ export const useMultiplayer = () => {
     try {
       const roomCode = generateRoomCode();
 
-      // Создаём комнату в базе
+      // Создаём комнату в базе с привязкой к auth.uid() если пользователь авторизован
       const { data: room, error: roomError } = await supabase
         .from('rooms')
         .insert({
           code: roomCode,
           name: validatedRoomName,
           host_id: playerId,
+          owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
           status: 'waiting',
           max_players: 4,
           is_private: false,
@@ -147,7 +150,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, setCurrentRoom, setView]);
+  }, [playerId, user, setCurrentRoom, setView]);
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
