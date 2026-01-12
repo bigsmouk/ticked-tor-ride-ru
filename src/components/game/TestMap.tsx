@@ -366,103 +366,124 @@ export const TestMap: React.FC<TestMapProps> = ({
                 />
                 
                 {isClaimed && claimedColor ? (
-                  // Claimed route - show as dashed line in player color
-                  <>
-                    {/* Outer glow/shadow for visibility */}
-                    <line
-                      x1={startX}
-                      y1={startY}
-                      x2={endX}
-                      y2={endY}
-                      stroke="rgba(0,0,0,0.4)"
-                      strokeWidth={20}
-                      strokeLinecap="round"
-                    />
-                    {/* White outline for contrast */}
-                    <line
-                      x1={startX}
-                      y1={startY}
-                      x2={endX}
-                      y2={endY}
-                      stroke="rgba(255,255,255,0.8)"
-                      strokeWidth={16}
-                      strokeLinecap="round"
-                    />
-                    {/* Player colored dashed line */}
-                    <line
-                      x1={startX}
-                      y1={startY}
-                      x2={endX}
-                      y2={endY}
-                      stroke={claimedColor}
-                      strokeWidth={10}
-                      strokeLinecap="round"
-                      strokeDasharray="24 12"
-                      filter="url(#test-claimed-glow)"
-                      className="claimed-route-line"
-                    />
-                    {/* Start and end markers */}
-                    <circle
-                      cx={startX}
-                      cy={startY}
-                      r={8}
-                      fill={claimedColor}
-                      stroke="white"
-                      strokeWidth={3}
-                    />
-                    <circle
-                      cx={endX}
-                      cy={endY}
-                      r={8}
-                      fill={claimedColor}
-                      stroke="white"
-                      strokeWidth={3}
-                    />
-                  </>
+                  // Claimed route - show as dashed line through all wagon segments
+                  (() => {
+                    // Build path through cities and all wagon segments
+                    const allPoints = [
+                      { x: startX, y: startY },
+                      ...segments.map(s => ({ x: s.x, y: s.y })),
+                      { x: endX, y: endY }
+                    ];
+                    const pathD = allPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                    
+                    return (
+                      <>
+                        {/* Outer glow/shadow for visibility */}
+                        <path
+                          d={pathD}
+                          stroke="rgba(0,0,0,0.4)"
+                          strokeWidth={20}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {/* White outline for contrast */}
+                        <path
+                          d={pathD}
+                          stroke="rgba(255,255,255,0.8)"
+                          strokeWidth={16}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {/* Player colored dashed line */}
+                        <path
+                          d={pathD}
+                          stroke={claimedColor}
+                          strokeWidth={10}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeDasharray="24 12"
+                          filter="url(#test-claimed-glow)"
+                          className="claimed-route-line"
+                        />
+                        {/* Start and end markers */}
+                        <circle
+                          cx={startX}
+                          cy={startY}
+                          r={8}
+                          fill={claimedColor}
+                          stroke="white"
+                          strokeWidth={3}
+                        />
+                        <circle
+                          cx={endX}
+                          cy={endY}
+                          r={8}
+                          fill={claimedColor}
+                          stroke="white"
+                          strokeWidth={3}
+                        />
+                      </>
+                    );
+                  })()
                 ) : (
                   // Unclaimed route - show wagon slots
                   <>
                     {/* Pulsing highlight for selectable routes */}
-                    {isSelectable && (
-                      <line
-                        x1={startX}
-                        y1={startY}
-                        x2={endX}
-                        y2={endY}
-                        stroke="#fbbf24"
-                        strokeWidth={22}
-                        strokeLinecap="round"
-                        className="route-claimable-line"
-                      />
-                    )}
-                    
-                    {/* Route background line */}
-                    <line
-                      x1={startX}
-                      y1={startY}
-                      x2={endX}
-                      y2={endY}
-                      stroke={isSelected || isHighlighted ? '#fbbf24' : '#78716c'}
-                      strokeWidth={isSelected || isHighlighted ? 20 : 16}
-                      strokeLinecap="round"
-                      opacity={isSelected || isHighlighted ? 1 : isSelectable ? 0.6 : 0.5}
-                      filter={isHovered ? 'url(#test-hover-glow)' : undefined}
-                    />
-                    
-                    {/* Tunnel/Ferry indicator on the line */}
-                    {route.type === 'tunnel' && (
-                      <line
-                        x1={startX}
-                        y1={startY}
-                        x2={endX}
-                        y2={endY}
-                        stroke={color}
-                        strokeWidth={12}
-                        strokeLinecap="round"
-                        strokeDasharray="20 10"
-                        opacity={0.8}
-                      />
-                    )}
+                    {(() => {
+                      // Build path through cities and all wagon segments
+                      const allPoints = [
+                        { x: startX, y: startY },
+                        ...segments.map(s => ({ x: s.x, y: s.y })),
+                        { x: endX, y: endY }
+                      ];
+                      const pathD = allPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                      
+                      return (
+                        <>
+                          {/* Pulsing highlight for selectable routes */}
+                          {isSelectable && (
+                            <path
+                              d={pathD}
+                              stroke="#fbbf24"
+                              strokeWidth={22}
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="route-claimable-line"
+                            />
+                          )}
+                          
+                          {/* Route background line */}
+                          <path
+                            d={pathD}
+                            stroke={isSelected || isHighlighted ? '#fbbf24' : '#78716c'}
+                            strokeWidth={isSelected || isHighlighted ? 20 : 16}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity={isSelected || isHighlighted ? 1 : isSelectable ? 0.6 : 0.5}
+                            filter={isHovered ? 'url(#test-hover-glow)' : undefined}
+                          />
+                          
+                          {/* Tunnel/Ferry indicator on the line */}
+                          {route.type === 'tunnel' && (
+                            <path
+                              d={pathD}
+                              stroke={color}
+                              strokeWidth={12}
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeDasharray="20 10"
+                              opacity={0.8}
+                            />
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {/* Individual wagon segments */}
                     {segments.map((seg, i) => {

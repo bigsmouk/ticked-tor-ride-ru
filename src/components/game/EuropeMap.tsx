@@ -49,15 +49,24 @@ const getRoutePath = (
   // Check if we have calibrated positions for this route
   const calibrated = ROUTE_WAGON_POSITIONS[route.id];
   if (calibrated && calibrated.length === route.length) {
-    // Use calibrated positions
-    const pathPoints = calibrated.map(w => `${w.x} ${w.y}`);
-    const startPos = { x: calibrated[0].x, y: calibrated[0].y };
-    const endPos = { x: calibrated[calibrated.length - 1].x, y: calibrated[calibrated.length - 1].y };
+    // Use calibrated positions - path goes through all wagon centers
+    const startCity = getCityPosition(route.cities[0], cities);
+    const endCity = getCityPosition(route.cities[1], cities);
+    
+    // Build path that goes: city -> first wagon -> ... -> last wagon -> city
+    const allPoints = [
+      startCity,
+      ...calibrated.map(w => ({ x: w.x, y: w.y })),
+      endCity
+    ];
+    
+    const pathPoints = allPoints.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`);
+    
     return {
-      path: `M ${pathPoints.join(' L ')}`,
+      path: pathPoints.join(' '),
       segments: calibrated.map(w => ({ x: w.x, y: w.y, angle: w.angle })),
-      startPos,
-      endPos,
+      startPos: startCity,
+      endPos: endCity,
     };
   }
   
@@ -98,8 +107,16 @@ const getRoutePath = (
     });
   }
   
+  // Build path through all segment centers for consistency
+  const allPoints = [
+    { x: startX, y: startY },
+    ...segments.map(s => ({ x: s.x, y: s.y })),
+    { x: endX, y: endY }
+  ];
+  const pathPoints = allPoints.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`);
+  
   return {
-    path: `M ${startX} ${startY} L ${endX} ${endY}`,
+    path: pathPoints.join(' '),
     segments,
     startPos: { x: startX, y: startY },
     endPos: { x: endX, y: endY },
