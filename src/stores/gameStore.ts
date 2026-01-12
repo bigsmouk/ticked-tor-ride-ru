@@ -10,6 +10,7 @@ import {
   TurnAction,
   PlayerColor,
   GameLogEntry,
+  KickVote,
   ROUTE_POINTS,
   INITIAL_TRAINS,
   INITIAL_TRAIN_CARDS,
@@ -23,6 +24,8 @@ import {
   createTrainCardDeck, 
   shuffleArray 
 } from '@/data/europeMap';
+
+const KICK_VOTE_DURATION_MS = 30000; // 30 seconds
 
 // Helper to create log entry
 const createLog = (playerId: string | undefined, action: string, details?: string): GameLogEntry => ({
@@ -67,6 +70,12 @@ interface GameStore {
   calculateFinalScores: () => void;
   addLog: (playerId: string | undefined, action: string, details?: string) => void;
   removePlayer: (playerId: string, playerName: string) => void;
+  
+  // Kick voting actions
+  initiateKickVote: (targetPlayerId: string, initiatorId: string) => void;
+  castKickVote: (voterId: string, approve: boolean) => void;
+  resolveKickVote: () => void;
+  cancelKickVote: () => void;
   
   // Helpers
   canClaimRoute: (routeId: string) => boolean;
@@ -993,9 +1002,170 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!hasEnough) return 'Недостаточно карт одного цвета';
     } else {
       const colorCount = cardCounts[route.color] || 0;
-      if (colorCount + locomotives < route.length) return 'Недостаточно карт нужного цвета';
+    if (colorCount + locomotives < route.length) return 'Недостаточно карт нужного цвета';
     }
     
     return null;
+  },
+  
+  initiateKickVote: (targetPlayerId, initiatorId) => {
+    const { gameState } = get();
+    if (!gameState) return;
+    
+    // Cannot start a vote if one is already active
+    if (gameState.activeKickVote) return;
+    
+    const targetPlayer = gameState.players.find(p => p.id === targetPlayerId);
+    if (!targetPlayer) return;
+    
+    const kickVote: KickVote = {
+      targetPlayerId,
+      targetPlayerName: targetPlayer.name,
+      initiatorId,
+      votes: {},
+      expiresAt: Date.now() + KICK_VOTE_DURATION_MS,
+    };
+    
+    set({
+      gameState: {
+        ...gameState,
+        activeKickVote: kickVote,
+        logs: [
+          ...gameState.logs,
+          createLog(initiatorId, 'Инициировал голосование', `Исключение: ${targetPlayer.name}`),
+        ],
+      },
+    });
+  },
+  
+  castKickVote: (voterId, approve) => {
+    const { gameState } = get();
+    if (!gameState || !gameState.activeKickVote) return;
+    
+    // Cannot vote if already voted
+    if (gameState.activeKickVote.votes[voterId] !== undefined) return;
+    
+    // Cannot vote for yourself
+    if (voterId === gameState.activeKickVote.targetPlayerId) return;
+    
+    const newVotes = {
+      ...gameState.activeKickVote.votes,
+      [voterId]: approve,
+    };
+    
+    set({
+      gameState: {
+        ...gameState,
+        activeKickVote: {
+          ...gameState.activeKickVote,
+          votes: newVotes,
+        },
+      },
+    });
+    
+    // Check if all eligible voters have voted
+    const eligibleVoters = gameState.players.filter(
+      p => p.id !== gameState.activeKickVote!.targetPlayerId
+    );
+    const votedCount = Object.keys(newVotes).length;
+    
+    if (votedCount >= eligibleVoters.length) {
+      // All votes are in, resolve immediately
+      setTimeout(() => get().resolveKickVote(), 100);
+    }
+  },
+  
+  resolveKickVote: () => {
+    const { gameState, currentRoom } = get();
+    if (!gameState || !gameState.activeKickVote) return;
+    
+    const { targetPlayerId, targetPlayerName, votes } = gameState.activeKickVote;
+    
+    // Count votes
+    const voteEntries = Object.entries(votes);
+    const approveCount = voteEntries.filter(([, v]) => v).length;
+    const rejectCount = voteEntries.filter(([, v]) => !v).length;
+    
+    // Majority wins (more approves than rejects)
+    const kickApproved = approveCount > rejectCount;
+    
+    if (kickApproved) {
+      // Remove the player
+      const playerIndex = gameState.players.findIndex(p => p.id === targetPlayerId);
+      const wasActive = gameState.currentPlayerId === targetPlayerId;
+      const updatedPlayers = gameState.players.filter(p => p.id !== targetPlayerId);
+      
+      if (updatedPlayers.length < 2) {
+        set({
+          gameState: {
+            ...gameState,
+            phase: 'finished',
+            players: updatedPlayers,
+            activeKickVote: undefined,
+            logs: [
+              ...gameState.logs,
+              createLog(undefined, 'Голосование завершено', `${targetPlayerName} исключён (${approveCount}:${rejectCount})`),
+              createLog(undefined, 'Игра завершена', 'Недостаточно игроков'),
+            ],
+          },
+        });
+        return;
+      }
+      
+      // Determine new current player if needed
+      let newCurrentPlayerId = gameState.currentPlayerId;
+      if (wasActive) {
+        const newIndex = playerIndex % updatedPlayers.length;
+        newCurrentPlayerId = updatedPlayers[newIndex].id;
+        updatedPlayers[newIndex] = { ...updatedPlayers[newIndex], isActive: true };
+      }
+      
+      set({
+        gameState: {
+          ...gameState,
+          players: updatedPlayers,
+          currentPlayerId: newCurrentPlayerId,
+          currentAction: wasActive ? 'none' : gameState.currentAction,
+          activeKickVote: undefined,
+          logs: [
+            ...gameState.logs,
+            createLog(undefined, 'Голосование завершено', `${targetPlayerName} исключён (${approveCount}:${rejectCount})`),
+            ...(wasActive ? [createLog(newCurrentPlayerId, 'Начинает ход', 'После исключения игрока')] : []),
+          ],
+        },
+        currentRoom: currentRoom ? {
+          ...currentRoom,
+          players: updatedPlayers,
+        } : null,
+      });
+    } else {
+      // Vote failed
+      set({
+        gameState: {
+          ...gameState,
+          activeKickVote: undefined,
+          logs: [
+            ...gameState.logs,
+            createLog(undefined, 'Голосование завершено', `${targetPlayerName} остаётся (${approveCount}:${rejectCount})`),
+          ],
+        },
+      });
+    }
+  },
+  
+  cancelKickVote: () => {
+    const { gameState } = get();
+    if (!gameState || !gameState.activeKickVote) return;
+    
+    set({
+      gameState: {
+        ...gameState,
+        activeKickVote: undefined,
+        logs: [
+          ...gameState.logs,
+          createLog(undefined, 'Голосование отменено', 'Время истекло'),
+        ],
+      },
+    });
   },
 }));

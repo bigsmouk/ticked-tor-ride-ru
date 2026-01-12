@@ -80,6 +80,15 @@ export interface GameRoom {
   createdAt: Date;
 }
 
+// Kick vote
+export interface KickVote {
+  targetPlayerId: string;
+  targetPlayerName: string;
+  initiatorId: string;
+  votes: Record<string, boolean>; // playerId -> approve/reject
+  expiresAt: number; // timestamp
+}
+
 // Main game state
 export interface GameState {
   roomId: string;
@@ -109,6 +118,9 @@ export interface GameState {
   // Winner info
   winnerId?: string;
   finalScores?: { playerId: string; score: number; longestPath: number }[];
+  
+  // Kick voting
+  activeKickVote?: KickVote;
 }
 
 // Chat message
