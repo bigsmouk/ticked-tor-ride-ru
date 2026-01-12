@@ -8,7 +8,13 @@ import { RulesModal } from '@/components/game/RulesModal';
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, isLoading, isReady } = useMultiplayer();
-  const { isRecovering, hasSession } = useSessionRecovery();
+  const {
+    isRecovering,
+    showRecoveryPrompt,
+    savedSessionData,
+    attemptRecovery,
+    dismissRecovery,
+  } = useSessionRecovery();
   const [playerName, setPlayerName] = useState('');
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -35,6 +41,59 @@ const Index = () => {
           <div className="animate-spin text-4xl mb-4">🚂</div>
           <p className="font-display text-lg text-muted-foreground">Подключение к серверу...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Показываем prompt для восстановления сессии
+  if (showRecoveryPrompt && savedSessionData) {
+    return (
+      <div className="min-h-screen parchment flex flex-col">
+        {/* Header */}
+        <header className="py-6 text-center border-b-4 border-ornament bg-primary">
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
+            🚂 Железнодорожное Приключение
+          </h1>
+          <p className="font-display text-xl text-gold mt-2">ЕВРОПА</p>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-md w-full">
+            <div className="ornate-frame bg-card rounded-lg p-8 text-center">
+              <div className="text-5xl mb-4">🎮</div>
+              <h2 className="font-display text-2xl font-bold mb-2 text-foreground">
+                У вас есть активная игра
+              </h2>
+              <p className="text-muted-foreground mb-2">
+                Игрок: <strong className="text-foreground">{savedSessionData.playerName}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Код комнаты: <span className="font-mono text-primary">{savedSessionData.roomCode}</span>
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  className="btn-gold w-full rounded-lg py-4 text-lg"
+                  onClick={attemptRecovery}
+                >
+                  🚂 Вернуться в игру
+                </button>
+                <button
+                  className="btn-vintage w-full rounded-lg py-3"
+                  onClick={dismissRecovery}
+                >
+                  🏠 Остаться на главной
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-4 text-center text-sm text-muted-foreground border-t border-ornament space-y-1">
+          <p>Создатель: <strong>Симинеев Тимур</strong></p>
+          <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
+        </footer>
       </div>
     );
   }
