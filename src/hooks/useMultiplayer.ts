@@ -111,6 +111,7 @@ export const useMultiplayer = () => {
           color: PLAYER_COLORS[0],
           is_ready: true,
           is_host: true,
+          owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
         });
 
       if (playerError) throw playerError;
@@ -216,6 +217,7 @@ export const useMultiplayer = () => {
             color: availableColor,
             is_ready: true,
             is_host: false,
+            owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
           });
 
         if (joinError) throw joinError;
@@ -268,7 +270,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, setCurrentRoom, setView]);
+  }, [playerId, user, setCurrentRoom, setView]);
 
   // Выход из комнаты
   const leaveRoom = useCallback(async (roomId: string) => {
