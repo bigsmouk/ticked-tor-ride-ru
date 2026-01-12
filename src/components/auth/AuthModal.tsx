@@ -47,11 +47,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, displayName.trim());
+        const { error, data } = await signUp(email, password, displayName.trim());
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Аккаунт создан! Добро пожаловать!');
+          // Check if email confirmation is required
+          if (data?.user && !data.session) {
+            toast.success('📧 Проверьте почту!', {
+              description: 'Мы отправили ссылку для подтверждения на ' + email,
+              duration: 10000,
+            });
+          } else {
+            toast.success('Аккаунт создан! Добро пожаловать!');
+          }
           onClose();
         }
       }
