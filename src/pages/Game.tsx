@@ -13,11 +13,13 @@ const GameInner = () => {
   const { isRecovering } = useSessionRecovery();
   const isExitingRef = useRef(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+  const hasTriedDbRecoveryRef = useRef(false);
 
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
 
   // Доступ к одному общему каналу синхронизации (включая экран загрузки)
-  const { requestSync, isHost } = useGameSyncContext();
+  const { requestSync, isHost, restoreFromDb } = useGameSyncContext();
 
   const handleExitToHome = async () => {
     isExitingRef.current = true;
@@ -39,6 +41,25 @@ const GameInner = () => {
     requestSync();
   }, [roomId, isHost, requestSync]);
 
+  // Попытка восстановить из БД (для хоста)
+  const handleRestoreFromDb = useCallback(async () => {
+    if (!roomId) return;
+    setIsLoadingFromDb(true);
+    const success = await restoreFromDb();
+    setIsLoadingFromDb(false);
+    if (!success) {
+      console.log('[Game] Failed to restore from DB');
+    }
+  }, [roomId, restoreFromDb]);
+
+  // Автоматическое восстановление из БД для хоста
+  useEffect(() => {
+    if (isHost && !gameState && roomId && !hasTriedDbRecoveryRef.current && !isRecovering) {
+      hasTriedDbRecoveryRef.current = true;
+      handleRestoreFromDb();
+    }
+  }, [isHost, gameState, roomId, isRecovering, handleRestoreFromDb]);
+
   useEffect(() => {
     // Если идёт восстановление — ждём
     if (isRecovering) return;
@@ -56,12 +77,14 @@ const GameInner = () => {
   }, [currentRoom, navigate, isRecovering]);
 
   // Показываем загрузку пока восстанавливается сессия
-  if (isRecovering) {
+  if (isRecovering || isLoadingFromDb) {
     return (
       <div className="min-h-screen parchment flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="animate-spin text-4xl mb-4">🚂</div>
-          <p className="font-display text-lg text-foreground">Восстановление сессии...</p>
+          <p className="font-display text-lg text-foreground">
+            {isLoadingFromDb ? 'Загрузка из базы данных...' : 'Восстановление сессии...'}
+          </p>
           <p className="text-sm text-muted-foreground mt-2">
             Подключаемся к игре...
           </p>
@@ -78,12 +101,19 @@ const GameInner = () => {
           <p className="font-display text-lg text-foreground">Загрузка игры...</p>
           <p className="text-sm text-muted-foreground mt-2">
             {isHost
-              ? 'Состояние игры не найдено. Попробуйте перезагрузить страницу.'
+              ? 'Состояние игры не найдено в базе данных.'
               : 'Ждём состояние от хоста...'}
           </p>
 
           <div className="flex flex-col gap-3 mt-6">
-            {!isHost && (
+            {isHost ? (
+              <button
+                className="btn-vintage rounded-lg px-6 py-3"
+                onClick={handleRestoreFromDb}
+              >
+                🔄 Попробовать загрузить из БД
+              </button>
+            ) : (
               <button
                 className="btn-vintage rounded-lg px-6 py-3"
                 onClick={handleRequestSync}

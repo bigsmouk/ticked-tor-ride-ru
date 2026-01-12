@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 
 import { useGameSync, ConnectionStatus, GameAction } from "@/hooks/useGameSync";
+import { useGameStatePersistence } from "@/hooks/useGameStatePersistence";
 
-export type GameSyncContextValue = ReturnType<typeof useGameSync>;
+export type GameSyncContextValue = ReturnType<typeof useGameSync> & {
+  restoreFromDb: () => Promise<boolean>;
+};
 
 const GameSyncContext = createContext<GameSyncContextValue | null>(null);
 
@@ -15,13 +18,33 @@ const defaultContextValue: GameSyncContextValue = {
   sendActionToHost: () => {},
   requestSync: () => {},
   attemptReconnect: () => {},
+  restoreFromDb: async () => false,
 };
 
 export const GameSyncProvider: React.FC<{
   roomId: string | null;
   children: React.ReactNode;
 }> = ({ roomId, children }) => {
-  const value = useGameSync(roomId);
+  const syncValue = useGameSync(roomId);
+  const { restoreFromDb } = useGameStatePersistence({ roomId, enabled: !!roomId });
+
+  // При монтировании пытаемся восстановить состояние из БД
+  useEffect(() => {
+    if (roomId && syncValue.isHost) {
+      // Хост пытается восстановить состояние из БД при загрузке
+      restoreFromDb().then((restored) => {
+        if (restored) {
+          console.log('[GameSyncProvider] Host restored state from DB');
+        }
+      });
+    }
+  }, [roomId, syncValue.isHost, restoreFromDb]);
+
+  const value: GameSyncContextValue = {
+    ...syncValue,
+    restoreFromDb,
+  };
+
   return <GameSyncContext.Provider value={value}>{children}</GameSyncContext.Provider>;
 };
 
