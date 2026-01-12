@@ -24,7 +24,7 @@ export const GameBoard: React.FC = () => {
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   
   // Получаем функцию синхронизации и статус подключения (из провайдера, один канал на страницу)
-  const { sendActionToHost, isHost, connectionStatus, lastSyncTime } = useGameSyncContext();
+  const { sendActionToHost, isHost, connectionStatus, lastSyncTime, reconnectAttempt, attemptReconnect } = useGameSyncContext();
   
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
@@ -202,7 +202,9 @@ export const GameBoard: React.FC = () => {
           <ConnectionIndicator 
             status={connectionStatus} 
             isHost={isHost} 
-            lastSyncTime={lastSyncTime} 
+            lastSyncTime={lastSyncTime}
+            reconnectAttempt={reconnectAttempt}
+            onReconnect={attemptReconnect}
           />
           <div className="text-sm">Ход: {gameState.turnNumber}</div>
           <AuthControls />
