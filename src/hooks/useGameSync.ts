@@ -12,7 +12,10 @@ export type GameAction =
   | { type: 'drawDestinations' }
   | { type: 'keepDestinations'; ticketIds: string[] }
   | { type: 'cancelDestinationDraw' }
-  | { type: 'endTurn' };
+  | { type: 'endTurn' }
+  | { type: 'playerLeft'; playerId: string; playerName: string }
+  | { type: 'initiateKickVote'; targetPlayerId: string; initiatorId: string }
+  | { type: 'castKickVote'; targetPlayerId: string; voterId: string; approve: boolean };
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'degraded' | 'disconnected' | 'reconnecting';
 
@@ -58,6 +61,8 @@ export const useGameSync = (roomId: string | null) => {
   const executeKeepDestinations = useGameStore(state => state.keepDestinations);
   const executeCancelDestinationDraw = useGameStore(state => state.cancelDestinationDraw);
   const executeEndTurn = useGameStore(state => state.endTurn);
+  const executeRemovePlayer = useGameStore(state => state.removePlayer);
+  const executeAddLog = useGameStore(state => state.addLog);
   
   const isHost = currentRoom?.hostId === localPlayerId;
   const isHostRef = useRef(isHost);
@@ -407,11 +412,20 @@ export const useGameSync = (roomId: string | null) => {
         const { playerId, action } = payload.payload as { playerId: string; action: GameAction };
         console.log('[GameSync] Host received action from player:', playerId, 'action:', action.type);
         
-        // Проверяем, что действие от текущего активного игрока
         const currentState = useGameStore.getState().gameState;
-        if (!currentState || currentState.currentPlayerId !== playerId) {
-          console.log('[GameSync] Ignoring action - not from current player');
+        if (!currentState) {
+          console.log('[GameSync] Ignoring action - no game state');
           return;
+        }
+        
+        // Действия playerLeft, initiateKickVote и castKickVote могут приходить от любого игрока
+        const allowedFromAnyPlayer = ['playerLeft', 'initiateKickVote', 'castKickVote'];
+        if (!allowedFromAnyPlayer.includes(action.type)) {
+          // Проверяем, что действие от текущего активного игрока
+          if (currentState.currentPlayerId !== playerId) {
+            console.log('[GameSync] Ignoring action - not from current player');
+            return;
+          }
         }
         
         // Временно подменяем localPlayerId для выполнения действия
@@ -443,6 +457,17 @@ export const useGameSync = (roomId: string | null) => {
             break;
           case 'endTurn':
             executeEndTurn();
+            break;
+          case 'playerLeft':
+            executeRemovePlayer(action.playerId, action.playerName);
+            break;
+          case 'initiateKickVote':
+            // TODO: Handle kick vote initiation
+            executeAddLog(action.initiatorId, 'Инициировал голосование за исключение', 
+              `Цель: ${useGameStore.getState().gameState?.players.find(p => p.id === action.targetPlayerId)?.name || 'Игрок'}`);
+            break;
+          case 'castKickVote':
+            // TODO: Handle kick vote casting
             break;
         }
         

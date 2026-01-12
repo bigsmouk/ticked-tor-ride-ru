@@ -9,6 +9,7 @@ interface PlayerPanelProps {
   isOnline?: boolean;
   position: 'left' | 'right';
   index: number;
+  onClick?: () => void;
 }
 
 const PLAYER_COLORS: Record<PlayerColor, { bg: string; border: string; text: string }> = {
@@ -46,6 +47,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   isOnline = true,
   position,
   index,
+  onClick,
 }) => {
   const colors = PLAYER_COLORS[player.color];
   
@@ -58,7 +60,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   return (
     <div 
       className={`
-        player-panel relative w-44 min-w-0 transition-shadow duration-300
+        player-panel relative w-44 min-w-0 transition-shadow duration-300 cursor-pointer hover:opacity-100
         ${isCurrentPlayer ? 'active' : 'opacity-90'}
         ${isLocalPlayer ? 'ring-2 ring-gold/50' : ''}
       `}
@@ -69,6 +71,10 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
           ? '0 0 20px 4px hsla(45, 90%, 55%, 0.6), 0 0 0 2px hsla(45, 90%, 55%, 0.8)' 
           : undefined,
       }}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
       {/* Player color indicator */}
       <div 

@@ -9,8 +9,10 @@ import { GameOverModal } from '@/components/game/GameOverModal';
 import { GameLog } from '@/components/game/GameLog';
 import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
 import { AuthControls } from '@/components/auth/AuthControls';
+import { LeaveGameButton } from '@/components/game/LeaveGameButton';
+import { PlayerProfileModal } from '@/components/game/PlayerProfileModal';
 import { useGameStore } from '@/stores/gameStore';
-import { TrainCardType, DestinationTicket } from '@/types/game';
+import { TrainCardType, DestinationTicket, Player } from '@/types/game';
 import { useGameSyncContext } from '@/contexts/gameSyncContext';
 import { usePresence } from '@/hooks/usePresence';
 import { playTurnNotificationSound } from '@/hooks/useGameSounds';
@@ -22,12 +24,33 @@ export const GameBoard: React.FC = () => {
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
   // Получаем функцию синхронизации и статус подключения (из провайдера, один канал на страницу)
   const { sendActionToHost, isHost, connectionStatus, lastSyncTime, reconnectAttempt, attemptReconnect } = useGameSyncContext();
   
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
+
+  const handlePlayerClick = (player: Player) => {
+    setSelectedPlayer(player);
+    setShowPlayerProfile(true);
+  };
+
+  const handleInitiateKick = (playerId: string) => {
+    // TODO: Implement full kick voting system with state
+    if (isHost) {
+      addLog(localPlayerId || undefined, 'Инициировал голосование за исключение', 
+        gameState?.players.find(p => p.id === playerId)?.name || 'Игрок');
+    } else {
+      sendActionToHost({ 
+        type: 'initiateKickVote', 
+        targetPlayerId: playerId,
+        initiatorId: localPlayerId || ''
+      });
+    }
+  };
 
   // Сбрасываем выделение при смене хода и проигрываем звук если ход перешёл к нам
   const prevCurrentPlayerId = useRef(gameState?.currentPlayerId);
@@ -207,6 +230,7 @@ export const GameBoard: React.FC = () => {
             onReconnect={attemptReconnect}
           />
           <div className="text-sm">Ход: {gameState.turnNumber}</div>
+          <LeaveGameButton />
           <AuthControls />
         </div>
       </header>
@@ -223,6 +247,7 @@ export const GameBoard: React.FC = () => {
               isOnline={isPlayerOnline(player.id)}
               position="left"
               index={i}
+              onClick={() => handlePlayerClick(player)}
             />
           ))}
         </aside>
@@ -288,6 +313,7 @@ export const GameBoard: React.FC = () => {
               isOnline={isPlayerOnline(player.id)}
               position="right"
               index={i + 2}
+              onClick={() => handlePlayerClick(player)}
             />
           ))}
         </aside>
@@ -318,6 +344,18 @@ export const GameBoard: React.FC = () => {
       
       {/* Game over modal */}
       <GameOverModal />
+
+      {/* Player profile modal */}
+      <PlayerProfileModal
+        player={selectedPlayer}
+        isOpen={showPlayerProfile}
+        onClose={() => setShowPlayerProfile(false)}
+        isHost={currentRoom?.hostId === selectedPlayer?.id}
+        isLocalPlayer={selectedPlayer?.id === localPlayerId}
+        isOnline={selectedPlayer ? isPlayerOnline(selectedPlayer.id) : false}
+        canKick={!selectedPlayer?.id?.includes(localPlayerId || '') && gameState.players.length > 2}
+        onInitiateKick={handleInitiateKick}
+      />
     </div>
   );
 };
