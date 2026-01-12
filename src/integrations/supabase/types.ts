@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_states: {
+        Row: {
+          game_state: Json
+          id: string
+          room_id: string
+          turn_number: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          game_state: Json
+          id?: string
+          room_id: string
+          turn_number?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          game_state?: Json
+          id?: string
+          room_id?: string
+          turn_number?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_states_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_history: {
         Row: {
           game_data: Json | null
