@@ -288,7 +288,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             return (
               <g 
                 key={route.id}
-                className={`route-segment ${isClaimable ? 'cursor-pointer' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
+                className={`route-segment ${isClaimable ? 'cursor-pointer route-claimable' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
                 onClick={() => !isClaimed && onRouteClick?.(route.id)}
               >
                 {isClaimed && playerColor ? (
@@ -342,6 +342,18 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 ) : (
                   // Unclaimed route - show wagon slots
                   <>
+                    {/* Pulsing highlight for claimable routes */}
+                    {isClaimable && (
+                      <path
+                        d={path}
+                        stroke="hsl(43 80% 50%)"
+                        strokeWidth={14}
+                        fill="none"
+                        strokeLinecap="round"
+                        className="route-claimable-line"
+                      />
+                    )}
+                    
                     {/* Route background line - dimmed for unclaimed */}
                     <path
                       d={path}
@@ -349,7 +361,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                       strokeWidth={isSelected ? 14 : 10}
                       fill="none"
                       strokeLinecap="round"
-                      opacity={isSelected ? 1 : 0.3}
+                      opacity={isSelected ? 1 : isClaimable ? 0.5 : 0.3}
                     />
                     
                     {/* Individual train car slots */}

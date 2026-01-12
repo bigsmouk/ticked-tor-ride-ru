@@ -348,7 +348,7 @@ export const TestMap: React.FC<TestMapProps> = ({
             return (
               <g 
                 key={route.id}
-                className={`route-group ${isSelectable ? 'cursor-pointer' : ''} ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`route-group ${isSelectable ? 'cursor-pointer route-claimable' : ''} ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                 onMouseEnter={(e) => handleRouteHover(route, e)}
                 onMouseLeave={() => handleRouteHover(null)}
                 onClick={() => !isClaimed && !isDisabled && onRouteClick?.(route.id)}
@@ -422,6 +422,20 @@ export const TestMap: React.FC<TestMapProps> = ({
                 ) : (
                   // Unclaimed route - show wagon slots
                   <>
+                    {/* Pulsing highlight for selectable routes */}
+                    {isSelectable && (
+                      <line
+                        x1={startX}
+                        y1={startY}
+                        x2={endX}
+                        y2={endY}
+                        stroke="#fbbf24"
+                        strokeWidth={22}
+                        strokeLinecap="round"
+                        className="route-claimable-line"
+                      />
+                    )}
+                    
                     {/* Route background line */}
                     <line
                       x1={startX}
@@ -431,7 +445,7 @@ export const TestMap: React.FC<TestMapProps> = ({
                       stroke={isSelected || isHighlighted ? '#fbbf24' : '#78716c'}
                       strokeWidth={isSelected || isHighlighted ? 20 : 16}
                       strokeLinecap="round"
-                      opacity={isSelected || isHighlighted ? 1 : 0.5}
+                      opacity={isSelected || isHighlighted ? 1 : isSelectable ? 0.6 : 0.5}
                       filter={isHovered ? 'url(#test-hover-glow)' : undefined}
                     />
                     
