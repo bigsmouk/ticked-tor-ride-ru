@@ -1,17 +1,6 @@
 import React from 'react';
 import { TrainCardType } from '@/types/game';
-
-// Import card images
-import locomotiveCard from '@/assets/cards/locomotive.png';
-import redCard from '@/assets/cards/red.png';
-import blueCard from '@/assets/cards/blue.png';
-import greenCard from '@/assets/cards/green.png';
-import yellowCard from '@/assets/cards/yellow.png';
-import orangeCard from '@/assets/cards/orange.png';
-import pinkCard from '@/assets/cards/pink.png';
-import whiteCard from '@/assets/cards/white.png';
-import blackCard from '@/assets/cards/black.png';
-import cardBack from '@/assets/cards/card-back.png';
+import { PRELOADED_CARDS } from '@/hooks/useAssetPreloader';
 
 interface TrainCardProps {
   type: TrainCardType;
@@ -24,18 +13,21 @@ interface TrainCardProps {
   showCount?: boolean;
 }
 
+// Use preloaded card images for instant rendering
 const CARD_IMAGES: Record<TrainCardType, string> = {
-  red: redCard,
-  blue: blueCard,
-  green: greenCard,
-  yellow: yellowCard,
-  orange: orangeCard,
-  pink: pinkCard,
-  white: whiteCard,
-  black: blackCard,
-  gray: whiteCard, // fallback to white for gray
-  locomotive: locomotiveCard,
+  red: PRELOADED_CARDS.red,
+  blue: PRELOADED_CARDS.blue,
+  green: PRELOADED_CARDS.green,
+  yellow: PRELOADED_CARDS.yellow,
+  orange: PRELOADED_CARDS.orange,
+  pink: PRELOADED_CARDS.pink,
+  white: PRELOADED_CARDS.white,
+  black: PRELOADED_CARDS.black,
+  gray: PRELOADED_CARDS.white, // fallback to white for gray
+  locomotive: PRELOADED_CARDS.locomotive,
 };
+
+const cardBack = PRELOADED_CARDS.cardBack;
 
 const SIZES = {
   small: { width: 50, height: 70 },

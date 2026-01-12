@@ -8,7 +8,10 @@ import {
   getTestCity, 
   getParallelOffset 
 } from '@/data/testMap';
-import testMapBg from '@/assets/test-map-bg.jpg';
+import { PRELOADED_MAPS } from '@/hooks/useAssetPreloader';
+
+// Use preloaded map image
+const testMapBg = PRELOADED_MAPS.test;
 // Route state interface
 export interface TestRouteState {
   claimedBy?: string;

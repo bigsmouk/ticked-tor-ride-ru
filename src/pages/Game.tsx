@@ -5,6 +5,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { GameSyncProvider, useGameSyncContext } from '@/contexts/gameSyncContext';
+import { AssetPreloader } from '@/components/game/AssetPreloader';
 
 const GameInner = () => {
   const navigate = useNavigate();
@@ -138,9 +139,11 @@ const Game = () => {
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
 
   return (
-    <GameSyncProvider roomId={roomId}>
-      <GameInner />
-    </GameSyncProvider>
+    <AssetPreloader>
+      <GameSyncProvider roomId={roomId}>
+        <GameInner />
+      </GameSyncProvider>
+    </AssetPreloader>
   );
 };
 

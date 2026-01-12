@@ -1,8 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
-import europeMapImage from '@/assets/europe-map.jpg';
+import { PRELOADED_MAPS } from '@/hooks/useAssetPreloader';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
+
+// Use preloaded map image
+const europeMapImage = PRELOADED_MAPS.europe;
 
 interface EuropeMapProps {
   cities: City[];
