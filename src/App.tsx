@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import WaitingRoom from "./pages/WaitingRoom";
 import Game from "./pages/Game";
+import TestSandbox from "./pages/TestSandbox";
 import MapCalibration from "./pages/MapCalibration";
 import RouteCalibration from "./pages/RouteCalibration";
 import EmailConfirmed from "./pages/EmailConfirmed";
@@ -24,6 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/test" element={<TestSandbox />} />
             <Route path="/calibration" element={<MapCalibration />} />
             <Route path="/routes" element={<RouteCalibration />} />
             <Route path="/waiting" element={<WaitingRoom />} />
