@@ -82,16 +82,27 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       
       {/* Player info */}
       <div className="flex items-center gap-2 mb-2">
-        {/* Avatar placeholder */}
-        <div 
-          className="w-10 h-10 rounded-full flex items-center justify-center font-display text-lg font-bold relative"
-          style={{ 
-            background: 'hsl(40 30% 90%)',
-            border: `2px solid ${colors.border}`,
-            color: colors.border,
-          }}
-        >
-          {player.name.charAt(0).toUpperCase()}
+        {/* Avatar */}
+        <div className="relative">
+          {player.avatarUrl ? (
+            <img
+              src={player.avatarUrl}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover"
+              style={{ border: `2px solid ${colors.border}` }}
+            />
+          ) : (
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center font-display text-lg font-bold"
+              style={{ 
+                background: 'hsl(40 30% 90%)',
+                border: `2px solid ${colors.border}`,
+                color: colors.border,
+              }}
+            >
+              {player.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           
           {/* Online indicator dot */}
           <div 

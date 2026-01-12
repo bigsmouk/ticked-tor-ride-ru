@@ -46,7 +46,7 @@ export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const playerId = getOrCreatePlayerId();
 
@@ -118,6 +118,7 @@ export const useMultiplayer = () => {
           is_ready: true,
           is_host: true,
           owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
+          avatar_url: profile?.avatar_url || null, // Передаём аватар профиля
         });
 
       if (playerError) throw playerError;
@@ -130,6 +131,7 @@ export const useMultiplayer = () => {
         players: [{
           id: playerId,
           name: validatedPlayerName,
+          avatarUrl: profile?.avatar_url || undefined,
           color: PLAYER_COLORS[0],
           trainCards: [],
           destinationTickets: [],
@@ -160,7 +162,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, setCurrentRoom, setView]);
+  }, [playerId, user, profile, setCurrentRoom, setView]);
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
@@ -233,6 +235,7 @@ export const useMultiplayer = () => {
             is_ready: true,
             is_host: false,
             owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
+            avatar_url: profile?.avatar_url || null, // Передаём аватар профиля
           });
 
         if (joinError) throw joinError;
@@ -250,6 +253,7 @@ export const useMultiplayer = () => {
       const players: Player[] = allPlayers.map(p => ({
         id: p.player_id,
         name: p.player_name,
+        avatarUrl: p.avatar_url || undefined,
         color: p.color as PlayerColor,
         trainCards: [],
         destinationTickets: [],
@@ -288,7 +292,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, setCurrentRoom, setView]);
+  }, [playerId, user, profile, setCurrentRoom, setView]);
 
   // Выход из комнаты
   const leaveRoom = useCallback(async (roomId: string) => {
@@ -374,6 +378,7 @@ export const useRoomSubscription = (roomId: string | null) => {
             const updatedPlayers: Player[] = players.map(p => ({
               id: p.player_id,
               name: p.player_name,
+              avatarUrl: p.avatar_url || undefined,
               color: p.color as PlayerColor,
               trainCards: [],
               destinationTickets: [],
