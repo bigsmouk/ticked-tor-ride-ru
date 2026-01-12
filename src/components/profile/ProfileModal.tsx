@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -121,6 +122,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <DialogTitle className="text-xl font-bold text-amber-900 text-center">
             🎫 Профиль игрока
           </DialogTitle>
+          <DialogDescription className="text-center text-amber-700">
+            Настройки аккаунта и статистика
+          </DialogDescription>
         </DialogHeader>
 
         {/* Tabs */}

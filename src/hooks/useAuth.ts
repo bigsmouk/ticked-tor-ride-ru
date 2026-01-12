@@ -132,14 +132,17 @@ export const useAuth = () => {
   const uploadAvatar = async (file: File) => {
     if (!authState.user) return { error: new Error('Not authenticated'), url: null };
 
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const filePath = `${authState.user.id}/avatar.${fileExt}`;
+
+    console.log('[Avatar] Uploading to:', filePath);
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
+      console.error('[Avatar] Upload error:', uploadError);
       return { error: uploadError, url: null };
     }
 
@@ -147,10 +150,19 @@ export const useAuth = () => {
       .from('avatars')
       .getPublicUrl(filePath);
 
-    // Обновляем профиль с новым URL
-    await updateProfile({ avatar_url: publicUrl });
+    // Добавляем timestamp для сброса кеша
+    const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+    console.log('[Avatar] Public URL:', urlWithCacheBust);
 
-    return { error: null, url: publicUrl };
+    // Обновляем профиль с новым URL
+    const { error: updateError } = await updateProfile({ avatar_url: urlWithCacheBust });
+    
+    if (updateError) {
+      console.error('[Avatar] Profile update error:', updateError);
+      return { error: updateError, url: null };
+    }
+
+    return { error: null, url: urlWithCacheBust };
   };
 
   return {
