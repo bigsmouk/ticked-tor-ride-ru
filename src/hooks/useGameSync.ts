@@ -45,20 +45,45 @@ export const useGameSync = (roomId: string | null) => {
   const hostIdRef = useRef<string | null>(null);
   hostIdRef.current = currentRoom?.hostId || null;
 
+  // Унифицированная отправка broadcast (предпочитаем REST-доставку, т.к. WebSocket может быть заблокирован)
+  const sendBroadcast = useCallback(async (event: string, payload: Record<string, any>) => {
+    const channel = channelRef.current as any;
+    if (!channel) return;
+
+    try {
+      if (typeof channel.httpSend === 'function') {
+        await channel.httpSend({ type: 'broadcast', event, payload });
+        return;
+      }
+    } catch (e) {
+      console.warn('[GameSync] httpSend failed, falling back to send()', e);
+    }
+
+    try {
+      await channel.send({ type: 'broadcast', event, payload });
+    } catch (e) {
+      console.error('[GameSync] send() failed', e);
+    }
+  }, []);
+
   // Отправка действия хосту (для не-хостов)
   const sendActionToHost = useCallback((action: GameAction) => {
     if (!channelRef.current || isHostRef.current) return;
-    
+
     console.log('[GameSync] Sending action to host:', action.type);
-    channelRef.current.send({
-      type: 'broadcast',
-      event: 'player_action',
-      payload: {
-        playerId: localPlayerId,
-        action,
-      },
+    void sendBroadcast('player_action', {
+      playerId: localPlayerId,
+      action,
     });
-  }, [localPlayerId]);
+  }, [localPlayerId, sendBroadcast]);
+
+  // Запрос синхронизации у хоста (для не-хостов)
+  const requestSync = useCallback(() => {
+    if (!channelRef.current || isHostRef.current) return;
+
+    console.log('[GameSync] Requesting sync from host');
+    void sendBroadcast('request_sync', { playerId: localPlayerId });
+  }, [localPlayerId, sendBroadcast]);
 
   useEffect(() => {
     if (!roomId || !localPlayerId) {
@@ -67,6 +92,8 @@ export const useGameSync = (roomId: string | null) => {
     }
 
     console.log('[GameSync] Setting up channel for room:', roomId, 'player:', localPlayerId, 'isHost:', isHostRef.current);
+
+    setConnectionStatus('connecting');
 
     // Создаём канал для синхронизации
     const channel = supabase.channel(`game-sync-${roomId}`, {
@@ -80,7 +107,18 @@ export const useGameSync = (roomId: string | null) => {
       },
     });
 
-    channel
+    const sendFromChannel = async (event: string, payload: Record<string, any>) => {
+      const ch = channel as any;
+      try {
+        if (typeof ch.httpSend === 'function') {
+          await ch.httpSend({ type: 'broadcast', event, payload });
+          return;
+        }
+      } catch (e) {
+        console.warn('[GameSync] httpSend failed (channel), falling back to send()', e);
+      }
+      await ch.send({ type: 'broadcast', event, payload });
+    };
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         console.log('[GameSync] Presence sync event, state:', Object.keys(presenceState));
@@ -125,20 +163,16 @@ export const useGameSync = (roomId: string | null) => {
       // Слушаем запросы на синхронизацию от переподключившихся игроков
       .on('broadcast', { event: 'request_sync' }, (payload) => {
         if (!isHostRef.current) return;
-        
+
         const { playerId: requestingPlayerId } = payload.payload as { playerId: string };
         console.log('[GameSync] Host received sync request from player:', requestingPlayerId);
-        
+
         // Отправляем текущее состояние игры
         const currentGameState = useGameStore.getState().gameState;
         if (currentGameState) {
-          channel.send({
-            type: 'broadcast',
-            event: 'sync_response',
-            payload: {
-              targetPlayerId: requestingPlayerId,
-              gameState: JSON.stringify(currentGameState),
-            },
+          void sendFromChannel('sync_response', {
+            targetPlayerId: requestingPlayerId,
+            gameState: JSON.stringify(currentGameState),
           });
           console.log('[GameSync] Host sent sync response to player:', requestingPlayerId);
         }
@@ -211,36 +245,42 @@ export const useGameSync = (roomId: string | null) => {
       })
       .subscribe(async (status) => {
         console.log('[GameSync] Subscription status:', status);
+
+        if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setConnectionStatus('disconnected');
+          return;
+        }
+
         if (status === 'SUBSCRIBED') {
+          // Хост всегда считает себя подключенным
+          if (isHostRef.current) {
+            setConnectionStatus('connected');
+          }
+
           // ВАЖНО: все клиенты должны "track"-аться в presence, иначе sync может не сработать
           if (!isHostRef.current) {
             await channel.track({
               updatedAt: Date.now(),
               isHost: false,
             });
-            
+
             // Запрашиваем состояние у хоста при подключении
             const currentGameState = useGameStore.getState().gameState;
             if (!currentGameState) {
               console.log('[GameSync] No local gameState, requesting sync from host');
-              channel.send({
-                type: 'broadcast',
-                event: 'request_sync',
-                payload: { playerId: localPlayerId },
-              });
-              
+              void sendFromChannel('request_sync', { playerId: localPlayerId });
+
               // Повторяем запрос через 2 секунды если состояние не получено
-              setTimeout(() => {
+              const retryTimer = setTimeout(() => {
                 const stateAfterWait = useGameStore.getState().gameState;
                 if (!stateAfterWait) {
                   console.log('[GameSync] Still no gameState, retrying sync request');
-                  channel.send({
-                    type: 'broadcast',
-                    event: 'request_sync',
-                    payload: { playerId: localPlayerId },
-                  });
+                  void sendFromChannel('request_sync', { playerId: localPlayerId });
                 }
               }, 2000);
+
+              // Если effect размонтируется, таймер не должен стрелять
+              (channel as any).__syncRetryTimer = retryTimer;
             }
           }
 
@@ -261,8 +301,13 @@ export const useGameSync = (roomId: string | null) => {
 
     return () => {
       console.log('[GameSync] Cleaning up channel');
+      const retryTimer = (channel as any).__syncRetryTimer as any;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
       supabase.removeChannel(channel);
       channelRef.current = null;
+      setConnectionStatus('disconnected');
     };
   }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn]);
 
@@ -297,5 +342,5 @@ export const useGameSync = (roomId: string | null) => {
     return () => clearInterval(interval);
   }, [isHost]);
 
-  return { sendActionToHost, isHost, connectionStatus, lastSyncTime };
+  return { sendActionToHost, requestSync, isHost, connectionStatus, lastSyncTime };
 };

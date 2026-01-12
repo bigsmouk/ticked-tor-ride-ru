@@ -1,4 +1,4 @@
-import React, { useState, useContext, createContext, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EuropeMap } from '@/components/game/EuropeMap';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
@@ -10,17 +10,9 @@ import { GameLog } from '@/components/game/GameLog';
 import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket } from '@/types/game';
-import { useGameSync, GameAction } from '@/hooks/useGameSync';
+import { useGameSyncContext } from '@/contexts/gameSyncContext';
 import { usePresence } from '@/hooks/usePresence';
 import { playTurnNotificationSound } from '@/hooks/useGameSounds';
-
-// Context для передачи sendActionToHost в дочерние компоненты
-const GameSyncContext = createContext<{
-  sendActionToHost: (action: GameAction) => void;
-  isHost: boolean;
-} | null>(null);
-
-export const useGameSyncContext = () => useContext(GameSyncContext);
 
 export const GameBoard: React.FC = () => {
   const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError } = useGameStore();
@@ -30,8 +22,8 @@ export const GameBoard: React.FC = () => {
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   
-  // Получаем функцию синхронизации и статус подключения
-  const { sendActionToHost, isHost, connectionStatus, lastSyncTime } = useGameSync(currentRoom?.id || null);
+  // Получаем функцию синхронизации и статус подключения (из провайдера, один канал на страницу)
+  const { sendActionToHost, isHost, connectionStatus, lastSyncTime } = useGameSyncContext();
   
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
