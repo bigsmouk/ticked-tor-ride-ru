@@ -104,6 +104,46 @@ export const useGameSync = (roomId: string | null) => {
               console.error('[GameSync] Error parsing game state:', e);
             }
           }
+        } else {
+          console.log('[GameSync] Host not found in presence, waiting...');
+        }
+      })
+      // Слушаем запросы на синхронизацию от переподключившихся игроков
+      .on('broadcast', { event: 'request_sync' }, (payload) => {
+        if (!isHostRef.current) return;
+        
+        const { playerId: requestingPlayerId } = payload.payload as { playerId: string };
+        console.log('[GameSync] Host received sync request from player:', requestingPlayerId);
+        
+        // Отправляем текущее состояние игры
+        const currentGameState = useGameStore.getState().gameState;
+        if (currentGameState) {
+          channel.send({
+            type: 'broadcast',
+            event: 'sync_response',
+            payload: {
+              targetPlayerId: requestingPlayerId,
+              gameState: JSON.stringify(currentGameState),
+            },
+          });
+          console.log('[GameSync] Host sent sync response to player:', requestingPlayerId);
+        }
+      })
+      // Слушаем ответы на запрос синхронизации
+      .on('broadcast', { event: 'sync_response' }, (payload) => {
+        if (isHostRef.current) return;
+        
+        const { targetPlayerId, gameState: gameStateStr } = payload.payload as { targetPlayerId: string; gameState: string };
+        
+        // Проверяем, что ответ для нас
+        if (targetPlayerId !== localPlayerId) return;
+        
+        try {
+          const parsedState = JSON.parse(gameStateStr) as GameState;
+          console.log('[GameSync] Received sync response, currentPlayer:', parsedState.currentPlayerId, 'turn:', parsedState.turnNumber);
+          setGameState(parsedState);
+        } catch (e) {
+          console.error('[GameSync] Error parsing sync response:', e);
         }
       })
       // Хост слушает действия от других игроков
@@ -164,6 +204,30 @@ export const useGameSync = (roomId: string | null) => {
               updatedAt: Date.now(),
               isHost: false,
             });
+            
+            // Запрашиваем состояние у хоста при подключении
+            const currentGameState = useGameStore.getState().gameState;
+            if (!currentGameState) {
+              console.log('[GameSync] No local gameState, requesting sync from host');
+              channel.send({
+                type: 'broadcast',
+                event: 'request_sync',
+                payload: { playerId: localPlayerId },
+              });
+              
+              // Повторяем запрос через 2 секунды если состояние не получено
+              setTimeout(() => {
+                const stateAfterWait = useGameStore.getState().gameState;
+                if (!stateAfterWait) {
+                  console.log('[GameSync] Still no gameState, retrying sync request');
+                  channel.send({
+                    type: 'broadcast',
+                    event: 'request_sync',
+                    payload: { playerId: localPlayerId },
+                  });
+                }
+              }, 2000);
+            }
           }
 
           // Если мы хост и есть состояние игры, транслируем его
@@ -199,6 +263,25 @@ export const useGameSync = (roomId: string | null) => {
       });
     }
   }, [gameState]);
+
+  // Периодическая синхронизация от хоста (каждые 10 секунд)
+  useEffect(() => {
+    if (!isHost || !channelRef.current) return;
+
+    const interval = setInterval(() => {
+      const currentGameState = useGameStore.getState().gameState;
+      if (currentGameState && channelRef.current) {
+        console.log('[GameSync] Host periodic sync, turn:', currentGameState.turnNumber);
+        channelRef.current.track({
+          gameState: JSON.stringify(currentGameState),
+          updatedAt: Date.now(),
+          isHost: true,
+        });
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isHost]);
 
   return { sendActionToHost, isHost };
 };
