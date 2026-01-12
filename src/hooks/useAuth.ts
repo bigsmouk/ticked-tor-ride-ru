@@ -15,7 +15,8 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  loading: boolean;
+  loading: boolean; // состояние аутентификации/сессии
+  profileLoading: boolean; // отдельная загрузка профиля
 }
 
 export const useAuth = () => {
@@ -24,66 +25,131 @@ export const useAuth = () => {
     session: null,
     profile: null,
     loading: true,
+    profileLoading: false,
   });
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
+  const ensureProfile = useCallback(async (user: User) => {
+    const userId = user.id;
+
+    // maybeSingle() не кидает ошибку, если данных нет — просто вернёт data: null
+    const { data: existing, error: selectError } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+    if (selectError) {
+      console.error('Error fetching profile:', selectError);
       return null;
     }
-    return data as Profile;
+
+    if (existing) return existing as Profile;
+
+    // Если профиля нет (например, старые аккаунты/сбой триггера) — создаём.
+    const displayName =
+      (user.user_metadata as any)?.display_name ||
+      (user.email ? user.email.split('@')[0] : null) ||
+      'Игрок';
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('profiles')
+      .insert({ user_id: userId, display_name: displayName })
+      .select('*')
+      .maybeSingle();
+
+    if (insertError) {
+      console.error('Error creating profile:', insertError);
+      return null;
+    }
+
+    return inserted as Profile;
   }, []);
 
-  useEffect(() => {
-    // Сначала подписываемся на изменения
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[Auth] State changed:', event);
-        
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          setAuthState({
-            user: session.user,
-            session,
-            profile,
-            loading: false,
-          });
-        } else {
-          setAuthState({
-            user: null,
-            session: null,
-            profile: null,
-            loading: false,
-          });
-        }
-      }
-    );
+  const refreshProfile = useCallback(async () => {
+    if (!authState.user) return null;
+    setAuthState(prev => ({ ...prev, profileLoading: true }));
 
-    // Затем получаем текущую сессию
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    try {
+      const profile = await ensureProfile(authState.user);
+      setAuthState(prev => ({ ...prev, profile, profileLoading: false }));
+      return profile;
+    } catch (e) {
+      console.error('refreshProfile failed:', e);
+      setAuthState(prev => ({ ...prev, profileLoading: false }));
+      return null;
+    }
+  }, [authState.user, ensureProfile]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const startProfileLoad = (user: User) => {
+      // Важно: не блокируем UI на ожидании профиля
+      setAuthState(prev => ({ ...prev, profileLoading: true }));
+      void (async () => {
+        const profile = await ensureProfile(user);
+        if (!isMounted) return;
+        setAuthState(prev => ({ ...prev, profile, profileLoading: false }));
+      })();
+    };
+
+    // 1) подписка на изменения
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[Auth] State changed:', event);
+
+      if (!isMounted) return;
+
       if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setAuthState({
+        // Сессию выставляем сразу
+        setAuthState(prev => ({
+          ...prev,
           user: session.user,
           session,
-          profile,
           loading: false,
-        });
+        }));
+        startProfileLoad(session.user);
       } else {
-        setAuthState(prev => ({ ...prev, loading: false }));
+        setAuthState({
+          user: null,
+          session: null,
+          profile: null,
+          loading: false,
+          profileLoading: false,
+        });
       }
     });
 
+    // 2) текущая сессия
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!isMounted) return;
+
+        if (session?.user) {
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            session,
+            loading: false,
+          }));
+          startProfileLoad(session.user);
+        } else {
+          setAuthState(prev => ({ ...prev, loading: false }));
+        }
+      })
+      .catch((e) => {
+        console.error('getSession failed:', e);
+        if (!isMounted) return;
+        setAuthState(prev => ({ ...prev, loading: false }));
+      });
+
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [ensureProfile]);
 
   const signUp = async (email: string, password: string, displayName: string) => {
     const { data, error } = await supabase.auth.signUp({
@@ -172,6 +238,7 @@ export const useAuth = () => {
     signOut,
     updateProfile,
     uploadAvatar,
+    refreshProfile,
     isAuthenticated: !!authState.user,
   };
 };
