@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -66,6 +67,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <DialogTitle className="text-xl font-bold text-amber-900 text-center">
             {mode === 'login' ? '🚂 Вход в аккаунт' : '🎫 Регистрация'}
           </DialogTitle>
+          <DialogDescription className="text-center text-amber-700">
+            {mode === 'login' 
+              ? 'Войдите для сохранения прогресса и мультиплеера' 
+              : 'Создайте аккаунт для игры с друзьями'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -111,7 +117,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <Label htmlFor="password" className="text-amber-800">
               Пароль
             </Label>
-            <div className="relative">
+          <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-600" />
               <Input
                 id="password"
@@ -120,6 +126,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 bg-white border-amber-300 focus:border-amber-500"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 required
                 minLength={6}
               />

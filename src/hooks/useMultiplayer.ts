@@ -152,7 +152,10 @@ export const useMultiplayer = () => {
     } catch (err: any) {
       console.error('Error creating room:', err);
       setError(err.message);
-      toast.error('Ошибка создания комнаты');
+      const errorMessage = err.code === '42501' 
+        ? 'Ошибка прав доступа. Попробуйте перезайти в аккаунт.'
+        : `Ошибка создания комнаты: ${err.message}`;
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -277,7 +280,10 @@ export const useMultiplayer = () => {
     } catch (err: any) {
       console.error('Error joining room:', err);
       setError(err.message);
-      toast.error('Ошибка присоединения к комнате');
+      const errorMessage = err.code === '42501' 
+        ? 'Ошибка прав доступа. Попробуйте перезайти в аккаунт.'
+        : `Ошибка присоединения: ${err.message}`;
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
