@@ -58,13 +58,16 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   return (
     <div 
       className={`
-        player-panel relative w-44 min-w-0 transition-all duration-300
-        ${isCurrentPlayer ? 'active glow-gold scale-105' : 'opacity-90'}
+        player-panel relative w-44 min-w-0 transition-shadow duration-300
+        ${isCurrentPlayer ? 'active' : 'opacity-90'}
         ${isLocalPlayer ? 'ring-2 ring-gold/50' : ''}
       `}
       style={{
         background: colors.bg,
         borderColor: colors.border,
+        boxShadow: isCurrentPlayer 
+          ? '0 0 20px 4px hsla(45, 90%, 55%, 0.6), 0 0 0 2px hsla(45, 90%, 55%, 0.8)' 
+          : undefined,
       }}
     >
       {/* Player color indicator */}
