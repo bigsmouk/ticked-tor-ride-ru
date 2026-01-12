@@ -148,6 +148,7 @@ export type Database = {
       }
       room_players: {
         Row: {
+          avatar_url: string | null
           color: string
           id: string
           is_host: boolean
@@ -159,6 +160,7 @@ export type Database = {
           room_id: string
         }
         Insert: {
+          avatar_url?: string | null
           color: string
           id?: string
           is_host?: boolean
@@ -170,6 +172,7 @@ export type Database = {
           room_id: string
         }
         Update: {
+          avatar_url?: string | null
           color?: string
           id?: string
           is_host?: boolean

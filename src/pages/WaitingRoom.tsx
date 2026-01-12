@@ -140,14 +140,27 @@ const WaitingRoom = () => {
                         : 'border-ornament bg-background'
                     }`}
                   >
-                    {/* Player color */}
-                    <div
-                      className={`w-10 h-10 rounded-full ${playerColors[player.color]} flex items-center justify-center`}
-                    >
-                      <span className="text-white font-bold text-lg">
-                        {player.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                    {/* Player color / avatar */}
+                    {player.avatarUrl ? (
+                      <img
+                        src={player.avatarUrl}
+                        alt=""
+                        className={`w-10 h-10 rounded-full object-cover ring-2 ring-offset-2 ${
+                          player.color === 'red' ? 'ring-player-red' :
+                          player.color === 'blue' ? 'ring-player-blue' :
+                          player.color === 'green' ? 'ring-player-green' :
+                          'ring-player-yellow'
+                        }`}
+                      />
+                    ) : (
+                      <div
+                        className={`w-10 h-10 rounded-full ${playerColors[player.color]} flex items-center justify-center`}
+                      >
+                        <span className="text-white font-bold text-lg">
+                          {player.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Player info */}
                     <div className="flex-1">
