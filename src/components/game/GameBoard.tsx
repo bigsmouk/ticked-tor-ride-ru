@@ -34,12 +34,12 @@ export const GameBoard: React.FC = () => {
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
 
-  const handlePlayerClick = (player: Player) => {
+  const handlePlayerClick = useCallback((player: Player) => {
     setSelectedPlayer(player);
     setShowPlayerProfile(true);
-  };
+  }, []);
 
-  const handleInitiateKick = (playerId: string) => {
+  const handleInitiateKick = useCallback((playerId: string) => {
     if (isHost) {
       initiateKickVote(playerId, localPlayerId || '');
     } else {
@@ -50,7 +50,7 @@ export const GameBoard: React.FC = () => {
       });
     }
     setShowPlayerProfile(false);
-  };
+  }, [isHost, initiateKickVote, localPlayerId, sendActionToHost]);
 
   const handleCastVote = useCallback((approve: boolean) => {
     if (!localPlayerId) return;
@@ -102,11 +102,15 @@ export const GameBoard: React.FC = () => {
     isFirstRender.current = false;
   }, [gameState?.currentPlayerId, localPlayerId, gameState?.phase]);
 
-  if (!gameState) return <div className="flex items-center justify-center h-screen">Загрузка...</div>;
-
-  const localPlayer = gameState.players.find(p => p.id === localPlayerId);
-  const isMyTurn = gameState.currentPlayerId === localPlayerId;
-  const canInteract = isMyTurn && gameState.currentAction === 'none';
+  // Вычисляем значения даже если gameState null — хуки всегда вызываются
+  const localPlayer = gameState?.players.find(p => p.id === localPlayerId) ?? null;
+  const isMyTurn = gameState?.currentPlayerId === localPlayerId;
+  const canInteract = isMyTurn && gameState?.currentAction === 'none';
+  
+  // Если нет gameState, показываем пустой контейнер (скрыт через parent visibility)
+  if (!gameState) {
+    return <div className="h-screen flex flex-col bg-background overflow-hidden" />;
+  }
 
   const handleRouteClick = (routeId: string) => {
     // Можно выбирать маршрут только если наш ход и нет активного действия

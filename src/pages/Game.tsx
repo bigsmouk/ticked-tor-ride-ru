@@ -22,7 +22,7 @@ const GameInner = () => {
   // Доступ к одному общему каналу синхронизации (включая экран загрузки)
   const { requestSync, isHost, restoreFromDb } = useGameSyncContext();
 
-  const handleExitToHome = async () => {
+  const handleExitToHome = useCallback(async () => {
     isExitingRef.current = true;
 
     // Уходим на главную с флагом, чтобы авто-восстановление не зацикливало пользователя
@@ -33,7 +33,7 @@ const GameInner = () => {
       void leaveRoomFromDb(roomId);
     }
     leaveRoom();
-  };
+  }, [navigate, roomId, leaveRoomFromDb, leaveRoom]);
 
   // Ручной запрос состояния (без создания временных каналов)
   const handleRequestSync = useCallback(() => {
@@ -77,61 +77,70 @@ const GameInner = () => {
     }
   }, [currentRoom, navigate, isRecovering]);
 
-  // Показываем загрузку пока восстанавливается сессия
-  if (isRecovering || isLoadingFromDb) {
-    return (
-      <div className="min-h-screen parchment flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="animate-spin text-4xl mb-4">🚂</div>
-          <p className="font-display text-lg text-foreground">
-            {isLoadingFromDb ? 'Загрузка из базы данных...' : 'Восстановление сессии...'}
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Подключаемся к игре...
-          </p>
-        </div>
+  // Определяем состояния для оверлеев
+  const showRecoveringOverlay = isRecovering || isLoadingFromDb;
+  const showWaitingForStateOverlay = !showRecoveringOverlay && !gameState;
+  const showGameBoard = !showRecoveringOverlay && !!gameState;
+
+  return (
+    <div className="min-h-screen parchment relative">
+      {/* Всегда рендерим GameBoard, но скрываем если нет состояния */}
+      <div className={showGameBoard ? 'block' : 'hidden'}>
+        <GameBoard />
       </div>
-    );
-  }
 
-  if (!gameState) {
-    return (
-      <div className="min-h-screen parchment flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="animate-spin text-4xl mb-4">🚂</div>
-          <p className="font-display text-lg text-foreground">Загрузка игры...</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {isHost
-              ? 'Состояние игры не найдено в базе данных.'
-              : 'Ждём состояние от хоста...'}
-          </p>
-
-          <div className="flex flex-col gap-3 mt-6">
-            {isHost ? (
-              <button
-                className="btn-vintage rounded-lg px-6 py-3"
-                onClick={handleRestoreFromDb}
-              >
-                🔄 Попробовать загрузить из БД
-              </button>
-            ) : (
-              <button
-                className="btn-vintage rounded-lg px-6 py-3"
-                onClick={handleRequestSync}
-              >
-                🔄 Запросить состояние {retryCount > 0 ? `(${retryCount})` : ''}
-              </button>
-            )}
-            <button className="btn-vintage rounded-lg px-6 py-3" onClick={handleExitToHome}>
-              ← На главную
-            </button>
+      {/* Оверлей восстановления сессии */}
+      {showRecoveringOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/90 z-50">
+          <div className="text-center max-w-md">
+            <div className="animate-spin text-4xl mb-4">🚂</div>
+            <p className="font-display text-lg text-foreground">
+              {isLoadingFromDb ? 'Загрузка из базы данных...' : 'Восстановление сессии...'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Подключаемся к игре...
+            </p>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return <GameBoard />;
+      {/* Оверлей ожидания состояния от хоста */}
+      {showWaitingForStateOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/90 z-50">
+          <div className="text-center max-w-md">
+            <div className="animate-spin text-4xl mb-4">🚂</div>
+            <p className="font-display text-lg text-foreground">Загрузка игры...</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {isHost
+                ? 'Состояние игры не найдено в базе данных.'
+                : 'Ждём состояние от хоста...'}
+            </p>
+
+            <div className="flex flex-col gap-3 mt-6">
+              {isHost ? (
+                <button
+                  className="btn-vintage rounded-lg px-6 py-3"
+                  onClick={handleRestoreFromDb}
+                >
+                  🔄 Попробовать загрузить из БД
+                </button>
+              ) : (
+                <button
+                  className="btn-vintage rounded-lg px-6 py-3"
+                  onClick={handleRequestSync}
+                >
+                  🔄 Запросить состояние {retryCount > 0 ? `(${retryCount})` : ''}
+                </button>
+              )}
+              <button className="btn-vintage rounded-lg px-6 py-3" onClick={handleExitToHome}>
+                ← На главную
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const Game = () => {
