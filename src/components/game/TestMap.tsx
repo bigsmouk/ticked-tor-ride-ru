@@ -8,7 +8,7 @@ import {
   getTestCity, 
   getParallelOffset 
 } from '@/data/testMap';
-
+import testMapBg from '@/assets/test-map-bg.jpg';
 // Route state interface
 export interface TestRouteState {
   claimedBy?: string;
@@ -296,15 +296,15 @@ export const TestMap: React.FC<TestMapProps> = ({
           </filter>
         </defs>
         
-        {/* Background - simple gradient ocean/land */}
-        <rect x="0" y="0" width="1920" height="1080" fill="url(#bg-gradient)" />
-        <defs>
-          <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e0f2fe" />
-            <stop offset="50%" stopColor="#dcfce7" />
-            <stop offset="100%" stopColor="#fef3c7" />
-          </linearGradient>
-        </defs>
+        {/* Background image */}
+        <image
+          href={testMapBg}
+          x="0"
+          y="0"
+          width="1920"
+          height="1080"
+          preserveAspectRatio="xMidYMid slice"
+        />
         
         {/* Routes layer */}
         <g className="routes-layer">
