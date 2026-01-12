@@ -6,11 +6,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { AuthControls } from '@/components/auth/AuthControls';
 import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Loader2, RefreshCw, Users, Lock, Globe } from 'lucide-react';
+
+interface PublicRoom {
+  id: string;
+  code: string;
+  name: string;
+  hostId: string;
+  playerCount: number;
+  maxPlayers: number;
+  createdAt: Date;
+}
 
 const Index = () => {
   const navigate = useNavigate();
-  const { createRoom, joinRoom, isLoading, isReady } = useMultiplayer();
-  const { profile } = useAuth();
+  const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, isLoading, isReady } = useMultiplayer();
+  const { profile, user } = useAuth();
   const {
     isRecovering,
     showRecoveryPrompt,
@@ -23,6 +36,9 @@ const Index = () => {
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
 
   // Устанавливаем имя из профиля при авторизации
   useEffect(() => {
@@ -108,9 +124,24 @@ const Index = () => {
     );
   }
 
+  const loadPublicRooms = async () => {
+    if (!user) return;
+    setLoadingRooms(true);
+    const rooms = await fetchPublicRooms();
+    setPublicRooms(rooms);
+    setLoadingRooms(false);
+  };
+
+  // Загружаем открытые комнаты при входе на страницу
+  useEffect(() => {
+    if (user && !showCreate && !showJoin) {
+      loadPublicRooms();
+    }
+  }, [user, showCreate, showJoin]);
+
   const handleCreateGame = async () => {
     if (playerName.trim() && roomName.trim()) {
-      const result = await createRoom(roomName.trim(), playerName.trim());
+      const result = await createRoom(roomName.trim(), playerName.trim(), isPrivate);
       if (result) {
         navigate('/waiting');
       }
@@ -123,6 +154,16 @@ const Index = () => {
       if (result) {
         navigate('/waiting');
       }
+    }
+  };
+
+  const handleJoinPublicRoom = async (roomId: string) => {
+    if (!playerName.trim()) {
+      return;
+    }
+    const result = await joinRoomById(roomId, playerName.trim());
+    if (result) {
+      navigate('/waiting');
     }
   };
 
@@ -176,6 +217,56 @@ const Index = () => {
                   🔗 Присоединиться по коду
                 </button>
 
+                {/* Список открытых комнат */}
+                {user && (
+                  <div className="mt-6 pt-4 border-t border-ornament">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        Открытые комнаты
+                      </h3>
+                      <button
+                        onClick={loadPublicRooms}
+                        disabled={loadingRooms}
+                        className="p-1 hover:bg-muted rounded transition-colors"
+                      >
+                        <RefreshCw className={`h-4 w-4 text-muted-foreground ${loadingRooms ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+
+                    {loadingRooms ? (
+                      <div className="text-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                      </div>
+                    ) : publicRooms.length > 0 ? (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {publicRooms.map((room) => (
+                          <button
+                            key={room.id}
+                            onClick={() => handleJoinPublicRoom(room.id)}
+                            disabled={isLoading || !playerName.trim()}
+                            className="w-full p-3 bg-muted/50 hover:bg-muted rounded-lg text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-foreground truncate">
+                                {room.name}
+                              </span>
+                              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                {room.playerCount}/{room.maxPlayers}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-sm text-muted-foreground py-4">
+                        Нет открытых комнат
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="text-center text-sm text-muted-foreground mt-6">
                   <p>Онлайн-версия настольной игры</p>
                   <p className="mt-1">Постройте железнодорожную империю в Европе!</p>
@@ -194,6 +285,30 @@ const Index = () => {
                     className="w-full bg-background border-ornament"
                   />
                 </div>
+
+                {/* Переключатель приватности */}
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {isPrivate ? (
+                      <Lock className="h-4 w-4 text-amber-600" />
+                    ) : (
+                      <Globe className="h-4 w-4 text-green-600" />
+                    )}
+                    <Label htmlFor="private-mode" className="text-sm font-medium cursor-pointer">
+                      {isPrivate ? 'Приватная комната' : 'Открытая комната'}
+                    </Label>
+                  </div>
+                  <Switch
+                    id="private-mode"
+                    checked={isPrivate}
+                    onCheckedChange={setIsPrivate}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground -mt-2 px-1">
+                  {isPrivate 
+                    ? 'Только по коду — комната не видна в списке' 
+                    : 'Все смогут найти и присоединиться'}
+                </p>
 
                 <button
                   className="btn-gold w-full rounded-lg py-3"

@@ -76,6 +76,7 @@ export interface GameRoom {
   players: Player[];
   maxPlayers: number;
   status: 'waiting' | 'playing' | 'finished';
+  isPrivate?: boolean;
   createdAt: Date;
 }
 
