@@ -63,6 +63,8 @@ export const useGameSync = (roomId: string | null) => {
   const executeEndTurn = useGameStore(state => state.endTurn);
   const executeRemovePlayer = useGameStore(state => state.removePlayer);
   const executeAddLog = useGameStore(state => state.addLog);
+  const executeInitiateKickVote = useGameStore(state => state.initiateKickVote);
+  const executeCastKickVote = useGameStore(state => state.castKickVote);
   
   const isHost = currentRoom?.hostId === localPlayerId;
   const isHostRef = useRef(isHost);
@@ -462,12 +464,10 @@ export const useGameSync = (roomId: string | null) => {
             executeRemovePlayer(action.playerId, action.playerName);
             break;
           case 'initiateKickVote':
-            // TODO: Handle kick vote initiation
-            executeAddLog(action.initiatorId, 'Инициировал голосование за исключение', 
-              `Цель: ${useGameStore.getState().gameState?.players.find(p => p.id === action.targetPlayerId)?.name || 'Игрок'}`);
+            executeInitiateKickVote(action.targetPlayerId, action.initiatorId);
             break;
           case 'castKickVote':
-            // TODO: Handle kick vote casting
+            executeCastKickVote(action.voterId, action.approve);
             break;
         }
         
@@ -557,7 +557,7 @@ export const useGameSync = (roomId: string | null) => {
       channelRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer]);
+  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer]);
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {

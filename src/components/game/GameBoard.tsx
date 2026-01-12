@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { EuropeMap } from '@/components/game/EuropeMap';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
@@ -11,6 +11,7 @@ import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
 import { AuthControls } from '@/components/auth/AuthControls';
 import { LeaveGameButton } from '@/components/game/LeaveGameButton';
 import { PlayerProfileModal } from '@/components/game/PlayerProfileModal';
+import { KickVoteModal } from '@/components/game/KickVoteModal';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket, Player } from '@/types/game';
 import { useGameSyncContext } from '@/contexts/gameSyncContext';
@@ -18,7 +19,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { playTurnNotificationSound } from '@/hooks/useGameSounds';
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError } = useGameStore();
+  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError, initiateKickVote, castKickVote, resolveKickVote, cancelKickVote } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -39,10 +40,8 @@ export const GameBoard: React.FC = () => {
   };
 
   const handleInitiateKick = (playerId: string) => {
-    // TODO: Implement full kick voting system with state
     if (isHost) {
-      addLog(localPlayerId || undefined, 'Инициировал голосование за исключение', 
-        gameState?.players.find(p => p.id === playerId)?.name || 'Игрок');
+      initiateKickVote(playerId, localPlayerId || '');
     } else {
       sendActionToHost({ 
         type: 'initiateKickVote', 
@@ -50,7 +49,38 @@ export const GameBoard: React.FC = () => {
         initiatorId: localPlayerId || ''
       });
     }
+    setShowPlayerProfile(false);
   };
+
+  const handleCastVote = useCallback((approve: boolean) => {
+    if (!localPlayerId) return;
+    
+    if (isHost) {
+      castKickVote(localPlayerId, approve);
+    } else {
+      sendActionToHost({
+        type: 'castKickVote',
+        targetPlayerId: gameState?.activeKickVote?.targetPlayerId || '',
+        voterId: localPlayerId,
+        approve
+      });
+    }
+  }, [isHost, localPlayerId, castKickVote, sendActionToHost, gameState?.activeKickVote?.targetPlayerId]);
+
+  // Timer effect for kick vote expiration (host only)
+  useEffect(() => {
+    if (!isHost || !gameState?.activeKickVote) return;
+
+    const checkExpiration = () => {
+      if (gameState.activeKickVote && Date.now() >= gameState.activeKickVote.expiresAt) {
+        // Vote expired - resolve it
+        resolveKickVote();
+      }
+    };
+
+    const interval = setInterval(checkExpiration, 1000);
+    return () => clearInterval(interval);
+  }, [isHost, gameState?.activeKickVote, resolveKickVote]);
 
   // Сбрасываем выделение при смене хода и проигрываем звук если ход перешёл к нам
   const prevCurrentPlayerId = useRef(gameState?.currentPlayerId);
@@ -353,8 +383,18 @@ export const GameBoard: React.FC = () => {
         isHost={currentRoom?.hostId === selectedPlayer?.id}
         isLocalPlayer={selectedPlayer?.id === localPlayerId}
         isOnline={selectedPlayer ? isPlayerOnline(selectedPlayer.id) : false}
-        canKick={!selectedPlayer?.id?.includes(localPlayerId || '') && gameState.players.length > 2}
+        canKick={!selectedPlayer?.id?.includes(localPlayerId || '') && gameState.players.length > 2 && !gameState.activeKickVote}
         onInitiateKick={handleInitiateKick}
+      />
+
+      {/* Kick vote modal */}
+      <KickVoteModal
+        vote={gameState?.activeKickVote || null}
+        players={gameState?.players || []}
+        localPlayerId={localPlayerId || ''}
+        isOpen={!!gameState?.activeKickVote}
+        onVote={handleCastVote}
+        onClose={() => {}} // Cannot close during vote
       />
     </div>
   );
