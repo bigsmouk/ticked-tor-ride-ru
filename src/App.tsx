@@ -9,6 +9,7 @@ import Game from "./pages/Game";
 import MapCalibration from "./pages/MapCalibration";
 import RouteCalibration from "./pages/RouteCalibration";
 import EmailConfirmed from "./pages/EmailConfirmed";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/waiting" element={<WaitingRoom />} />
           <Route path="/game" element={<Game />} />
           <Route path="/email-confirmed" element={<EmailConfirmed />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
