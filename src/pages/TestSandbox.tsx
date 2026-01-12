@@ -1,8 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { GameBoard } from '@/components/game/GameBoard';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Play, Users } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { RotateCcw, Users, Zap, Trophy, CreditCard, Train } from 'lucide-react';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -21,9 +22,11 @@ import {
 } from '@/types/game';
 
 const SANDBOX_PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
+const ALL_CARD_TYPES: TrainCardType[] = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black', 'locomotive'];
 
 const TestSandbox = () => {
-  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId } = useGameStore();
+  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores } = useGameStore();
+  const [infiniteCards, setInfiniteCards] = useState(false);
 
   // Initialize sandbox game with specified number of players
   const initializeSandbox = useCallback((playerCount: number = 2) => {
@@ -128,6 +131,155 @@ const TestSandbox = () => {
     });
   }, [gameState, setLocalPlayerId, setGameState]);
 
+  // Cheat: Give current player all card types (10 of each)
+  const giveAllCards = useCallback(() => {
+    if (!gameState || !localPlayerId) return;
+    
+    const megaHand: TrainCardType[] = [];
+    ALL_CARD_TYPES.forEach(cardType => {
+      for (let i = 0; i < 10; i++) {
+        megaHand.push(cardType);
+      }
+    });
+
+    const newPlayers = gameState.players.map(p => 
+      p.id === localPlayerId 
+        ? { ...p, trainCards: [...p.trainCards, ...megaHand] }
+        : p
+    );
+
+    setGameState({
+      ...gameState,
+      players: newPlayers,
+      logs: [
+        ...gameState.logs,
+        {
+          id: crypto.randomUUID(),
+          playerId: localPlayerId,
+          action: '🃏 ЧИТ: Получил все карты',
+          details: '+90 карт',
+          timestamp: new Date(),
+        },
+      ],
+    });
+  }, [gameState, localPlayerId, setGameState]);
+
+  // Cheat: Set trains to 2 (triggers end game)
+  const triggerEndGame = useCallback(() => {
+    if (!gameState || !localPlayerId) return;
+
+    const newPlayers = gameState.players.map(p => 
+      p.id === localPlayerId 
+        ? { ...p, trainsRemaining: 2 }
+        : p
+    );
+
+    setGameState({
+      ...gameState,
+      players: newPlayers,
+      phase: 'lastRound',
+      lastRoundTriggeredBy: localPlayerId,
+      turnsRemainingInLastRound: gameState.players.length,
+      logs: [
+        ...gameState.logs,
+        {
+          id: crypto.randomUUID(),
+          playerId: localPlayerId,
+          action: '⚡ ЧИТ: Запущен последний раунд',
+          details: 'Осталось 2 вагона',
+          timestamp: new Date(),
+        },
+      ],
+    });
+  }, [gameState, localPlayerId, setGameState]);
+
+  // Cheat: Instant finish game
+  const instantFinish = useCallback(() => {
+    if (!gameState) return;
+    calculateFinalScores();
+  }, [gameState, calculateFinalScores]);
+
+  // Cheat: Add score to current player
+  const addScore = useCallback((amount: number) => {
+    if (!gameState || !localPlayerId) return;
+
+    const newPlayers = gameState.players.map(p => 
+      p.id === localPlayerId 
+        ? { ...p, score: p.score + amount }
+        : p
+    );
+
+    setGameState({
+      ...gameState,
+      players: newPlayers,
+      logs: [
+        ...gameState.logs,
+        {
+          id: crypto.randomUUID(),
+          playerId: localPlayerId,
+          action: '💰 ЧИТ: Добавлены очки',
+          details: `+${amount}`,
+          timestamp: new Date(),
+        },
+      ],
+    });
+  }, [gameState, localPlayerId, setGameState]);
+
+  // Cheat: Infinite trains
+  const giveInfiniteTrains = useCallback(() => {
+    if (!gameState || !localPlayerId) return;
+
+    const newPlayers = gameState.players.map(p => 
+      p.id === localPlayerId 
+        ? { ...p, trainsRemaining: 999 }
+        : p
+    );
+
+    setGameState({
+      ...gameState,
+      players: newPlayers,
+      logs: [
+        ...gameState.logs,
+        {
+          id: crypto.randomUUID(),
+          playerId: localPlayerId,
+          action: '🚂 ЧИТ: Бесконечные вагоны',
+          details: '999 вагонов',
+          timestamp: new Date(),
+        },
+      ],
+    });
+  }, [gameState, localPlayerId, setGameState]);
+
+  // Effect: Infinite cards mode - replenish cards after each action
+  useEffect(() => {
+    if (!infiniteCards || !gameState || !localPlayerId) return;
+
+    const currentPlayer = gameState.players.find(p => p.id === localPlayerId);
+    if (!currentPlayer) return;
+
+    // If player has less than 20 cards, give more
+    if (currentPlayer.trainCards.length < 20) {
+      const megaHand: TrainCardType[] = [];
+      ALL_CARD_TYPES.forEach(cardType => {
+        for (let i = 0; i < 5; i++) {
+          megaHand.push(cardType);
+        }
+      });
+
+      const newPlayers = gameState.players.map(p => 
+        p.id === localPlayerId 
+          ? { ...p, trainCards: [...p.trainCards, ...megaHand] }
+          : p
+      );
+
+      setGameState({
+        ...gameState,
+        players: newPlayers,
+      });
+    }
+  }, [infiniteCards, gameState?.turnNumber, localPlayerId]);
+
   // Auto-initialize on mount if no game
   useEffect(() => {
     if (!gameState) {
@@ -146,10 +298,12 @@ const TestSandbox = () => {
     );
   }
 
+  const currentPlayer = gameState.players.find(p => p.id === localPlayerId);
+
   return (
     <div className="relative">
       {/* Sandbox Controls Overlay */}
-      <div className="fixed top-2 left-2 z-50 bg-background/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg max-w-xs">
+      <div className="fixed top-2 left-2 z-50 bg-background/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg max-w-xs overflow-y-auto max-h-[90vh]">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🧪</span>
           <span className="font-display text-sm font-bold text-primary">Песочница</span>
@@ -193,12 +347,90 @@ const TestSandbox = () => {
           </div>
         </div>
 
+        {/* Cheat section */}
+        <div className="border-t border-border pt-3 mt-3">
+          <p className="text-xs font-bold text-yellow-500 mb-2 flex items-center gap-1">
+            <Zap className="w-3 h-3" />
+            Читы
+          </p>
+
+          {/* Infinite cards toggle */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">♾️ Бесконечные карты</span>
+            <Switch
+              checked={infiniteCards}
+              onCheckedChange={setInfiniteCards}
+            />
+          </div>
+
+          {/* Cheat buttons */}
+          <div className="grid grid-cols-2 gap-1 mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={giveAllCards}
+              className="text-xs border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+            >
+              <CreditCard className="w-3 h-3 mr-1" />
+              +90 карт
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={giveInfiniteTrains}
+              className="text-xs border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+            >
+              <Train className="w-3 h-3 mr-1" />
+              999 вагонов
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1 mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addScore(50)}
+              className="text-xs border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+            >
+              💰 +50 очков
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addScore(100)}
+              className="text-xs border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+            >
+              💰 +100 очков
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={triggerEndGame}
+              className="text-xs border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+            >
+              ⚡ Последний раунд
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={instantFinish}
+              className="text-xs border-red-500/50 text-red-600 hover:bg-red-500/10"
+            >
+              <Trophy className="w-3 h-3 mr-1" />
+              Завершить
+            </Button>
+          </div>
+        </div>
+
         {/* Reset button */}
         <Button
           variant="destructive"
           size="sm"
           onClick={() => initializeSandbox(gameState.players.length)}
-          className="w-full text-xs"
+          className="w-full text-xs mt-3"
         >
           <RotateCcw className="w-3 h-3 mr-1" />
           Сбросить игру
@@ -212,6 +444,16 @@ const TestSandbox = () => {
           <p className="text-xs text-muted-foreground">
             Фаза: {gameState.phase}
           </p>
+          {currentPlayer && (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Карт: {currentPlayer.trainCards.length}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Вагонов: {currentPlayer.trainsRemaining}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
