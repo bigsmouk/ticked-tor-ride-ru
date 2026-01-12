@@ -20,13 +20,34 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const [mode, setMode] = useState<'login' | 'register' | 'confirm-pending'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'confirm-pending' | 'forgot-password' | 'reset-sent'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { signIn, signUp } = useAuth();
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error('Введите email');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        setMode('reset-sent');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleResendConfirmation = async () => {
     setResending(true);
@@ -103,6 +124,119 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setMode('login');
     onClose();
   };
+
+  // Password reset sent screen
+  if (mode === 'reset-sent') {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md bg-amber-50 border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-amber-900 text-center">
+              📧 Письмо отправлено
+            </DialogTitle>
+            <DialogDescription className="text-center text-amber-700">
+              Ссылка для сброса пароля отправлена на
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 text-center">
+            <p className="font-medium text-amber-900 text-lg mb-4">{email}</p>
+            
+            <div className="bg-amber-100 rounded-lg p-4 mb-4">
+              <p className="text-sm text-amber-800">
+                Перейдите по ссылке в письме, чтобы создать новый пароль.
+                Проверьте папку «Спам», если письмо не пришло.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleForgotPassword}
+              variant="outline"
+              className="w-full border-amber-300 text-amber-800 hover:bg-amber-100"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Отправить повторно
+            </Button>
+          </div>
+
+          <div className="mt-2 text-center">
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className="text-sm text-amber-700 hover:text-amber-900 underline"
+            >
+              Вернуться к входу
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Forgot password screen
+  if (mode === 'forgot-password') {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md bg-amber-50 border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-amber-900 text-center">
+              🔐 Сброс пароля
+            </DialogTitle>
+            <DialogDescription className="text-center text-amber-700">
+              Введите email для получения ссылки сброса
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email" className="text-amber-800">
+                Email
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-600" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 bg-white border-amber-300 focus:border-amber-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleForgotPassword}
+              className="w-full bg-amber-700 hover:bg-amber-800 text-white"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Отправить ссылку'
+              )}
+            </Button>
+          </div>
+
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className="text-sm text-amber-700 hover:text-amber-900 underline"
+            >
+              Вернуться к входу
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Confirmation pending screen
   if (mode === 'confirm-pending') {
@@ -245,7 +379,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center space-y-2">
           <button
             type="button"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
@@ -255,6 +389,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               ? 'Нет аккаунта? Зарегистрироваться'
               : 'Уже есть аккаунт? Войти'}
           </button>
+          
+          {mode === 'login' && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setMode('forgot-password')}
+                className="text-sm text-amber-600 hover:text-amber-800 underline"
+              >
+                Забыли пароль?
+              </button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
