@@ -11,6 +11,9 @@ interface PresenceState {
   lastSeen: number;
 }
 
+// Задержка перед уведомлением о выходе (чтобы избежать ложных срабатываний)
+const LEAVE_DEBOUNCE_MS = 3000;
+
 export const usePresence = (roomId: string | null) => {
   const { localPlayerId, currentRoom } = useGameStore();
   const [onlinePlayers, setOnlinePlayers] = useState<Set<string>>(new Set());
@@ -19,6 +22,10 @@ export const usePresence = (roomId: string | null) => {
   // Храним предыдущее состояние для сравнения (чтобы не дублировать уведомления)
   const previousOnlineRef = useRef<Set<string>>(new Set());
   const isInitialSyncRef = useRef(true);
+  // Таймеры для debounce выхода игроков
+  const leaveTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  // Флаг, что мы уже подписались
+  const isSubscribedRef = useRef(false);
 
   // Получаем имя игрока по ID
   const getPlayerName = useCallback((playerId: string): string => {
@@ -71,6 +78,14 @@ export const usePresence = (roomId: string | null) => {
         const firstPresence = newPresences[0] as unknown as PresenceState | undefined;
         const joinedPlayerId = firstPresence?.playerId || key;
         
+        // Отменяем таймер выхода, если игрок вернулся
+        const leaveTimer = leaveTimersRef.current.get(joinedPlayerId);
+        if (leaveTimer) {
+          clearTimeout(leaveTimer);
+          leaveTimersRef.current.delete(joinedPlayerId);
+          console.log(`🔄 [Presence] Игрок быстро вернулся, отмена уведомления о выходе: ${joinedPlayerId}`);
+        }
+        
         // Не уведомляем о себе и не дублируем
         if (joinedPlayerId !== localPlayerId && !previousOnlineRef.current.has(joinedPlayerId)) {
           const playerName = getPlayerName(joinedPlayerId);
@@ -96,12 +111,35 @@ export const usePresence = (roomId: string | null) => {
         const firstPresence = leftPresences[0] as unknown as PresenceState | undefined;
         const leftPlayerId = firstPresence?.playerId || key;
         
-        // Не уведомляем о себе
-        if (leftPlayerId !== localPlayerId && previousOnlineRef.current.has(leftPlayerId)) {
-          const playerName = getPlayerName(leftPlayerId);
-          console.log(`🔴 [Presence] Игрок отключился: ${playerName} (${leftPlayerId})`);
-          toast.warning(`${playerName} отключился от игры`);
-          playPlayerLeaveSound();
+        // Не обрабатываем свой выход
+        if (leftPlayerId === localPlayerId) return;
+        
+        // Debounce: ждём перед уведомлением о выходе
+        // Это предотвращает ложные срабатывания при кратковременных обрывах
+        if (!leaveTimersRef.current.has(leftPlayerId)) {
+          console.log(`⏳ [Presence] Обнаружен выход игрока, ожидание подтверждения: ${leftPlayerId}`);
+          
+          const timer = setTimeout(() => {
+            // Проверяем, что игрок действительно не вернулся
+            const currentState = presenceChannel.presenceState<PresenceState>() || {};
+            const stillOnline = Object.values(currentState).some((presences) =>
+              presences.some((p) => p.playerId === leftPlayerId)
+            );
+            
+            if (!stillOnline && previousOnlineRef.current.has(leftPlayerId)) {
+              const playerName = getPlayerName(leftPlayerId);
+              console.log(`🔴 [Presence] Игрок отключился (подтверждено): ${playerName} (${leftPlayerId})`);
+              toast.warning(`${playerName} отключился от игры`);
+              playPlayerLeaveSound();
+              previousOnlineRef.current.delete(leftPlayerId);
+            } else if (stillOnline) {
+              console.log(`✅ [Presence] Ложное срабатывание, игрок всё ещё онлайн: ${leftPlayerId}`);
+            }
+            
+            leaveTimersRef.current.delete(leftPlayerId);
+          }, LEAVE_DEBOUNCE_MS);
+          
+          leaveTimersRef.current.set(leftPlayerId, timer);
         }
         
         setOnlinePlayers(prev => {
@@ -111,7 +149,6 @@ export const usePresence = (roomId: string | null) => {
             const id = presence?.playerId;
             if (id) {
               next.delete(id);
-              previousOnlineRef.current.delete(id);
             }
           });
           return next;
@@ -142,6 +179,9 @@ export const usePresence = (roomId: string | null) => {
 
     return () => {
       clearInterval(heartbeat);
+      // Очищаем все pending таймеры выхода
+      leaveTimersRef.current.forEach((timer) => clearTimeout(timer));
+      leaveTimersRef.current.clear();
       isInitialSyncRef.current = true;
       previousOnlineRef.current = new Set();
       supabase.removeChannel(presenceChannel);
