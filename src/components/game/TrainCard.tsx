@@ -73,8 +73,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
         <img 
           src={cardBack} 
           alt="Card back"
-          className="w-full h-full object-contain"
-          style={{ transform: 'rotate(90deg) scale(1.4)' }}
+          className="w-full h-full object-cover"
           draggable={false}
           loading="eager"
         />
@@ -118,8 +117,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
       <img 
         src={cardImage} 
         alt={`${type} card`}
-        className="w-full h-full object-contain"
-        style={{ transform: 'rotate(90deg) scale(1.4)' }}
+        className="w-full h-full object-cover"
         draggable={false}
         loading="eager"
       />
