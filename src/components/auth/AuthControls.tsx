@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LogIn, User as UserIcon } from "lucide-react";
+import { LogIn, User as UserIcon, RefreshCw, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -36,33 +36,59 @@ export const AuthControls: React.FC<AuthControlsProps> = ({ className }) => {
 
   const avatarUrl = profile?.avatar_url ?? null;
 
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await refreshProfile();
+  };
+
   return (
-    <div className={className}>
+    <div className={`flex items-center gap-2 ${className ?? ""}`}>
       {authLoading ? (
         <div className="w-10 h-10 rounded-full bg-amber-700/50 animate-pulse" />
       ) : isAuthenticated ? (
-        <button
-          type="button"
-          onClick={() => setShowProfileModal(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-700/80 hover:bg-amber-700 transition-colors text-white"
-          aria-label="Открыть профиль"
-        >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              className="w-8 h-8 rounded-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center">
-              <UserIcon className="h-4 w-4" />
+        <>
+          {/* Статус загрузки / кнопка обновления */}
+          {profileLoading ? (
+            <div className="flex items-center gap-1 text-amber-200 text-xs">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="hidden sm:inline">Загрузка...</span>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="p-2 rounded-full bg-amber-700/50 hover:bg-amber-700 transition-colors text-white"
+              aria-label="Обновить профиль"
+              title="Обновить профиль"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           )}
-          <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
-            {displayName}
-          </span>
-        </button>
+
+          {/* Аватар / профиль */}
+          <button
+            type="button"
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-700/80 hover:bg-amber-700 transition-colors text-white"
+            aria-label="Открыть профиль"
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center">
+                <UserIcon className="h-4 w-4" />
+              </div>
+            )}
+            <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
+              {displayName}
+            </span>
+          </button>
+        </>
       ) : (
         <button
           type="button"
