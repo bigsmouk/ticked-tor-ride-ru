@@ -58,6 +58,8 @@ export const useSessionRecovery = () => {
   const { currentRoom, localPlayerId, setCurrentRoom, setView } = useGameStore();
   const [isRecovering, setIsRecovering] = useState(false);
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
+  const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
+  const [savedSessionData, setSavedSessionData] = useState<SavedSession | null>(null);
 
   // Попытка восстановить сессию
   const attemptRecovery = useCallback(async () => {
@@ -207,7 +209,7 @@ export const useSessionRecovery = () => {
     }
   }, [currentRoom, isRecovering, hasAttemptedRecovery, localPlayerId, setCurrentRoom, setView, navigate]);
 
-  // Автоматическая попытка восстановления при загрузке
+  // Проверяем наличие сохранённой сессии при загрузке (показываем prompt вместо авто-восстановления)
   useEffect(() => {
     const skipAutoRecovery = new URLSearchParams(location.search).has('noRecover');
 
@@ -219,13 +221,30 @@ export const useSessionRecovery = () => {
       !hasAttemptedRecovery &&
       location.pathname === '/'
     ) {
-      attemptRecovery();
+      const session = getSavedSession();
+      if (session) {
+        setSavedSessionData(session);
+        setShowRecoveryPrompt(true);
+      } else {
+        setHasAttemptedRecovery(true);
+      }
     }
-  }, [localPlayerId, currentRoom, hasAttemptedRecovery, location.pathname, location.search, attemptRecovery]);
+  }, [localPlayerId, currentRoom, hasAttemptedRecovery, location.pathname, location.search]);
+
+  // Отклонить восстановление — остаться на главной
+  const dismissRecovery = useCallback(() => {
+    clearSession();
+    setShowRecoveryPrompt(false);
+    setSavedSessionData(null);
+    setHasAttemptedRecovery(true);
+  }, []);
 
   return {
     isRecovering,
     attemptRecovery,
     hasSession: !!getSavedSession(),
+    showRecoveryPrompt,
+    savedSessionData,
+    dismissRecovery,
   };
 };
