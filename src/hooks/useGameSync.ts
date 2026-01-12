@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameStore } from '@/stores/gameStore';
 import { GameState, TrainCardType } from '@/types/game';
@@ -14,12 +14,19 @@ export type GameAction =
   | { type: 'cancelDestinationDraw' }
   | { type: 'endTurn' };
 
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
+
 export const useGameSync = (roomId: string | null) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const gameState = useGameStore(state => state.gameState);
   const localPlayerId = useGameStore(state => state.localPlayerId);
   const currentRoom = useGameStore(state => state.currentRoom);
   const setGameState = useGameStore(state => state.setGameState);
+  
+  // Состояние подключения
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const hostOnlineRef = useRef(false);
   
   // Game actions from store (host will execute these)
   const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
@@ -85,26 +92,33 @@ export const useGameSync = (roomId: string | null) => {
           return;
         }
 
-        // Если мы хост, не обновляем из presence
+        // Если мы хост, статус всегда "connected"
         if (isHostRef.current) {
           console.log('[GameSync] We are host, ignoring sync');
+          setConnectionStatus('connected');
           return;
         }
 
         // Ищем presence хоста
         const hostPresences = presenceState[hostId];
         if (hostPresences && hostPresences.length > 0) {
+          hostOnlineRef.current = true;
+          setConnectionStatus('connected');
+          
           const hostPresence = hostPresences[0] as any;
           if (hostPresence?.gameState) {
             try {
               const parsedState = JSON.parse(hostPresence.gameState) as GameState;
               console.log('[GameSync] Received state from host, currentPlayer:', parsedState.currentPlayerId, 'turn:', parsedState.turnNumber);
               setGameState(parsedState);
+              setLastSyncTime(Date.now());
             } catch (e) {
               console.error('[GameSync] Error parsing game state:', e);
             }
           }
         } else {
+          hostOnlineRef.current = false;
+          setConnectionStatus('disconnected');
           console.log('[GameSync] Host not found in presence, waiting...');
         }
       })
@@ -283,5 +297,5 @@ export const useGameSync = (roomId: string | null) => {
     return () => clearInterval(interval);
   }, [isHost]);
 
-  return { sendActionToHost, isHost };
+  return { sendActionToHost, isHost, connectionStatus, lastSyncTime };
 };
