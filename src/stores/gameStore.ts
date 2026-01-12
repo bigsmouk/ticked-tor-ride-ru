@@ -66,6 +66,7 @@ interface GameStore {
   endTurn: () => void;
   calculateFinalScores: () => void;
   addLog: (playerId: string | undefined, action: string, details?: string) => void;
+  removePlayer: (playerId: string, playerName: string) => void;
   
   // Helpers
   canClaimRoute: (routeId: string) => boolean;
@@ -613,6 +614,62 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...gameState,
         logs: [...gameState.logs, createLog(playerId, action, details)],
       },
+    });
+  },
+  
+  removePlayer: (playerId, playerName) => {
+    const { gameState, currentRoom } = get();
+    if (!gameState) return;
+    
+    // Находим индекс игрока
+    const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+    
+    // Если игрок был активным, передаём ход следующему
+    const wasActive = gameState.currentPlayerId === playerId;
+    const updatedPlayers = gameState.players.filter(p => p.id !== playerId);
+    
+    // Если осталось меньше 2 игроков - завершаем игру
+    if (updatedPlayers.length < 2) {
+      set({
+        gameState: {
+          ...gameState,
+          phase: 'finished',
+          players: updatedPlayers,
+          logs: [
+            ...gameState.logs,
+            createLog(playerId, 'Покинул игру', playerName),
+            createLog(undefined, 'Игра завершена', 'Недостаточно игроков'),
+          ],
+        },
+      });
+      return;
+    }
+    
+    // Определяем нового текущего игрока
+    let newCurrentPlayerId = gameState.currentPlayerId;
+    if (wasActive) {
+      const newIndex = playerIndex % updatedPlayers.length;
+      newCurrentPlayerId = updatedPlayers[newIndex].id;
+      updatedPlayers[newIndex] = { ...updatedPlayers[newIndex], isActive: true };
+    }
+    
+    set({
+      gameState: {
+        ...gameState,
+        players: updatedPlayers,
+        currentPlayerId: newCurrentPlayerId,
+        currentAction: wasActive ? 'none' : gameState.currentAction,
+        logs: [
+          ...gameState.logs,
+          createLog(playerId, 'Покинул игру', playerName),
+          ...(wasActive ? [createLog(newCurrentPlayerId, 'Начинает ход', 'После выхода игрока')] : []),
+        ],
+      },
+      currentRoom: currentRoom ? {
+        ...currentRoom,
+        players: updatedPlayers,
+      } : null,
     });
   },
   
