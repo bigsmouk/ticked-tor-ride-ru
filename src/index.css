@@ -378,6 +378,48 @@
       opacity: 1;
     }
   }
+  
+  /* Claimed route dashed line animation */
+  .claimed-route-line {
+    animation: claimedRouteAppear 0.8s ease-out forwards;
+  }
+  
+  @keyframes claimedRouteAppear {
+    0% {
+      stroke-dashoffset: 200;
+      opacity: 0;
+      stroke-width: 0;
+    }
+    30% {
+      opacity: 1;
+      stroke-width: 3;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+      stroke-width: 6;
+    }
+  }
+  
+  /* Claimed route marker animation */
+  .claimed-route-line + circle,
+  .claimed-route-line ~ circle {
+    animation: routeMarkerAppear 0.4s ease-out 0.5s both;
+  }
+  
+  @keyframes routeMarkerAppear {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.3);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 
   /* Vintage text shadow */
   .text-shadow-vintage {
