@@ -294,6 +294,31 @@ export const useAuth = () => {
     return { error: null, url: urlWithCacheBust };
   };
 
+  // Принудительная синхронизация данных из Google/OAuth
+  const syncFromProvider = async () => {
+    if (!authState.user) return { error: new Error('Not authenticated'), synced: false };
+
+    const metadata = authState.user.user_metadata as any;
+    const providerName = metadata?.full_name || metadata?.name;
+    const providerAvatar = metadata?.avatar_url || metadata?.picture;
+
+    if (!providerName && !providerAvatar) {
+      return { error: new Error('Нет данных от провайдера'), synced: false };
+    }
+
+    const updates: { display_name?: string; avatar_url?: string } = {};
+    if (providerName) updates.display_name = providerName;
+    if (providerAvatar) updates.avatar_url = providerAvatar;
+
+    const { error } = await updateProfile(updates);
+
+    if (!error) {
+      console.log('[Profile] Синхронизировано из провайдера:', updates);
+    }
+
+    return { error, synced: !error };
+  };
+
   return {
     ...authState,
     signUp,
@@ -302,6 +327,7 @@ export const useAuth = () => {
     updateProfile,
     uploadAvatar,
     refreshProfile,
+    syncFromProvider,
     isAuthenticated: !!authState.user,
   };
 };

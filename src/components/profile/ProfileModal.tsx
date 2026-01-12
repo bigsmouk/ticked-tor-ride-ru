@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useMatchHistory } from '@/hooks/useMatchHistory';
 import { toast } from 'sonner';
-import { Loader2, Camera, Trophy, Target, TrendingUp, Trash2, Award, Route } from 'lucide-react';
+import { Loader2, Camera, Trophy, Target, TrendingUp, Trash2, Award, Route, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import {
@@ -34,13 +34,38 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { user, profile, profileLoading, refreshProfile, updateProfile, uploadAvatar, signOut } = useAuth();
+  const { user, profile, profileLoading, refreshProfile, updateProfile, uploadAvatar, signOut, syncFromProvider } = useAuth();
   const { matches, stats, loading: historyLoading, fetchMatchHistory, fetchPlayerStats, clearMatchHistory } = useMatchHistory();
   
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'stats'>('profile');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Проверяем, вошёл ли пользователь через OAuth провайдер
+  const hasProviderData = !!(
+    (user?.user_metadata as any)?.full_name || 
+    (user?.user_metadata as any)?.name ||
+    (user?.user_metadata as any)?.avatar_url ||
+    (user?.user_metadata as any)?.picture
+  );
+
+  const handleSyncFromProvider = async () => {
+    setSyncing(true);
+    const { error, synced } = await syncFromProvider();
+    setSyncing(false);
+
+    if (error) {
+      toast.error(error.message || 'Ошибка синхронизации');
+    } else if (synced) {
+      toast.success('Данные синхронизированы из Google');
+      // Обновляем локальный state
+      if (profile) {
+        setDisplayName(profile.display_name);
+      }
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -246,6 +271,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Сохранить'}
               </Button>
+
+              {/* Кнопка синхронизации из Google */}
+              {hasProviderData && (
+                <Button
+                  variant="outline"
+                  onClick={handleSyncFromProvider}
+                  className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+                  disabled={syncing}
+                >
+                  {syncing ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Синхронизировать из Google
+                </Button>
+              )}
 
               <div className="pt-4 border-t border-amber-200">
                 <Button
