@@ -119,6 +119,8 @@ export const useGameSync = (roomId: string | null) => {
       }
       await ch.send({ type: 'broadcast', event, payload });
     };
+
+    channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         console.log('[GameSync] Presence sync event, state:', Object.keys(presenceState));
