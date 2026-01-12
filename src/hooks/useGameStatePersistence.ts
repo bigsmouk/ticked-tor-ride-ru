@@ -12,6 +12,7 @@ interface UseGameStatePersistenceOptions {
 }
 
 export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameStatePersistenceOptions) => {
+  // Всегда вызываем все хуки в одинаковом порядке - это критично для React!
   const gameState = useGameStore(state => state.gameState);
   const setGameState = useGameStore(state => state.setGameState);
   const localPlayerId = useGameStore(state => state.localPlayerId);
@@ -23,6 +24,7 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
 
   // Сохранение состояния в БД
   const saveToDb = useCallback(async (state: GameState) => {
+    // Early return но хук всегда вызывается
     if (!roomId || isSavingRef.current) return;
     
     // Не сохраняем если ничего не изменилось
@@ -89,6 +91,8 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
 
   // Попытка восстановить состояние из БД
   const restoreFromDb = useCallback(async (): Promise<boolean> => {
+    if (!roomId) return false;
+    
     const currentState = useGameStore.getState().gameState;
     
     // Если состояние уже есть, не перезаписываем
@@ -106,11 +110,21 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
     }
 
     return false;
-  }, [loadFromDb, setGameState]);
+  }, [roomId, loadFromDb, setGameState]);
+
+  // Обёртка для безопасного сохранения
+  const saveCurrentState = useCallback(() => {
+    if (gameState && roomId) {
+      saveToDb(gameState);
+    }
+  }, [gameState, roomId, saveToDb]);
 
   // Дебаунсированное сохранение при изменении состояния
   useEffect(() => {
-    if (!enabled || !roomId || !gameState) return;
+    // Проверка условий внутри эффекта, а не перед ним
+    if (!enabled || !roomId || !gameState) {
+      return;
+    }
 
     // Очищаем предыдущий таймер
     if (saveTimerRef.current) {
@@ -131,7 +145,9 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
 
   // Периодическое сохранение (backup)
   useEffect(() => {
-    if (!enabled || !roomId) return;
+    if (!enabled || !roomId) {
+      return;
+    }
 
     intervalRef.current = setInterval(() => {
       const currentState = useGameStore.getState().gameState;
@@ -149,20 +165,14 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
 
   // Сохранение при уходе со страницы
   useEffect(() => {
-    if (!enabled || !roomId) return;
+    if (!enabled || !roomId) {
+      return;
+    }
 
     const handleBeforeUnload = () => {
       const currentState = useGameStore.getState().gameState;
       if (currentState && currentState.turnNumber !== lastSavedTurnRef.current) {
         // Синхронный запрос через sendBeacon для надёжности
-        const payload = JSON.stringify({
-          room_id: roomId,
-          game_state: currentState,
-          turn_number: currentState.turnNumber,
-          updated_by: localPlayerId || 'unknown',
-        });
-        
-        // sendBeacon не работает с auth, поэтому просто логируем
         console.log('[GameStatePersistence] Page unload, state should be saved');
       }
     };
@@ -172,9 +182,7 @@ export const useGameStatePersistence = ({ roomId, enabled = true }: UseGameState
   }, [roomId, localPlayerId, enabled]);
 
   return {
-    saveToDb: useCallback(() => {
-      if (gameState) saveToDb(gameState);
-    }, [gameState, saveToDb]),
+    saveToDb: saveCurrentState,
     loadFromDb,
     restoreFromDb,
   };

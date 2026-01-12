@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useCallback, useMemo } from "react";
 
 import { useGameSync, ConnectionStatus, GameAction } from "@/hooks/useGameSync";
 import { useGameStatePersistence } from "@/hooks/useGameStatePersistence";
@@ -9,29 +9,32 @@ export type GameSyncContextValue = ReturnType<typeof useGameSync> & {
 
 const GameSyncContext = createContext<GameSyncContextValue | null>(null);
 
-// Дефолтные значения для случая когда контекст недоступен
+// Статический fallback - избегаем создания новых объектов при каждом рендере
+const noopAsync = async () => false;
+const noop = () => {};
+
 const defaultContextValue: GameSyncContextValue = {
   isHost: false,
   connectionStatus: 'disconnected' as ConnectionStatus,
   lastSyncTime: null,
   reconnectAttempt: 0,
-  sendActionToHost: () => {},
-  requestSync: () => {},
-  attemptReconnect: () => {},
-  restoreFromDb: async () => false,
+  sendActionToHost: noop,
+  requestSync: noop,
+  attemptReconnect: noop,
+  restoreFromDb: noopAsync,
 };
 
 export const GameSyncProvider: React.FC<{
   roomId: string | null;
   children: React.ReactNode;
 }> = ({ roomId, children }) => {
+  // Всегда вызываем оба хука - порядок хуков критичен!
   const syncValue = useGameSync(roomId);
   const { restoreFromDb } = useGameStatePersistence({ roomId, enabled: !!roomId });
 
-  // При монтировании пытаемся восстановить состояние из БД
+  // При монтировании пытаемся восстановить состояние из БД (только для хоста)
   useEffect(() => {
     if (roomId && syncValue.isHost) {
-      // Хост пытается восстановить состояние из БД при загрузке
       restoreFromDb().then((restored) => {
         if (restored) {
           console.log('[GameSyncProvider] Host restored state from DB');
@@ -40,10 +43,11 @@ export const GameSyncProvider: React.FC<{
     }
   }, [roomId, syncValue.isHost, restoreFromDb]);
 
-  const value: GameSyncContextValue = {
+  // Мемоизируем value чтобы избежать лишних ререндеров
+  const value = useMemo<GameSyncContextValue>(() => ({
     ...syncValue,
     restoreFromDb,
-  };
+  }), [syncValue, restoreFromDb]);
 
   return <GameSyncContext.Provider value={value}>{children}</GameSyncContext.Provider>;
 };
@@ -51,6 +55,7 @@ export const GameSyncProvider: React.FC<{
 // Безопасный хук — не выбрасывает ошибку, возвращает fallback значения
 export const useGameSyncContext = (): GameSyncContextValue => {
   const ctx = useContext(GameSyncContext);
+  // Возвращаем стабильный объект если контекст недоступен
   return ctx ?? defaultContextValue;
 };
 
