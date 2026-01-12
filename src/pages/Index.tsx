@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { useAuth } from '@/hooks/useAuth';
@@ -132,11 +133,46 @@ const Index = () => {
     setLoadingRooms(false);
   };
 
-  // Загружаем открытые комнаты при входе на страницу
+  // Загружаем открытые комнаты при входе на страницу + realtime подписка
   useEffect(() => {
-    if (user && !showCreate && !showJoin) {
-      loadPublicRooms();
-    }
+    if (!user || showCreate || showJoin) return;
+    
+    // Начальная загрузка
+    loadPublicRooms();
+
+    // Подписка на изменения в таблице rooms
+    const channel = supabase
+      .channel('public-rooms-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: 'is_private=eq.false',
+        },
+        () => {
+          // Обновляем список при любых изменениях
+          loadPublicRooms();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'room_players',
+        },
+        () => {
+          // Обновляем список при изменении игроков
+          loadPublicRooms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, showCreate, showJoin]);
 
   const handleCreateGame = async () => {
