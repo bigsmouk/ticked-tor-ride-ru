@@ -190,6 +190,25 @@ export const useAuth = () => {
 
     if (!error && data) {
       setAuthState(prev => ({ ...prev, profile: data as Profile }));
+
+      // Синхронизируем изменения с room_players если игрок в комнате
+      const syncUpdates: { player_name?: string; avatar_url?: string } = {};
+      if (updates.display_name) syncUpdates.player_name = updates.display_name;
+      if (updates.avatar_url !== undefined) syncUpdates.avatar_url = updates.avatar_url;
+
+      if (Object.keys(syncUpdates).length > 0) {
+        // Обновляем все записи игрока в room_players по owner_auth_id
+        const { error: syncError } = await supabase
+          .from('room_players')
+          .update(syncUpdates)
+          .eq('owner_auth_id', authState.user.id);
+
+        if (syncError) {
+          console.warn('[Profile] Не удалось синхронизировать с room_players:', syncError);
+        } else {
+          console.log('[Profile] Синхронизировано с room_players:', syncUpdates);
+        }
+      }
     }
 
     return { data, error };
