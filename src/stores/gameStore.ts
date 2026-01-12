@@ -88,6 +88,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setGameState: (state) => set({ gameState: state }),
   leaveRoom: () => {
+    // Импортируем clearSession динамически чтобы избежать циклических зависимостей
+    import('@/hooks/useSessionRecovery').then(({ clearSession }) => {
+      clearSession();
+    });
     set({
       currentRoom: null,
       gameState: null,

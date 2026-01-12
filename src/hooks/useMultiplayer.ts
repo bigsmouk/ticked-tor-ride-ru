@@ -4,6 +4,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { Player, PlayerColor } from '@/types/game';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { saveSession, clearSession } from './useSessionRecovery';
 
 const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
 
@@ -134,6 +135,9 @@ export const useMultiplayer = () => {
       });
       setView('waiting');
 
+      // Сохраняем сессию для реконнекта
+      saveSession(room.id, roomCode, validatedPlayerName);
+
       return { roomCode, roomId: room.id };
     } catch (err: any) {
       console.error('Error creating room:', err);
@@ -248,6 +252,9 @@ export const useMultiplayer = () => {
       });
       setView('waiting');
 
+      // Сохраняем сессию для реконнекта
+      saveSession(room.id, room.code, validatedPlayerName);
+
       toast.success(`Вы присоединились к комнате "${room.name}"`);
       return room.id;
     } catch (err: any) {
@@ -270,6 +277,9 @@ export const useMultiplayer = () => {
         .delete()
         .eq('room_id', roomId)
         .eq('player_id', playerId);
+
+      // Очищаем сохранённую сессию
+      clearSession();
 
       setCurrentRoom(null);
       setView('lobby');
