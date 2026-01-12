@@ -8,7 +8,7 @@ import {
   getTestCity, 
   getParallelOffset 
 } from '@/data/testMap';
-import testMapBg from '@/assets/test-map-bg.jpg';
+import { EuropeMapSVG } from './EuropeMapSVG';
 // Route state interface
 export interface TestRouteState {
   claimedBy?: string;
@@ -23,6 +23,9 @@ interface TestMapProps {
   onRouteClick?: (routeId: string) => void;
   onCityClick?: (cityId: string) => void;
   selectedRouteId?: string | null;
+  calibrationMode?: boolean;
+  customCityPositions?: Record<string, { x: number; y: number }>;
+  onCityDrag?: (cityId: string, x: number, y: number) => void;
 }
 
 // Color mappings for routes
@@ -120,6 +123,9 @@ export const TestMap: React.FC<TestMapProps> = ({
   onRouteClick,
   onCityClick,
   selectedRouteId,
+  calibrationMode = false,
+  customCityPositions = {},
+  onCityDrag,
 }) => {
   // Zoom and pan state
   const [scale, setScale] = useState(1);
@@ -129,20 +135,58 @@ export const TestMap: React.FC<TestMapProps> = ({
   const [showCityNames, setShowCityNames] = useState(true);
   const [hoveredRoute, setHoveredRoute] = useState<TestRoute | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [draggingCity, setDraggingCity] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 3;
   
-  // Pre-calculate route segments
+  // Get city position (custom or default)
+  const getCityPosition = useCallback((city: TestCity) => {
+    return customCityPositions[city.id] || { x: city.x, y: city.y };
+  }, [customCityPositions]);
+  
+  // Pre-calculate route segments with custom positions
   const routeSegments = useMemo(() => {
     const segments: Record<string, { x: number; y: number; angle: number }[]> = {};
     for (const route of TEST_ROUTES) {
       const offset = getParallelOffset(route, TEST_ROUTES);
-      segments[route.id] = calculateSegments(route, offset);
+      // Use custom positions for calculation
+      const startCity = getTestCity(route.from);
+      const endCity = getTestCity(route.to);
+      if (!startCity || !endCity) continue;
+      
+      const startPos = customCityPositions[route.from] || { x: startCity.x, y: startCity.y };
+      const endPos = customCityPositions[route.to] || { x: endCity.x, y: endCity.y };
+      
+      const dx = endPos.x - startPos.x;
+      const dy = endPos.y - startPos.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      
+      const perpX = -dy / length;
+      const perpY = dx / length;
+      
+      const startX = startPos.x + perpX * offset;
+      const startY = startPos.y + perpY * offset;
+      const endX = endPos.x + perpX * offset;
+      const endY = endPos.y + perpY * offset;
+      
+      const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+      
+      const segs: { x: number; y: number; angle: number }[] = [];
+      for (let i = 0; i < route.length; i++) {
+        const t = (i + 0.5) / route.length;
+        segs.push({
+          x: startX + (endX - startX) * t,
+          y: startY + (endY - startY) * t,
+          angle,
+        });
+      }
+      segments[route.id] = segs;
     }
     return segments;
-  }, []);
+  }, [customCityPositions]);
   
   // Handle mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -159,24 +203,35 @@ export const TestMap: React.FC<TestMapProps> = ({
     }
   }, [position]);
   
-  // Handle mouse move for panning
+  // Handle mouse move for panning or city dragging
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isDragging) {
+    if (calibrationMode && draggingCity && svgRef.current) {
+      // Calculate SVG coordinates
+      const svg = svgRef.current;
+      const rect = svg.getBoundingClientRect();
+      const svgX = ((e.clientX - rect.left) / rect.width) * 1920;
+      const svgY = ((e.clientY - rect.top) / rect.height) * 1080;
+      onCityDrag?.(draggingCity, Math.round(svgX), Math.round(svgY));
+    } else if (isDragging && !draggingCity) {
       setPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
       });
     }
-  }, [isDragging, dragStart]);
+  }, [isDragging, dragStart, calibrationMode, draggingCity, onCityDrag]);
   
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setDraggingCity(null);
   }, []);
   
   // Global mouse up listener
   useEffect(() => {
-    const handleGlobalMouseUp = () => setIsDragging(false);
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      setDraggingCity(null);
+    };
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
@@ -250,13 +305,14 @@ export const TestMap: React.FC<TestMapProps> = ({
       )}
       
       <svg
+        ref={svgRef}
         viewBox="0 0 1920 1080"
         className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
         style={{ 
-          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+          transform: calibrationMode ? undefined : `translate(${position.x}px, ${position.y}px) scale(${scale})`,
           transformOrigin: 'center center',
-          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          transition: isDragging || draggingCity ? 'none' : 'transform 0.1s ease-out',
         }}
       >
         <defs>
@@ -296,15 +352,8 @@ export const TestMap: React.FC<TestMapProps> = ({
           </filter>
         </defs>
         
-        {/* Background image */}
-        <image
-          href={testMapBg}
-          x="0"
-          y="0"
-          width="1920"
-          height="1080"
-          preserveAspectRatio="xMidYMid slice"
-        />
+        {/* SVG Background Map */}
+        <EuropeMapSVG />
         
         {/* Routes layer */}
         <g className="routes-layer">
@@ -463,62 +512,91 @@ export const TestMap: React.FC<TestMapProps> = ({
         
         {/* Cities layer */}
         <g className="cities-layer">
-          {TEST_CITIES.map((city) => (
-            <g
-              key={city.id}
-              className="city-marker cursor-pointer"
-              onClick={() => onCityClick?.(city.id)}
-            >
-              {/* City circle */}
-              <circle
-                cx={city.x}
-                cy={city.y}
-                r={16}
-                fill="#fef3c7"
-                stroke="#78716c"
-                strokeWidth={3}
-                filter="url(#test-city-shadow)"
-              />
-              <circle
-                cx={city.x}
-                cy={city.y}
-                r={10}
-                fill="#f59e0b"
-              />
-              
-              {/* City name label */}
-              {showCityNames && (
-                <g transform={`translate(${city.x}, ${city.y + 28})`}>
-                  {/* Text shadow/outline */}
+          {TEST_CITIES.map((city) => {
+            const pos = getCityPosition(city);
+            const isModified = !!customCityPositions[city.id];
+            const isBeingDragged = draggingCity === city.id;
+            
+            return (
+              <g
+                key={city.id}
+                className={`city-marker ${calibrationMode ? 'cursor-move' : 'cursor-pointer'}`}
+                onClick={() => !calibrationMode && onCityClick?.(city.id)}
+                onMouseDown={(e) => {
+                  if (calibrationMode) {
+                    e.stopPropagation();
+                    setDraggingCity(city.id);
+                  }
+                }}
+              >
+                {/* City circle */}
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={isBeingDragged ? 20 : 16}
+                  fill={calibrationMode ? (isModified ? '#22c55e' : '#fbbf24') : '#fef3c7'}
+                  stroke={isBeingDragged ? '#fff' : '#78716c'}
+                  strokeWidth={isBeingDragged ? 4 : 3}
+                  filter="url(#test-city-shadow)"
+                />
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={isBeingDragged ? 14 : 10}
+                  fill={calibrationMode ? (isModified ? '#16a34a' : '#f59e0b') : '#f59e0b'}
+                />
+                
+                {/* City name label */}
+                {showCityNames && (
+                  <g transform={`translate(${pos.x}, ${pos.y + 28})`}>
+                    {/* Text shadow/outline */}
+                    <text
+                      x={0}
+                      y={0}
+                      textAnchor="middle"
+                      fontSize={14}
+                      fontWeight="bold"
+                      fill="#000"
+                      stroke="#fff"
+                      strokeWidth={4}
+                      paintOrder="stroke"
+                      style={{ fontFamily: 'system-ui, sans-serif' }}
+                    >
+                      {city.name}
+                    </text>
+                    <text
+                      x={0}
+                      y={0}
+                      textAnchor="middle"
+                      fontSize={14}
+                      fontWeight="bold"
+                      fill="#1f2937"
+                      style={{ fontFamily: 'system-ui, sans-serif' }}
+                    >
+                      {city.name}
+                    </text>
+                  </g>
+                )}
+                
+                {/* Calibration mode: show coordinates */}
+                {calibrationMode && (
                   <text
-                    x={0}
-                    y={0}
+                    x={pos.x}
+                    y={pos.y - 24}
                     textAnchor="middle"
-                    fontSize={14}
+                    fontSize={10}
                     fontWeight="bold"
-                    fill="#000"
-                    stroke="#fff"
-                    strokeWidth={4}
+                    fill={isModified ? '#22c55e' : '#fbbf24'}
+                    stroke="#000"
+                    strokeWidth={2}
                     paintOrder="stroke"
-                    style={{ fontFamily: 'system-ui, sans-serif' }}
                   >
-                    {city.name}
+                    ({pos.x}, {pos.y})
                   </text>
-                  <text
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    fontSize={14}
-                    fontWeight="bold"
-                    fill="#1f2937"
-                    style={{ fontFamily: 'system-ui, sans-serif' }}
-                  >
-                    {city.name}
-                  </text>
-                </g>
-              )}
-            </g>
-          ))}
+                )}
+              </g>
+            );
+          })}
         </g>
       </svg>
     </div>
