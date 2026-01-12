@@ -14,6 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_history: {
+        Row: {
+          game_data: Json | null
+          id: string
+          played_at: string
+          player_count: number
+          room_id: string | null
+          room_name: string
+        }
+        Insert: {
+          game_data?: Json | null
+          id?: string
+          played_at?: string
+          player_count: number
+          room_id?: string | null
+          room_name: string
+        }
+        Update: {
+          game_data?: Json | null
+          id?: string
+          played_at?: string
+          player_count?: number
+          room_id?: string | null
+          room_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_players: {
+        Row: {
+          final_score: number
+          id: string
+          is_winner: boolean
+          longest_path_bonus: number
+          match_id: string
+          placement: number
+          player_color: string
+          player_name: string
+          profile_id: string | null
+          route_points: number
+          ticket_points: number
+          tickets_completed: number
+          tickets_failed: number
+        }
+        Insert: {
+          final_score?: number
+          id?: string
+          is_winner?: boolean
+          longest_path_bonus?: number
+          match_id: string
+          placement?: number
+          player_color: string
+          player_name: string
+          profile_id?: string | null
+          route_points?: number
+          ticket_points?: number
+          tickets_completed?: number
+          tickets_failed?: number
+        }
+        Update: {
+          final_score?: number
+          id?: string
+          is_winner?: boolean
+          longest_path_bonus?: number
+          match_id?: string
+          placement?: number
+          player_color?: string
+          player_name?: string
+          profile_id?: string | null
+          route_points?: number
+          ticket_points?: number
+          tickets_completed?: number
+          tickets_failed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_players_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "match_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_players_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       room_players: {
         Row: {
           color: string
