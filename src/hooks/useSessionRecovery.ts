@@ -180,13 +180,18 @@ export const useSessionRecovery = () => {
       // Обновляем timestamp сессии
       saveSession(session.roomId, session.roomCode, session.playerName);
 
-      // Навигация в зависимости от статуса
+      // Сначала сбрасываем состояние загрузки
+      setIsRecovering(false);
+      setHasAttemptedRecovery(true);
+
+      // Навигация в зависимости от статуса (после сброса isRecovering)
       if (room.status === 'playing') {
         setView('game');
-        navigate('/game');
+        // Используем setTimeout чтобы React успел обновить состояние
+        setTimeout(() => navigate('/game'), 0);
       } else if (room.status === 'waiting') {
         setView('waiting');
-        navigate('/waiting');
+        setTimeout(() => navigate('/waiting'), 0);
       } else {
         clearSession();
         return false;
@@ -196,10 +201,9 @@ export const useSessionRecovery = () => {
     } catch (err) {
       console.error('[SessionRecovery] Recovery failed:', err);
       clearSession();
-      return false;
-    } finally {
       setIsRecovering(false);
       setHasAttemptedRecovery(true);
+      return false;
     }
   }, [currentRoom, isRecovering, hasAttemptedRecovery, localPlayerId, setCurrentRoom, setView, navigate]);
 
