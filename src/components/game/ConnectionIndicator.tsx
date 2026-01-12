@@ -1,6 +1,6 @@
 import React from 'react';
 import { ConnectionStatus } from '@/hooks/useGameSync';
-import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -40,6 +40,14 @@ export const ConnectionIndicator: React.FC<ConnectionIndicatorProps> = ({
           description: lastSyncTime 
             ? `Последняя синхронизация: ${Math.round((Date.now() - lastSyncTime) / 1000)}с назад`
             : 'Связь с хостом установлена',
+        };
+      case 'degraded':
+        return {
+          icon: <Radio className="h-4 w-4" />,
+          color: 'text-yellow-500',
+          bgColor: 'bg-yellow-500/20',
+          label: 'REST режим',
+          description: 'WebSocket недоступен, используется HTTP. Возможны задержки.',
         };
       case 'connecting':
         return {

@@ -14,7 +14,7 @@ export type GameAction =
   | { type: 'cancelDestinationDraw' }
   | { type: 'endTurn' };
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
+export type ConnectionStatus = 'connecting' | 'connected' | 'degraded' | 'disconnected';
 
 export const useGameSync = (roomId: string | null) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -27,6 +27,7 @@ export const useGameSync = (roomId: string | null) => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const hostOnlineRef = useRef(false);
+  const usingRestFallbackRef = useRef(false);
   
   // Game actions from store (host will execute these)
   const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
@@ -57,6 +58,13 @@ export const useGameSync = (roomId: string | null) => {
       }
     } catch (e) {
       console.warn('[GameSync] httpSend failed, falling back to send()', e);
+    }
+
+    // Помечаем что используем REST fallback
+    if (!usingRestFallbackRef.current) {
+      usingRestFallbackRef.current = true;
+      setConnectionStatus('degraded');
+      console.log('[GameSync] Switched to REST fallback mode');
     }
 
     try {
@@ -116,6 +124,12 @@ export const useGameSync = (roomId: string | null) => {
         }
       } catch (e) {
         console.warn('[GameSync] httpSend failed (channel), falling back to send()', e);
+      }
+      // Помечаем что используем REST fallback
+      if (!usingRestFallbackRef.current) {
+        usingRestFallbackRef.current = true;
+        setConnectionStatus('degraded');
+        console.log('[GameSync] Switched to REST fallback mode');
       }
       await ch.send({ type: 'broadcast', event, payload });
     };
