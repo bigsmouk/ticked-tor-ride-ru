@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { GameBoard } from '@/components/game/GameBoard';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { GameSyncProvider, useGameSyncContext } from '@/contexts/gameSyncContext';
 
 const GameInner = () => {
   const navigate = useNavigate();
   const { currentRoom, gameState, leaveRoom, localPlayerId } = useGameStore();
   const { leaveRoom: leaveRoomFromDb } = useMultiplayer();
+  const { isRecovering } = useSessionRecovery();
   const isExitingRef = useRef(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -38,6 +40,9 @@ const GameInner = () => {
   }, [roomId, isHost, requestSync]);
 
   useEffect(() => {
+    // Если идёт восстановление — ждём
+    if (isRecovering) return;
+
     // Redirect if no room or game not started
     if (!currentRoom) {
       if (isExitingRef.current) return;
@@ -48,7 +53,22 @@ const GameInner = () => {
       navigate('/waiting');
       return;
     }
-  }, [currentRoom, navigate]);
+  }, [currentRoom, navigate, isRecovering]);
+
+  // Показываем загрузку пока восстанавливается сессия
+  if (isRecovering) {
+    return (
+      <div className="min-h-screen parchment flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="animate-spin text-4xl mb-4">🚂</div>
+          <p className="font-display text-lg text-foreground">Восстановление сессии...</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Подключаемся к игре...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!gameState) {
     return (
