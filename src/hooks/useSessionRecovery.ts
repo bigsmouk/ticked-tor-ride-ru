@@ -10,18 +10,53 @@ interface SavedSession {
   roomCode: string;
   playerName: string;
   timestamp: number;
+  gameStateSnapshot?: string; // JSON-сериализованное состояние игры
+  lastRoute?: string; // Последний маршрут (/game, /waiting)
 }
 
 const SESSION_KEY = 'ttr_game_session';
 const SESSION_EXPIRY_MS = 3 * 60 * 60 * 1000; // 3 часа
 
+// Внутренняя функция для получения сессии без проверки expiry
+const getSavedSessionRaw = (): SavedSession | null => {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (!saved) return null;
+    return JSON.parse(saved) as SavedSession;
+  } catch {
+    return null;
+  }
+};
+
 // Сохранение сессии
-export const saveSession = (roomId: string, roomCode: string, playerName: string) => {
+export const saveSession = (
+  roomId: string, 
+  roomCode: string, 
+  playerName: string,
+  options?: { gameStateSnapshot?: string; lastRoute?: string }
+) => {
+  const existing = getSavedSessionRaw();
   const session: SavedSession = {
     roomId,
     roomCode,
     playerName,
     timestamp: Date.now(),
+    gameStateSnapshot: options?.gameStateSnapshot ?? existing?.gameStateSnapshot,
+    lastRoute: options?.lastRoute ?? existing?.lastRoute,
+  };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+};
+
+// Обновить только snapshot и route (без перезаписи остального)
+export const updateSessionSnapshot = (gameStateSnapshot: string, lastRoute: string) => {
+  const existing = getSavedSessionRaw();
+  if (!existing) return;
+  
+  const session: SavedSession = {
+    ...existing,
+    timestamp: Date.now(),
+    gameStateSnapshot,
+    lastRoute,
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 };
@@ -55,11 +90,12 @@ const getSavedSession = (): SavedSession | null => {
 export const useSessionRecovery = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentRoom, localPlayerId, setCurrentRoom, setView } = useGameStore();
+  const { currentRoom, localPlayerId, setCurrentRoom, setView, gameState, setGameState } = useGameStore();
   const [isRecovering, setIsRecovering] = useState(false);
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [savedSessionData, setSavedSessionData] = useState<SavedSession | null>(null);
+  const [autoRecoveryTriggered, setAutoRecoveryTriggered] = useState(false);
 
   // Попытка восстановить сессию
   const attemptRecovery = useCallback(async () => {
@@ -182,6 +218,17 @@ export const useSessionRecovery = () => {
       // Обновляем timestamp сессии
       saveSession(session.roomId, session.roomCode, session.playerName);
 
+      // Восстанавливаем gameState из snapshot если есть и статус playing
+      if (room.status === 'playing' && session.gameStateSnapshot) {
+        try {
+          const restoredGameState = JSON.parse(session.gameStateSnapshot);
+          console.log('[SessionRecovery] Restoring gameState from snapshot, turn:', restoredGameState.turnNumber);
+          setGameState(restoredGameState);
+        } catch (e) {
+          console.warn('[SessionRecovery] Failed to parse gameState snapshot:', e);
+        }
+      }
+
       // Сначала сбрасываем состояние загрузки
       setIsRecovering(false);
       setHasAttemptedRecovery(true);
@@ -207,9 +254,48 @@ export const useSessionRecovery = () => {
       setHasAttemptedRecovery(true);
       return false;
     }
-  }, [currentRoom, isRecovering, hasAttemptedRecovery, localPlayerId, setCurrentRoom, setView, navigate]);
+  }, [currentRoom, isRecovering, hasAttemptedRecovery, localPlayerId, setCurrentRoom, setView, setGameState, navigate]);
 
-  // Проверяем наличие сохранённой сессии при загрузке (показываем prompt вместо авто-восстановления)
+  // Автосохранение gameState при изменениях
+  useEffect(() => {
+    if (gameState && currentRoom) {
+      try {
+        const snapshot = JSON.stringify(gameState);
+        updateSessionSnapshot(snapshot, location.pathname);
+      } catch (e) {
+        console.warn('[SessionRecovery] Failed to save gameState snapshot:', e);
+      }
+    }
+  }, [gameState, currentRoom, location.pathname]);
+
+  // АВТОМАТИЧЕСКОЕ восстановление при обновлении страницы /game или /waiting
+  useEffect(() => {
+    const skipAutoRecovery = new URLSearchParams(location.search).has('noRecover');
+    
+    // Если мы на /game или /waiting и нет currentRoom — автоматически восстанавливаем
+    if (
+      !skipAutoRecovery &&
+      localPlayerId &&
+      !currentRoom &&
+      !hasAttemptedRecovery &&
+      !autoRecoveryTriggered &&
+      (location.pathname === '/game' || location.pathname === '/waiting')
+    ) {
+      const session = getSavedSession();
+      if (session) {
+        console.log('[SessionRecovery] Auto-recovering session on', location.pathname);
+        setAutoRecoveryTriggered(true);
+        attemptRecovery();
+      } else {
+        // Нет сессии — редиректим на главную
+        console.log('[SessionRecovery] No session found, redirecting to home');
+        setHasAttemptedRecovery(true);
+        navigate('/');
+      }
+    }
+  }, [localPlayerId, currentRoom, hasAttemptedRecovery, autoRecoveryTriggered, location.pathname, location.search, attemptRecovery, navigate]);
+
+  // Проверяем наличие сохранённой сессии на ГЛАВНОЙ странице — показываем prompt
   useEffect(() => {
     const skipAutoRecovery = new URLSearchParams(location.search).has('noRecover');
 

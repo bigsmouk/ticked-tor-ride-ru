@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { usePresence } from '@/hooks/usePresence';
+import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { AuthControls } from '@/components/auth/AuthControls';
 import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ const WaitingRoom = () => {
   const navigate = useNavigate();
   const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
   const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb } = useMultiplayer();
+  const { isRecovering } = useSessionRecovery();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
@@ -28,12 +30,24 @@ const WaitingRoom = () => {
     }
   }, [currentRoom?.status, navigate, initializeGame]);
 
-  // Redirect if no room
+  // Redirect if no room (но не во время восстановления)
   useEffect(() => {
-    if (!currentRoom) {
+    if (!currentRoom && !isRecovering) {
       navigate('/');
     }
-  }, [currentRoom, navigate]);
+  }, [currentRoom, navigate, isRecovering]);
+
+  // Показываем загрузку при восстановлении
+  if (isRecovering) {
+    return (
+      <div className="min-h-screen parchment flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">🚂</div>
+          <p className="font-display text-lg text-muted-foreground">Восстановление сессии...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentRoom) {
     return null;
