@@ -3,6 +3,7 @@ import { LogIn, User as UserIcon, RefreshCw, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { toast } from "@/hooks/use-toast";
 
 type AuthControlsProps = {
   className?: string;
@@ -39,6 +40,10 @@ export const AuthControls: React.FC<AuthControlsProps> = ({ className }) => {
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await refreshProfile();
+    toast({
+      title: "Профиль обновлён",
+      description: "Данные профиля успешно загружены",
+    });
   };
 
   return (
