@@ -4,7 +4,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { usePresence } from '@/hooks/usePresence';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Copy, Users, Crown, Check, Wifi, WifiOff } from 'lucide-react';
+import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 const WaitingRoom = () => {
@@ -95,9 +95,22 @@ const WaitingRoom = () => {
           {/* Room info card */}
           <div className="ornate-frame bg-card rounded-lg p-8 mb-6">
             <div className="text-center mb-8">
-              <h2 className="font-display text-3xl font-bold text-foreground mb-2">
-                {currentRoom.name}
-              </h2>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <h2 className="font-display text-3xl font-bold text-foreground">
+                  {currentRoom.name}
+                </h2>
+                {currentRoom.isPrivate ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                    <Lock className="w-3 h-3" />
+                    Приватная
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                    <Globe className="w-3 h-3" />
+                    Открытая
+                  </span>
+                )}
+              </div>
               
               {/* Room code */}
               <div className="inline-flex items-center gap-3 bg-muted px-6 py-3 rounded-lg mt-4">
@@ -118,7 +131,10 @@ const WaitingRoom = () => {
               </div>
               
               <p className="text-sm text-muted-foreground mt-3">
-                Поделитесь этим кодом с друзьями для присоединения
+                {currentRoom.isPrivate 
+                  ? 'Поделитесь кодом с друзьями — комната скрыта из списка'
+                  : 'Комната видна всем в списке открытых игр'
+                }
               </p>
             </div>
 

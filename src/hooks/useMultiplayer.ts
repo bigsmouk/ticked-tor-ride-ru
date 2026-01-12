@@ -56,7 +56,7 @@ export const useMultiplayer = () => {
   }, [playerId, setLocalPlayerId]);
 
   // Создание комнаты
-  const createRoom = useCallback(async (roomName: string, playerName: string) => {
+  const createRoom = useCallback(async (roomName: string, playerName: string, isPrivate: boolean = false) => {
     // Требуем авторизацию для создания комнаты
     if (!user) {
       toast.error('Войдите в аккаунт для создания комнаты');
@@ -100,7 +100,7 @@ export const useMultiplayer = () => {
           owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
           status: 'waiting',
           max_players: 4,
-          is_private: false,
+          is_private: isPrivate,
         })
         .select()
         .single();
@@ -143,6 +143,7 @@ export const useMultiplayer = () => {
         }],
         maxPlayers: 4,
         status: 'waiting',
+        isPrivate,
         createdAt: new Date(),
       });
       setView('waiting');
@@ -272,6 +273,7 @@ export const useMultiplayer = () => {
         players,
         maxPlayers: room.max_players,
         status: room.status as 'waiting' | 'playing' | 'finished',
+        isPrivate: room.is_private,
         createdAt: new Date(room.created_at),
       });
       setView('waiting');
@@ -336,6 +338,180 @@ export const useMultiplayer = () => {
     }
   }, [playerId]);
 
+  // Получить список открытых комнат
+  const fetchPublicRooms = useCallback(async () => {
+    try {
+      // Получаем открытые комнаты в статусе "waiting"
+      const { data: rooms, error: roomsError } = await supabase
+        .from('rooms')
+        .select(`
+          id,
+          code,
+          name,
+          host_id,
+          status,
+          max_players,
+          is_private,
+          created_at
+        `)
+        .eq('status', 'waiting')
+        .eq('is_private', false)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (roomsError) throw roomsError;
+
+      // Получаем количество игроков для каждой комнаты
+      const roomsWithPlayers = await Promise.all(
+        (rooms || []).map(async (room) => {
+          const { count } = await supabase
+            .from('room_players')
+            .select('*', { count: 'exact', head: true })
+            .eq('room_id', room.id);
+
+          return {
+            id: room.id,
+            code: room.code,
+            name: room.name,
+            hostId: room.host_id,
+            playerCount: count || 0,
+            maxPlayers: room.max_players,
+            createdAt: new Date(room.created_at),
+          };
+        })
+      );
+
+      // Фильтруем комнаты, которые ещё не заполнены
+      return roomsWithPlayers.filter(r => r.playerCount < r.maxPlayers);
+    } catch (err: any) {
+      console.error('Error fetching public rooms:', err);
+      return [];
+    }
+  }, []);
+
+  // Присоединиться к комнате по ID (для открытых комнат)
+  const joinRoomById = useCallback(async (roomId: string, playerName: string) => {
+    // Требуем авторизацию
+    if (!user) {
+      toast.error('Войдите в аккаунт для присоединения к комнате');
+      return null;
+    }
+
+    if (!playerId) {
+      toast.error('Подождите, идёт подключение...');
+      return null;
+    }
+
+    const playerNameResult = playerNameSchema.safeParse(playerName);
+    if (!playerNameResult.success) {
+      toast.error(playerNameResult.error.errors[0].message);
+      return null;
+    }
+
+    const validatedPlayerName = playerNameResult.data;
+    setIsLoading(true);
+
+    try {
+      // Получаем комнату
+      const { data: room, error: roomError } = await supabase
+        .from('rooms')
+        .select('id, code, name, host_id, status, max_players, is_private, created_at')
+        .eq('id', roomId)
+        .eq('status', 'waiting')
+        .maybeSingle();
+
+      if (roomError) throw roomError;
+      if (!room) {
+        toast.error('Комната не найдена или игра уже началась');
+        return null;
+      }
+
+      // Получаем текущих игроков
+      const { data: existingPlayers, error: playersError } = await supabase
+        .from('room_players')
+        .select('*')
+        .eq('room_id', room.id);
+
+      if (playersError) throw playersError;
+
+      if (existingPlayers.length >= room.max_players) {
+        toast.error('Комната заполнена');
+        return null;
+      }
+
+      // Проверяем, не присоединился ли уже этот игрок
+      const alreadyJoined = existingPlayers.find(p => p.player_id === playerId);
+      if (!alreadyJoined) {
+        const usedColors = existingPlayers.map(p => p.color);
+        const availableColor = PLAYER_COLORS.find(c => !usedColors.includes(c)) || PLAYER_COLORS[0];
+
+        const { error: joinError } = await supabase
+          .from('room_players')
+          .insert({
+            room_id: room.id,
+            player_id: playerId,
+            player_name: validatedPlayerName,
+            color: availableColor,
+            is_ready: true,
+            is_host: false,
+            owner_auth_id: user?.id || null,
+            avatar_url: profile?.avatar_url || null,
+          });
+
+        if (joinError) throw joinError;
+      }
+
+      // Получаем обновлённый список игроков
+      const { data: allPlayers, error: allPlayersError } = await supabase
+        .from('room_players')
+        .select('*')
+        .eq('room_id', room.id)
+        .order('joined_at', { ascending: true });
+
+      if (allPlayersError) throw allPlayersError;
+
+      const players: Player[] = allPlayers.map(p => ({
+        id: p.player_id,
+        name: p.player_name,
+        avatarUrl: p.avatar_url || undefined,
+        color: p.color as PlayerColor,
+        trainCards: [],
+        destinationTickets: [],
+        trainsRemaining: 45,
+        stations: 3,
+        score: 0,
+        isActive: false,
+        isConnected: true,
+      }));
+
+      setCurrentRoom({
+        id: room.id,
+        code: room.code,
+        name: room.name,
+        hostId: room.host_id,
+        players,
+        maxPlayers: room.max_players,
+        status: room.status as 'waiting' | 'playing' | 'finished',
+        isPrivate: room.is_private,
+        createdAt: new Date(room.created_at),
+      });
+      setView('waiting');
+
+      saveSession(room.id, room.code, validatedPlayerName);
+      toast.success(`Вы присоединились к комнате "${room.name}"`);
+      return room.id;
+    } catch (err: any) {
+      console.error('Error joining room:', err);
+      const errorMessage = err.code === '42501' 
+        ? 'Ошибка прав доступа. Попробуйте перезайти в аккаунт.'
+        : `Ошибка присоединения: ${err.message}`;
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [playerId, user, profile, setCurrentRoom, setView]);
+
   return {
     playerId,
     isLoading,
@@ -343,6 +519,8 @@ export const useMultiplayer = () => {
     isReady: true,
     createRoom,
     joinRoom,
+    joinRoomById,
+    fetchPublicRooms,
     leaveRoom,
     startGame,
   };
