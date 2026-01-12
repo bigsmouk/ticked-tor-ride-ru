@@ -3,11 +3,6 @@ import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import europeMapImage from '@/assets/europe-map.jpg';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
-import redWagonImage from '@/assets/wagons/red.png';
-import blueWagonImage from '@/assets/wagons/blue.png';
-import greenWagonImage from '@/assets/wagons/green.png';
-import blackWagonImage from '@/assets/wagons/black.png';
-import yellowWagonImage from '@/assets/wagons/yellow.png';
 
 interface EuropeMapProps {
   cities: City[];
@@ -50,15 +45,19 @@ const getRoutePath = (
   route: Route, 
   cities: City[], 
   allRoutes: Route[]
-): { path: string; segments: { x: number; y: number; angle: number }[] } => {
+): { path: string; segments: { x: number; y: number; angle: number }[]; startPos: {x: number, y: number}; endPos: {x: number, y: number} } => {
   // Check if we have calibrated positions for this route
   const calibrated = ROUTE_WAGON_POSITIONS[route.id];
   if (calibrated && calibrated.length === route.length) {
     // Use calibrated positions
     const pathPoints = calibrated.map(w => `${w.x} ${w.y}`);
+    const startPos = { x: calibrated[0].x, y: calibrated[0].y };
+    const endPos = { x: calibrated[calibrated.length - 1].x, y: calibrated[calibrated.length - 1].y };
     return {
       path: `M ${pathPoints.join(' L ')}`,
       segments: calibrated.map(w => ({ x: w.x, y: w.y, angle: w.angle })),
+      startPos,
+      endPos,
     };
   }
   
@@ -102,6 +101,8 @@ const getRoutePath = (
   return {
     path: `M ${startX} ${startY} L ${endX} ${endY}`,
     segments,
+    startPos: { x: startX, y: startY },
+    endPos: { x: endX, y: endY },
   };
 };
 
@@ -233,8 +234,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             </feMerge>
           </filter>
           
-          {/* Strong glow for player wagons */}
-          <filter id="player-glow" x="-100%" y="-100%" width="300%" height="300%">
+          {/* Strong glow for claimed routes */}
+          <filter id="claimed-glow" x="-100%" y="-100%" width="300%" height="300%">
             <feGaussianBlur stdDeviation="2" result="blur"/>
             <feMerge>
               <feMergeNode in="blur"/>
@@ -256,18 +257,6 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           <filter id="city-shadow" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
           </filter>
-          
-          {/* Wagon shadow for better contrast - enhanced */}
-          <filter id="wagon-shadow" x="-100%" y="-100%" width="300%" height="300%">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.8"/>
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fff" floodOpacity="0.4"/>
-          </filter>
-          
-          {/* Extra strong contrast filter for player wagons */}
-          <filter id="wagon-contrast" x="-100%" y="-100%" width="300%" height="300%">
-            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#fff" floodOpacity="0.6"/>
-            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.9"/>
-          </filter>
         </defs>
         
         {/* Background image */}
@@ -283,7 +272,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         {/* Routes */}
         <g className="routes">
           {routes.map((route) => {
-            const { path, segments } = getRoutePath(route, cities, routes);
+            const { path, segments, startPos, endPos } = getRoutePath(route, cities, routes);
             const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
             const isSelected = selectedRoute === route.id;
             const isClaimed = !!route.claimedBy;
@@ -294,150 +283,98 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               ? gameState.players.find(p => p.id === route.claimedBy)
               : null;
             
-              return (
-                <g 
-                  key={route.id}
-                  className={`route-segment ${isClaimable ? 'cursor-pointer' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
-                  onClick={() => !isClaimed && onRouteClick?.(route.id)}
-                >
-                  {/* Route background line - dimmed for unclaimed */}
-                  <path
-                    d={path}
-                    stroke={isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 30% 40%)'}
-                    strokeWidth={isSelected ? 14 : 10}
-                    fill="none"
-                    strokeLinecap="round"
-                    opacity={isSelected ? 1 : isClaimed ? 0.2 : 0.3}
-                  />
-                  
-                  {/* Individual train car slots */}
-                  {segments.map((seg, i) => {
-                    const wagonColor = isClaimed && claimingPlayer 
-                      ? PLAYER_COLORS[claimingPlayer.color]
-                      : color;
+            const playerColor = claimingPlayer ? PLAYER_COLORS[claimingPlayer.color] : null;
+            
+            return (
+              <g 
+                key={route.id}
+                className={`route-segment ${isClaimable ? 'cursor-pointer' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
+                onClick={() => !isClaimed && onRouteClick?.(route.id)}
+              >
+                {isClaimed && playerColor ? (
+                  // Claimed route - show as dashed line in player color
+                  <>
+                    {/* Outer glow/shadow for visibility */}
+                    <path
+                      d={path}
+                      stroke="hsl(0 0% 0% / 0.4)"
+                      strokeWidth={12}
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                    {/* White outline for contrast */}
+                    <path
+                      d={path}
+                      stroke="hsl(0 0% 100% / 0.8)"
+                      strokeWidth={10}
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                    {/* Player colored dashed line */}
+                    <path
+                      d={path}
+                      stroke={playerColor}
+                      strokeWidth={6}
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray="12 6"
+                      filter="url(#claimed-glow)"
+                      className="claimed-route-line"
+                    />
+                    {/* Start and end markers */}
+                    <circle
+                      cx={startPos.x}
+                      cy={startPos.y}
+                      r={5}
+                      fill={playerColor}
+                      stroke="white"
+                      strokeWidth={2}
+                    />
+                    <circle
+                      cx={endPos.x}
+                      cy={endPos.y}
+                      r={5}
+                      fill={playerColor}
+                      stroke="white"
+                      strokeWidth={2}
+                    />
+                  </>
+                ) : (
+                  // Unclaimed route - show wagon slots
+                  <>
+                    {/* Route background line - dimmed for unclaimed */}
+                    <path
+                      d={path}
+                      stroke={isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 30% 40%)'}
+                      strokeWidth={isSelected ? 14 : 10}
+                      fill="none"
+                      strokeLinecap="round"
+                      opacity={isSelected ? 1 : 0.3}
+                    />
                     
-                    // Check if this is a claimed wagon by red or blue player
-                    const isRedPlayerWagon = isClaimed && claimingPlayer?.color === 'red';
-                    const isBluePlayerWagon = isClaimed && claimingPlayer?.color === 'blue';
-                    const isGreenPlayerWagon = isClaimed && claimingPlayer?.color === 'green';
-                    const isBlackPlayerWagon = isClaimed && claimingPlayer?.color === 'black';
-                    const isYellowPlayerWagon = isClaimed && claimingPlayer?.color === 'yellow';
-                    
-                    return (
+                    {/* Individual train car slots */}
+                    {segments.map((seg, i) => (
                       <g 
                         key={i} 
                         transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
                         className="wagon-slot"
                       >
-                        {/* Use wagon image for red/blue player, rectangles for others */}
-                        {isRedPlayerWagon ? (
-                          <g>
-                            {/* White outline for contrast */}
-                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
-                            <image
-                              href={redWagonImage}
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              preserveAspectRatio="xMidYMid meet"
-                              filter="url(#wagon-contrast)"
-                              className="wagon-image"
-                              style={{ animationDelay: `${i * 80}ms` }}
-                            />
-                          </g>
-                        ) : isBluePlayerWagon ? (
-                          <g>
-                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
-                            <image
-                              href={blueWagonImage}
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              preserveAspectRatio="xMidYMid meet"
-                              filter="url(#wagon-contrast)"
-                              className="wagon-image"
-                              style={{ animationDelay: `${i * 80}ms` }}
-                            />
-                          </g>
-                        ) : isGreenPlayerWagon ? (
-                          <g>
-                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
-                            <image
-                              href={greenWagonImage}
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              preserveAspectRatio="xMidYMid meet"
-                              filter="url(#wagon-contrast)"
-                              className="wagon-image"
-                              style={{ animationDelay: `${i * 80}ms` }}
-                            />
-                          </g>
-                        ) : isBlackPlayerWagon ? (
-                          <g>
-                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#fff" strokeWidth={2} opacity={0.8} />
-                            <image
-                              href={blackWagonImage}
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              preserveAspectRatio="xMidYMid meet"
-                              filter="url(#wagon-contrast)"
-                              className="wagon-image"
-                              style={{ animationDelay: `${i * 80}ms` }}
-                            />
-                          </g>
-                        ) : isYellowPlayerWagon ? (
-                          <g>
-                            <rect x={-15} y={-8} width={30} height={16} rx={3} fill="none" stroke="#000" strokeWidth={2} opacity={0.6} />
-                            <image
-                              href={yellowWagonImage}
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              preserveAspectRatio="xMidYMid meet"
-                              filter="url(#wagon-contrast)"
-                              className="wagon-image"
-                              style={{ animationDelay: `${i * 80}ms` }}
-                            />
-                          </g>
-                        ) : (
-                          <>
-                            {/* Slot background - player color border for claimed */}
-                            <rect
-                              x={-12}
-                              y={-5}
-                              width={24}
-                              height={10}
-                              rx={2}
-                              fill={isClaimed ? wagonColor : color}
-                              stroke={isClaimed ? wagonColor : 'hsl(30 30% 50%)'}
-                              strokeWidth={isClaimed ? 3 : 1.5}
-                              opacity={isClaimed ? 1 : 0.9}
-                              className="wagon-rect"
-                            />
-                            
-                            {/* Inner fill for claimed wagons */}
-                            {isClaimed && (
-                              <rect
-                                x={-9}
-                                y={-3}
-                                width={18}
-                                height={6}
-                                rx={1}
-                                fill="hsl(40 30% 95%)"
-                              />
-                            )}
-                          </>
-                        )}
+                        {/* Slot background */}
+                        <rect
+                          x={-12}
+                          y={-5}
+                          width={24}
+                          height={10}
+                          rx={2}
+                          fill={color}
+                          stroke="hsl(30 30% 50%)"
+                          strokeWidth={1.5}
+                          opacity={0.9}
+                          className="wagon-rect"
+                        />
                         
                         {/* Tunnel indicator */}
-                        {route.isTunnel && !isClaimed && (
+                        {route.isTunnel && (
                           <rect
                             x={-12}
                             y={-5}
@@ -452,7 +389,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                         )}
                         
                         {/* Ferry locomotive indicator */}
-                        {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && !isClaimed && (
+                        {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && (
                           <text
                             x={0}
                             y={4}
@@ -465,23 +402,24 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                           </text>
                         )}
                       </g>
-                    );
-                  })}
-                  
-                  {/* Hover highlight */}
-                  {isClaimable && (
-                    <path
-                      d={path}
-                      stroke="hsl(43 80% 50%)"
-                      strokeWidth={16}
-                      fill="none"
-                      strokeLinecap="round"
-                      opacity={0}
-                      className="transition-opacity hover:opacity-30"
-                    />
-                  )}
-                </g>
-              );
+                    ))}
+                    
+                    {/* Hover highlight */}
+                    {isClaimable && (
+                      <path
+                        d={path}
+                        stroke="hsl(43 80% 50%)"
+                        strokeWidth={16}
+                        fill="none"
+                        strokeLinecap="round"
+                        opacity={0}
+                        className="transition-opacity hover:opacity-30"
+                      />
+                    )}
+                  </>
+                )}
+              </g>
+            );
           })}
         </g>
         

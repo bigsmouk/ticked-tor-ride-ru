@@ -290,9 +290,14 @@ export const TestMap: React.FC<TestMapProps> = ({
             <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.3"/>
           </filter>
           
-          {/* Claimed wagon shadow */}
-          <filter id="test-wagon-shadow" x="-100%" y="-100%" width="300%" height="300%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.5"/>
+          {/* Claimed route glow */}
+          <filter id="test-claimed-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
           </filter>
         </defs>
         
@@ -360,102 +365,145 @@ export const TestMap: React.FC<TestMapProps> = ({
                   style={{ cursor: isSelectable ? 'pointer' : undefined }}
                 />
                 
-                {/* Route background line */}
-                <line
-                  x1={startX}
-                  y1={startY}
-                  x2={endX}
-                  y2={endY}
-                  stroke={isSelected || isHighlighted ? '#fbbf24' : '#78716c'}
-                  strokeWidth={isSelected || isHighlighted ? 20 : 16}
-                  strokeLinecap="round"
-                  opacity={isSelected || isHighlighted ? 1 : isClaimed ? 0.3 : 0.5}
-                  filter={isHovered && !isClaimed ? 'url(#test-hover-glow)' : undefined}
-                />
-                
-                {/* Tunnel/Ferry indicator on the line */}
-                {route.type === 'tunnel' && !isClaimed && (
-                  <line
-                    x1={startX}
-                    y1={startY}
-                    x2={endX}
-                    y2={endY}
-                    stroke={color}
-                    strokeWidth={12}
-                    strokeLinecap="round"
-                    strokeDasharray="20 10"
-                    opacity={0.8}
-                  />
-                )}
-                
-                {/* Individual wagon segments */}
-                {segments.map((seg, i) => {
-                  const wagonColor = isClaimed && claimedColor ? claimedColor : color;
-                  const segmentWidth = 48;
-                  const segmentHeight = 20;
-                  
-                  return (
-                    <g 
-                      key={i} 
-                      transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
-                      className={isClaimed ? 'wagon-claimed' : 'wagon-unclaimed'}
-                    >
-                      {/* Wagon slot background */}
-                      <rect
-                        x={-segmentWidth / 2}
-                        y={-segmentHeight / 2}
-                        width={segmentWidth}
-                        height={segmentHeight}
-                        rx={4}
-                        fill={isClaimed ? wagonColor : color}
-                        stroke={isClaimed ? '#fff' : '#78716c'}
-                        strokeWidth={isClaimed ? 3 : 2}
-                        opacity={isClaimed ? 1 : 0.9}
-                        filter={isClaimed ? 'url(#test-wagon-shadow)' : undefined}
-                        className={isClaimed ? 'animate-wagon-appear' : ''}
-                        style={{ animationDelay: `${i * 80}ms` }}
+                {isClaimed && claimedColor ? (
+                  // Claimed route - show as dashed line in player color
+                  <>
+                    {/* Outer glow/shadow for visibility */}
+                    <line
+                      x1={startX}
+                      y1={startY}
+                      x2={endX}
+                      y2={endY}
+                      stroke="rgba(0,0,0,0.4)"
+                      strokeWidth={20}
+                      strokeLinecap="round"
+                    />
+                    {/* White outline for contrast */}
+                    <line
+                      x1={startX}
+                      y1={startY}
+                      x2={endX}
+                      y2={endY}
+                      stroke="rgba(255,255,255,0.8)"
+                      strokeWidth={16}
+                      strokeLinecap="round"
+                    />
+                    {/* Player colored dashed line */}
+                    <line
+                      x1={startX}
+                      y1={startY}
+                      x2={endX}
+                      y2={endY}
+                      stroke={claimedColor}
+                      strokeWidth={10}
+                      strokeLinecap="round"
+                      strokeDasharray="24 12"
+                      filter="url(#test-claimed-glow)"
+                      className="claimed-route-line"
+                    />
+                    {/* Start and end markers */}
+                    <circle
+                      cx={startX}
+                      cy={startY}
+                      r={8}
+                      fill={claimedColor}
+                      stroke="white"
+                      strokeWidth={3}
+                    />
+                    <circle
+                      cx={endX}
+                      cy={endY}
+                      r={8}
+                      fill={claimedColor}
+                      stroke="white"
+                      strokeWidth={3}
+                    />
+                  </>
+                ) : (
+                  // Unclaimed route - show wagon slots
+                  <>
+                    {/* Route background line */}
+                    <line
+                      x1={startX}
+                      y1={startY}
+                      x2={endX}
+                      y2={endY}
+                      stroke={isSelected || isHighlighted ? '#fbbf24' : '#78716c'}
+                      strokeWidth={isSelected || isHighlighted ? 20 : 16}
+                      strokeLinecap="round"
+                      opacity={isSelected || isHighlighted ? 1 : 0.5}
+                      filter={isHovered ? 'url(#test-hover-glow)' : undefined}
+                    />
+                    
+                    {/* Tunnel/Ferry indicator on the line */}
+                    {route.type === 'tunnel' && (
+                      <line
+                        x1={startX}
+                        y1={startY}
+                        x2={endX}
+                        y2={endY}
+                        stroke={color}
+                        strokeWidth={12}
+                        strokeLinecap="round"
+                        strokeDasharray="20 10"
+                        opacity={0.8}
                       />
+                    )}
+                    
+                    {/* Individual wagon segments */}
+                    {segments.map((seg, i) => {
+                      const segmentWidth = 48;
+                      const segmentHeight = 20;
                       
-                      {/* Inner detail for claimed wagons */}
-                      {isClaimed && (
-                        <rect
-                          x={-segmentWidth / 2 + 6}
-                          y={-segmentHeight / 2 + 4}
-                          width={segmentWidth - 12}
-                          height={segmentHeight - 8}
-                          rx={2}
-                          fill="rgba(255,255,255,0.3)"
-                        />
-                      )}
-                      
-                      {/* Ferry locomotive indicator */}
-                      {route.type === 'ferry' && route.ferryLocomotives && i < route.ferryLocomotives && !isClaimed && (
-                        <text
-                          x={0}
-                          y={4}
-                          textAnchor="middle"
-                          fontSize={12}
-                          fill="#000"
+                      return (
+                        <g 
+                          key={i} 
+                          transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
+                          className="wagon-unclaimed"
                         >
-                          🚂
-                        </text>
-                      )}
-                      
-                      {/* Tunnel indicator */}
-                      {route.type === 'tunnel' && i === 0 && !isClaimed && (
-                        <text
-                          x={0}
-                          y={4}
-                          textAnchor="middle"
-                          fontSize={10}
-                          fill="#000"
-                        >
-                          ⛰️
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
+                          {/* Wagon slot background */}
+                          <rect
+                            x={-segmentWidth / 2}
+                            y={-segmentHeight / 2}
+                            width={segmentWidth}
+                            height={segmentHeight}
+                            rx={4}
+                            fill={color}
+                            stroke="#78716c"
+                            strokeWidth={2}
+                            opacity={0.9}
+                          />
+                          
+                          {/* Ferry locomotive indicator */}
+                          {route.type === 'ferry' && route.ferryLocomotives && i < route.ferryLocomotives && (
+                            <text
+                              x={0}
+                              y={4}
+                              textAnchor="middle"
+                              fontSize={12}
+                              fill="#000"
+                            >
+                              🚂
+                            </text>
+                          )}
+                          
+                          {/* Tunnel indicator */}
+                          {route.type === 'tunnel' && i === 0 && (
+                            <text
+                              x={0}
+                              y={4}
+                              textAnchor="middle"
+                              fontSize={10}
+                              fill="#000"
+                            >
+                              ⛰️
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+                  </>
+                )}
               </g>
             );
           })}
