@@ -12,7 +12,9 @@ interface KickVoteModalProps {
   players: Player[];
   localPlayerId: string;
   isOpen: boolean;
+  isHost: boolean;
   onVote: (approve: boolean) => void;
+  onCancelVote: () => void;
   onClose: () => void;
 }
 
@@ -21,7 +23,9 @@ export const KickVoteModal: React.FC<KickVoteModalProps> = ({
   players,
   localPlayerId,
   isOpen,
+  isHost,
   onVote,
+  onCancelVote,
   onClose,
 }) => {
   const [timeLeft, setTimeLeft] = useState(VOTE_DURATION_SECONDS);
@@ -194,6 +198,17 @@ export const KickVoteModal: React.FC<KickVoteModalProps> = ({
             <div className="text-center p-2 bg-destructive/10 rounded-lg text-destructive">
               Вы не можете голосовать за своё исключение
             </div>
+          )}
+
+          {/* Host cancel button */}
+          {isHost && (
+            <Button
+              variant="outline"
+              className="w-full mt-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+              onClick={onCancelVote}
+            >
+              Отменить голосование (хост)
+            </Button>
           )}
         </div>
       </DialogContent>

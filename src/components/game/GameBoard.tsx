@@ -393,7 +393,13 @@ export const GameBoard: React.FC = () => {
         players={gameState?.players || []}
         localPlayerId={localPlayerId || ''}
         isOpen={!!gameState?.activeKickVote}
+        isHost={isHost}
         onVote={handleCastVote}
+        onCancelVote={() => {
+          if (isHost) {
+            cancelKickVote();
+          }
+        }}
         onClose={() => {}} // Cannot close during vote
       />
     </div>
