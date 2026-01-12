@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
+import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { ProfileModal } from '@/components/profile/ProfileModal';
+import { User, LogIn } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, isLoading, isReady } = useMultiplayer();
+  const { isAuthenticated, profile, loading: authLoading } = useAuth();
   const {
     isRecovering,
     showRecoveryPrompt,
@@ -20,6 +25,15 @@ const Index = () => {
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // Устанавливаем имя из профиля при авторизации
+  useEffect(() => {
+    if (profile && !playerName) {
+      setPlayerName(profile.display_name);
+    }
+  }, [profile, playerName]);
 
   // Показываем загрузку пока идёт восстановление сессии
   if (isRecovering) {
@@ -119,7 +133,42 @@ const Index = () => {
   return (
     <div className="min-h-screen parchment flex flex-col">
       {/* Header */}
-      <header className="py-6 text-center border-b-4 border-ornament bg-primary">
+      <header className="py-6 text-center border-b-4 border-ornament bg-primary relative">
+        {/* Auth button */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          {authLoading ? (
+            <div className="w-10 h-10 rounded-full bg-amber-700/50 animate-pulse" />
+          ) : isAuthenticated && profile ? (
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-700/80 hover:bg-amber-700 transition-colors text-white"
+            >
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center">
+                  <User className="h-4 w-4" />
+                </div>
+              )}
+              <span className="hidden sm:inline text-sm font-medium max-w-[100px] truncate">
+                {profile.display_name}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-700/80 hover:bg-amber-700 transition-colors text-white text-sm font-medium"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Войти</span>
+            </button>
+          )}
+        </div>
+
         <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
           🚂 Железнодорожное Приключение
         </h1>
@@ -252,6 +301,10 @@ const Index = () => {
         <p>Создатель: <strong>Симинеев Тимур</strong></p>
         <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
       </footer>
+
+      {/* Modals */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
     </div>
   );
 };

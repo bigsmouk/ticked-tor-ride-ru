@@ -1,11 +1,92 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export const GameOverModal: React.FC = () => {
-  const { gameState, leaveRoom } = useGameStore();
+  const { gameState, currentRoom, leaveRoom } = useGameStore();
+  const { profile } = useAuth();
   const navigate = useNavigate();
+  const savedRef = useRef(false);
+  
+  // Сохраняем результаты матча в БД (только один раз)
+  useEffect(() => {
+    if (!gameState || gameState.phase !== 'finished' || savedRef.current) return;
+    if (!currentRoom) return;
+    
+    const saveMatchResults = async () => {
+      savedRef.current = true;
+      
+      try {
+        // Создаём запись матча
+        const { data: matchData, error: matchError } = await supabase
+          .from('match_history')
+          .insert({
+            room_id: currentRoom.id,
+            room_name: currentRoom.name,
+            player_count: gameState.players.length,
+            game_data: {
+              winnerId: gameState.winnerId,
+              turnNumber: gameState.turnNumber,
+              finishedAt: new Date().toISOString(),
+            },
+          })
+          .select()
+          .single();
+
+        if (matchError) {
+          console.error('Error saving match:', matchError);
+          return;
+        }
+
+        // Создаём записи для каждого игрока
+        const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+        
+        const playerRecords = sortedPlayers.map((player, index) => {
+          const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
+          const routePoints = player.score 
+            - ((finalScore as any)?.ticketBonus || 0) 
+            + ((finalScore as any)?.ticketPenalty || 0) 
+            - ((finalScore as any)?.longestPathBonus || 0);
+          
+          // Пытаемся найти профиль авторизованного игрока
+          // Это работает только для текущего пользователя
+          const isCurrentUser = profile && player.name === profile.display_name;
+          
+          return {
+            match_id: matchData.id,
+            profile_id: isCurrentUser ? profile.id : null,
+            player_name: player.name,
+            player_color: player.color,
+            final_score: player.score,
+            route_points: routePoints,
+            ticket_points: ((finalScore as any)?.ticketBonus || 0) - ((finalScore as any)?.ticketPenalty || 0),
+            longest_path_bonus: (finalScore as any)?.longestPathBonus || 0,
+            tickets_completed: (finalScore as any)?.completedTickets || 0,
+            tickets_failed: (finalScore as any)?.failedTickets || 0,
+            is_winner: player.id === gameState.winnerId,
+            placement: index + 1,
+          };
+        });
+
+        const { error: playersError } = await supabase
+          .from('match_players')
+          .insert(playerRecords);
+
+        if (playersError) {
+          console.error('Error saving match players:', playersError);
+        } else {
+          console.log('[GameOver] Match results saved successfully');
+        }
+      } catch (error) {
+        console.error('Error saving match results:', error);
+      }
+    };
+
+    saveMatchResults();
+  }, [gameState, currentRoom, profile]);
   
   if (!gameState || gameState.phase !== 'finished') return null;
   
