@@ -30,6 +30,11 @@ export const useAuth = () => {
 
   const ensureProfile = useCallback(async (user: User) => {
     const userId = user.id;
+    const metadata = user.user_metadata as any;
+
+    // Извлекаем данные из Google OAuth или других провайдеров
+    const googleName = metadata?.full_name || metadata?.name;
+    const googleAvatar = metadata?.avatar_url || metadata?.picture;
 
     // maybeSingle() не кидает ошибку, если данных нет — просто вернёт data: null
     const { data: existing, error: selectError } = await supabase
@@ -43,17 +48,55 @@ export const useAuth = () => {
       return null;
     }
 
-    if (existing) return existing as Profile;
+    if (existing) {
+      // Если профиль существует, но данные из Google не синхронизированы — обновляем
+      const needsUpdate = 
+        (googleName && !existing.display_name) ||
+        (googleAvatar && !existing.avatar_url);
+
+      if (needsUpdate) {
+        const updates: { display_name?: string; avatar_url?: string } = {};
+        if (googleName && (!existing.display_name || existing.display_name === 'Игрок')) {
+          updates.display_name = googleName;
+        }
+        if (googleAvatar && !existing.avatar_url) {
+          updates.avatar_url = googleAvatar;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { data: updated, error: updateError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+          if (!updateError && updated) {
+            console.log('[Profile] Синхронизированы данные из Google:', updates);
+            return updated as Profile;
+          }
+        }
+      }
+
+      return existing as Profile;
+    }
 
     // Если профиля нет (например, старые аккаунты/сбой триггера) — создаём.
     const displayName =
-      (user.user_metadata as any)?.display_name ||
+      googleName ||
+      metadata?.display_name ||
       (user.email ? user.email.split('@')[0] : null) ||
       'Игрок';
 
+    const avatarUrl = googleAvatar || null;
+
     const { data: inserted, error: insertError } = await supabase
       .from('profiles')
-      .insert({ user_id: userId, display_name: displayName })
+      .insert({ 
+        user_id: userId, 
+        display_name: displayName,
+        avatar_url: avatarUrl,
+      })
       .select('*')
       .maybeSingle();
 
@@ -62,6 +105,7 @@ export const useAuth = () => {
       return null;
     }
 
+    console.log('[Profile] Создан профиль с данными Google:', { displayName, avatarUrl });
     return inserted as Profile;
   }, []);
 
