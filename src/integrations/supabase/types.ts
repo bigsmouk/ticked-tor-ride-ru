@@ -249,6 +249,44 @@ export type Database = {
         }
         Relationships: []
       }
+      public_room_players: {
+        Row: {
+          color: string | null
+          id: string | null
+          is_host: boolean | null
+          is_ready: boolean | null
+          joined_at: string | null
+          player_name: string | null
+          room_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          id?: string | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          joined_at?: string | null
+          player_name?: string | null
+          room_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          id?: string | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          joined_at?: string | null
+          player_name?: string | null
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_public_profile: {
