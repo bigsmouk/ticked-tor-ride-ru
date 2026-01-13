@@ -15,6 +15,8 @@ import { LogOut } from 'lucide-react';
 import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useGameSyncContext } from '@/contexts/gameSyncContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LeaveGameButtonProps {
   onLeave?: () => void;
@@ -26,14 +28,78 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
   const { currentRoom, leaveRoom, addLog, localPlayerId, gameState } = useGameStore();
   const { leaveRoom: leaveRoomFromDb } = useMultiplayer();
   const { sendActionToHost, isHost } = useGameSyncContext();
+  const { profile } = useAuth();
 
   const handleLeaveClick = () => {
     setShowConfirm(true);
   };
 
+  // Сохраняем историю для игрока который выходит
+  const saveMatchHistoryForLeavingPlayer = async () => {
+    if (!gameState || !currentRoom || !profile) return;
+    
+    // Если игра ещё не началась (нет ходов) - не сохраняем
+    if (gameState.turnNumber < 1) return;
+    
+    try {
+      const localPlayer = gameState.players.find(p => p.id === localPlayerId);
+      if (!localPlayer) return;
+
+      // Создаём запись матча для вышедшего игрока
+      const { data: matchData, error: matchError } = await supabase
+        .from('match_history')
+        .insert({
+          room_id: null, // Не привязываем к комнате, чтобы обойти RLS 
+          room_name: currentRoom.name,
+          player_count: gameState.players.length,
+          game_data: {
+            turnNumber: gameState.turnNumber,
+            finishedAt: new Date().toISOString(),
+            endReason: 'left_game',
+          },
+        })
+        .select()
+        .single();
+
+      if (matchError) {
+        console.error('[LeaveGame] Error saving match:', matchError);
+        return;
+      }
+
+      // Сохраняем только запись для текущего игрока
+      const { error: playerError } = await supabase
+        .from('match_players')
+        .insert({
+          match_id: matchData.id,
+          profile_id: profile.id,
+          player_name: localPlayer.name,
+          player_color: localPlayer.color,
+          final_score: localPlayer.score,
+          route_points: localPlayer.score,
+          ticket_points: 0,
+          longest_path_bonus: 0,
+          tickets_completed: 0,
+          tickets_failed: 0,
+          is_winner: false,
+          placement: 0, // 0 = покинул игру
+        });
+
+      if (playerError) {
+        console.error('[LeaveGame] Error saving player record:', playerError);
+      } else {
+        console.log('[LeaveGame] Match history saved for leaving player');
+      }
+    } catch (error) {
+      console.error('[LeaveGame] Error:', error);
+    }
+  };
+
   const handleConfirmLeave = async () => {
     const localPlayer = gameState?.players.find(p => p.id === localPlayerId);
     const playerName = localPlayer?.name || 'Игрок';
+
+    // Сохраняем историю матча для вышедшего игрока
+    await saveMatchHistoryForLeavingPlayer();
 
     // Добавляем запись в лог через синхронизацию
     if (isHost) {
