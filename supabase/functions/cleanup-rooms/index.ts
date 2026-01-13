@@ -24,6 +24,9 @@ Deno.serve(async (req) => {
     const tenMinutesAgo = new Date();
     tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
+    const fiveMinutesAgo = new Date();
+    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+
     // 1. Find old waiting rooms (24+ hours)
     const { data: oldRooms, error: findOldError } = await supabase
       .from("rooms")
@@ -35,8 +38,7 @@ Deno.serve(async (req) => {
       throw findOldError;
     }
 
-    // 2. Find rooms where host left more than 10 minutes ago
-    // Get all waiting rooms
+    // 2. Find all waiting rooms to check player status
     const { data: waitingRooms, error: findWaitingError } = await supabase
       .from("rooms")
       .select("id, code, name, host_id, updated_at")
@@ -46,25 +48,33 @@ Deno.serve(async (req) => {
       throw findWaitingError;
     }
 
-    // Check which rooms have no host in room_players
+    // Check which rooms have no host or no players at all
     const hostlessRooms: Array<{ id: string; code: string; name: string }> = [];
+    const emptyRooms: Array<{ id: string; code: string; name: string }> = [];
 
     for (const room of waitingRooms || []) {
-      // Check if host is still in the room
-      const { data: hostPlayer, error: hostError } = await supabase
+      // Get all players in the room
+      const { data: players, error: playersError } = await supabase
         .from("room_players")
-        .select("id")
-        .eq("room_id", room.id)
-        .eq("is_host", true)
-        .maybeSingle();
+        .select("id, is_host")
+        .eq("room_id", room.id);
 
-      if (hostError) {
-        console.error(`Error checking host for room ${room.code}:`, hostError);
+      if (playersError) {
+        console.error(`Error checking players for room ${room.code}:`, playersError);
         continue;
       }
 
-      // If no host and room updated more than 10 minutes ago, mark for deletion
-      if (!hostPlayer && new Date(room.updated_at) < tenMinutesAgo) {
+      const playerCount = players?.length || 0;
+      const hasHost = players?.some(p => p.is_host) || false;
+
+      // 3. Empty rooms (no players at all) - delete after 5 minutes
+      if (playerCount === 0 && new Date(room.updated_at) < fiveMinutesAgo) {
+        emptyRooms.push({ id: room.id, code: room.code, name: room.name });
+        continue;
+      }
+
+      // 4. Rooms with players but no host - delete after 10 minutes
+      if (!hasHost && new Date(room.updated_at) < tenMinutesAgo) {
         hostlessRooms.push({ id: room.id, code: room.code, name: room.name });
       }
     }
@@ -72,7 +82,8 @@ Deno.serve(async (req) => {
     // Combine rooms to delete (avoid duplicates)
     const oldRoomIds = (oldRooms || []).map((r) => r.id);
     const hostlessRoomIds = hostlessRooms.map((r) => r.id);
-    const allRoomIds = [...new Set([...oldRoomIds, ...hostlessRoomIds])];
+    const emptyRoomIds = emptyRooms.map((r) => r.id);
+    const allRoomIds = [...new Set([...oldRoomIds, ...hostlessRoomIds, ...emptyRoomIds])];
 
     if (allRoomIds.length === 0) {
       return new Response(
@@ -80,7 +91,8 @@ Deno.serve(async (req) => {
           message: "No rooms to clean up", 
           deleted: 0,
           oldRooms: 0,
-          hostlessRooms: 0
+          hostlessRooms: 0,
+          emptyRooms: 0
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -109,6 +121,7 @@ Deno.serve(async (req) => {
     console.log(`Cleaned up ${allRoomIds.length} rooms:`);
     console.log(`  - ${oldRoomIds.length} old rooms (24h+):`, (oldRooms || []).map(r => r.code));
     console.log(`  - ${hostlessRooms.length} hostless rooms (10min+):`, hostlessRooms.map(r => r.code));
+    console.log(`  - ${emptyRoomIds.length} empty rooms (5min+):`, emptyRooms.map(r => r.code));
 
     return new Response(
       JSON.stringify({
@@ -116,9 +129,11 @@ Deno.serve(async (req) => {
         deleted: allRoomIds.length,
         oldRooms: oldRoomIds.length,
         hostlessRooms: hostlessRooms.length,
+        emptyRooms: emptyRoomIds.length,
         details: {
           old: (oldRooms || []).map((r) => ({ code: r.code, name: r.name })),
           hostless: hostlessRooms.map((r) => ({ code: r.code, name: r.name })),
+          empty: emptyRooms.map((r) => ({ code: r.code, name: r.name })),
         }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
