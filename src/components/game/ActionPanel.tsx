@@ -80,6 +80,16 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
             🎫 Взять маршруты
           </button>
           
+          {stationsRemaining > 0 && onBuildStation && (
+            <button
+              className="btn-vintage rounded-lg"
+              onClick={onBuildStation}
+              title={`Построить станцию (${stationCost} карт)`}
+            >
+              🏛️ Станция ({stationCost})
+            </button>
+          )}
+          
           {selectedRouteId && canClaimSelectedRoute && (
             <button
               className="btn-gold rounded-lg animate-pulse"
@@ -94,6 +104,20 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
               ⚠️ {claimError || 'Недостаточно карт для этого маршрута'}
             </div>
           )}
+        </div>
+      )}
+      
+      {currentAction === 'buildStation' && (
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gold font-display animate-pulse">
+            Выберите город для станции
+          </div>
+          <button
+            className="btn-vintage rounded-lg text-sm"
+            onClick={onCancelAction}
+          >
+            ❌ Отмена
+          </button>
         </div>
       )}
       

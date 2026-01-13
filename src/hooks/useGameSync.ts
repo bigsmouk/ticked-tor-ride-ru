@@ -18,7 +18,10 @@ export type GameAction =
   | { type: 'endTurn' }
   | { type: 'playerLeft'; playerId: string; playerName: string }
   | { type: 'initiateKickVote'; targetPlayerId: string; initiatorId: string }
-  | { type: 'castKickVote'; targetPlayerId: string; voterId: string; approve: boolean };
+  | { type: 'castKickVote'; targetPlayerId: string; voterId: string; approve: boolean }
+  | { type: 'startBuildStation' }
+  | { type: 'buildStation'; cityId: string; cardsUsed: TrainCardType[] }
+  | { type: 'cancelBuildStation' };
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'degraded' | 'disconnected' | 'reconnecting';
 
@@ -480,6 +483,15 @@ export const useGameSync = (roomId: string | null) => {
             break;
           case 'castKickVote':
             executeCastKickVote(action.voterId, action.approve);
+            break;
+          case 'startBuildStation':
+            useGameStore.getState().startBuildStation();
+            break;
+          case 'buildStation':
+            useGameStore.getState().buildStation(action.cityId, action.cardsUsed);
+            break;
+          case 'cancelBuildStation':
+            useGameStore.getState().cancelBuildStation();
             break;
         }
         

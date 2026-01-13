@@ -5,6 +5,7 @@ import { PRELOADED_MAPS } from '@/hooks/useAssetPreloader';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
 import { RouteSegment } from './map/RouteSegment';
 import { CityMarker } from './map/CityMarker';
+import { StationMarker } from './map/StationMarker';
 
 // Use preloaded map image
 const europeMapImage = PRELOADED_MAPS.europe;
@@ -414,6 +415,25 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               onClick={() => onCityClick?.(city.id)}
             />
           ))}
+        </g>
+        
+        {/* Stations - displayed on top of cities */}
+        <g className="stations">
+          {gameState?.placedStations.map((station) => {
+            const city = cities.find(c => c.id === station.cityId);
+            const player = gameState.players.find(p => p.id === station.playerId);
+            if (!city || !player) return null;
+            
+            return (
+              <StationMarker
+                key={`station-${station.cityId}`}
+                x={city.x + 15}
+                y={city.y - 10}
+                playerColor={player.color}
+                playerName={player.name}
+              />
+            );
+          })}
         </g>
         
         {/* Score legend */}
