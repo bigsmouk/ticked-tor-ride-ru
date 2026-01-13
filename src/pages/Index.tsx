@@ -212,43 +212,43 @@ const Index = () => {
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
-      <header className="retro-header py-8 text-center relative z-10">
+      <header className="retro-header py-4 md:py-6 text-center relative z-10 flex-shrink-0">
         {/* Auth controls */}
         <AuthControls className="absolute right-4 top-1/2 -translate-y-1/2" />
         
         {/* Decorative train icon */}
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block">
-          <Train className="h-12 w-12 text-gold opacity-80" />
+          <Train className="h-10 w-10 text-gold opacity-80" />
         </div>
 
-        <h1 className="vintage-title text-3xl md:text-5xl font-bold text-primary-foreground">
+        <h1 className="vintage-title text-2xl md:text-4xl font-bold text-primary-foreground">
           Железнодорожное Приключение
         </h1>
-        <p className="vintage-subtitle text-xl md:text-2xl mt-3 font-bold">
+        <p className="vintage-subtitle text-lg md:text-xl mt-1 font-bold">
           ЕВРОПА
         </p>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative z-10 overflow-y-auto min-h-0">
         {/* Active games counter */}
-        <div className="mb-6 animate-fade-in">
+        <div className="mb-3 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-lg w-full">
-          <div className="vintage-card rounded-xl p-8">
+        <div className="max-w-lg w-full flex-shrink-0">
+          <div className="vintage-card rounded-xl p-5 md:p-6">
             {/* Welcome text */}
-            <div className="text-center mb-6">
-              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+            <div className="text-center mb-4">
+              <h2 className="font-display text-xl font-bold text-foreground mb-1">
                 Добро пожаловать!
               </h2>
-              <div className="ornate-divider my-4"></div>
+              <div className="ornate-divider my-2"></div>
             </div>
 
             {/* Player name input */}
-            <div className="mb-6">
-              <label className="block font-display text-sm font-semibold mb-2 text-foreground">
+            <div className="mb-4">
+              <label className="block font-display text-sm font-semibold mb-1 text-foreground">
                 Ваше имя
               </label>
               <Input
@@ -260,16 +260,16 @@ const Index = () => {
             </div>
 
             {!showCreate && !showJoin ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button
-                  className="btn-gold w-full rounded-lg py-4 text-lg"
+                  className="btn-gold w-full rounded-lg py-3 text-base"
                   onClick={() => setShowCreate(true)}
                 >
                   ➕ Создать комнату
                 </button>
                 
                 <button
-                  className="btn-vintage w-full rounded-lg"
+                  className="btn-vintage w-full rounded-lg py-2"
                   onClick={() => setShowJoin(true)}
                 >
                   🔗 Присоединиться по коду
@@ -306,8 +306,8 @@ const Index = () => {
 
                 {/* Список открытых комнат */}
                 {user && (
-                  <div className="mt-6 pt-4 border-t border-ornament">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="mt-4 pt-3 border-t border-ornament">
+                    <div className="flex items-center justify-between mb-2">
                       <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
                         <Globe className="h-4 w-4" />
                         Открытые комнаты
@@ -326,7 +326,7 @@ const Index = () => {
                         <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                       </div>
                     ) : publicRooms.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
                         {publicRooms.map((room) => (
                           <button
                             key={room.id}
@@ -354,9 +354,8 @@ const Index = () => {
                   </div>
                 )}
 
-                <div className="text-center text-sm text-muted-foreground mt-6">
-                  <p>Онлайн-версия настольной игры</p>
-                  <p className="mt-1">Постройте железнодорожную империю в Европе!</p>
+                <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>Постройте железнодорожную империю в Европе!</p>
                 </div>
               </div>
             ) : showCreate ? (
@@ -448,17 +447,17 @@ const Index = () => {
           </div>
 
           {/* Game info and rules */}
-          <div className="mt-8 text-center space-y-4">
-            <div className="inline-flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+          <div className="mt-4 text-center space-y-2 flex-shrink-0">
+            <div className="inline-flex flex-wrap justify-center gap-2 md:gap-4 text-xs md:text-sm">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
                 <span className="text-gold">👥</span>
                 <span className="text-foreground font-medium">2-4 игрока</span>
               </span>
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
                 <span className="text-gold">⏱️</span>
                 <span className="text-foreground font-medium">30-60 мин</span>
               </span>
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
                 <span className="text-gold">🏙️</span>
                 <span className="text-foreground font-medium">46 городов</span>
               </span>
@@ -472,23 +471,23 @@ const Index = () => {
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-6 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 space-y-3">
+      <footer className="py-3 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0">
         <div className="flex items-center justify-center gap-2">
-          <p className="text-primary-foreground font-display text-lg">
+          <p className="text-primary-foreground font-display text-sm md:text-base">
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
           </p>
           <a 
             href="https://t.me/timursimineev" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gold/20 hover:bg-gold/40 transition-colors"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold/20 hover:bg-gold/40 transition-colors"
             title="Telegram"
           >
-            <Send className="h-4 w-4 text-gold" />
+            <Send className="h-3.5 w-3.5 text-gold" />
           </a>
         </div>
-        <p className="text-sm text-primary-foreground/80">
-          Вдохновлено настольной игрой <span className="italic">Ticket to Ride: Europe</span>
+        <p className="text-xs text-primary-foreground/80 mt-1">
+          Вдохновлено <span className="italic">Ticket to Ride: Europe</span>
         </p>
       </footer>
 
