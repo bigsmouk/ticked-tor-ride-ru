@@ -120,39 +120,83 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showCityNames, setShowCityNames] = useState(false);
   const [hoveredRoute, setHoveredRoute] = useState<Route | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // Refs for RAF optimization
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const rafIdRef = useRef<number | null>(null);
+  const pendingPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingScaleRef = useRef<number | null>(null);
+  
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 3;
+
+  // RAF-based state updater for smooth animations
+  const scheduleUpdate = useCallback(() => {
+    if (rafIdRef.current !== null) return; // Already scheduled
+    
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      
+      if (pendingPositionRef.current !== null) {
+        setPosition(pendingPositionRef.current);
+        pendingPositionRef.current = null;
+      }
+      
+      if (pendingScaleRef.current !== null) {
+        setScale(pendingScaleRef.current);
+        pendingScaleRef.current = null;
+      }
+    });
+  }, []);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
   
-  // Handle mouse wheel zoom
+  // Handle mouse wheel zoom with RAF
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev * delta)));
-  }, []);
+    
+    setScale(prev => {
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev * delta));
+      pendingScaleRef.current = newScale;
+      scheduleUpdate();
+      return prev; // Don't update immediately, let RAF handle it
+    });
+    
+    // Actually update via RAF
+    pendingScaleRef.current = Math.min(MAX_SCALE, Math.max(MIN_SCALE, (pendingScaleRef.current ?? scale) * delta));
+    scheduleUpdate();
+  }, [scale, scheduleUpdate]);
   
   // Handle mouse down for panning
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 0) { // Left mouse button
       setIsDragging(true);
-      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+      dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
     }
   }, [position]);
   
-  // Handle mouse move for panning
+  // Handle mouse move for panning with RAF
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isDragging) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
+      pendingPositionRef.current = {
+        x: e.clientX - dragStartRef.current.x,
+        y: e.clientY - dragStartRef.current.y,
+      };
+      scheduleUpdate();
     }
-  }, [isDragging, dragStart]);
+  }, [isDragging, scheduleUpdate]);
   
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
