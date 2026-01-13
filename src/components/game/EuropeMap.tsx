@@ -362,18 +362,6 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 ) : (
                   // Unclaimed route - show wagon slots
                   <>
-                    {/* Pulsing highlight for claimable routes */}
-                    {isClaimable && (
-                      <path
-                        d={path}
-                        stroke="hsl(43 80% 50%)"
-                        strokeWidth={14}
-                        fill="none"
-                        strokeLinecap="round"
-                        className="route-claimable-line"
-                      />
-                    )}
-                    
                     {/* Route background line - dimmed for unclaimed */}
                     <path
                       d={path}
