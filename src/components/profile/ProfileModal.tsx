@@ -31,19 +31,19 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 // Система рангов (ММР на основе побед)
 const RANKS = [
   { name: 'Новичок', minWins: 0, icon: '🎫', color: 'text-gray-500', tier: 'bronze' },
-  { name: 'Пассажир', minWins: 1, icon: '🧳', color: 'text-amber-700', tier: 'bronze' },
-  { name: 'Кочегар', minWins: 3, icon: '🔥', color: 'text-orange-600', tier: 'bronze' },
-  { name: 'Помощник машиниста', minWins: 5, icon: '🔧', color: 'text-slate-600', tier: 'silver' },
-  { name: 'Машинист III класса', minWins: 10, icon: '🚃', color: 'text-blue-500', tier: 'silver' },
-  { name: 'Машинист II класса', minWins: 15, icon: '🚂', color: 'text-blue-600', tier: 'silver' },
-  { name: 'Машинист I класса', minWins: 25, icon: '⭐', color: 'text-amber-500', tier: 'gold' },
-  { name: 'Старший машинист', minWins: 40, icon: '🌟', color: 'text-amber-600', tier: 'gold' },
-  { name: 'Инспектор депо', minWins: 60, icon: '🎖️', color: 'text-purple-500', tier: 'platinum' },
-  { name: 'Начальник депо', minWins: 80, icon: '🏅', color: 'text-purple-600', tier: 'platinum' },
-  { name: 'Начальник станции', minWins: 100, icon: '🏆', color: 'text-yellow-500', tier: 'diamond' },
-  { name: 'Директор железных дорог', minWins: 150, icon: '👑', color: 'text-gold', tier: 'diamond' },
-  { name: 'Железнодорожный магнат', minWins: 200, icon: '💎', color: 'text-cyan-400', tier: 'master' },
-  { name: 'Легенда рельсов', minWins: 300, icon: '🌠', color: 'text-rose-500', tier: 'legend' },
+  { name: 'Пассажир', minWins: 3, icon: '🧳', color: 'text-amber-700', tier: 'bronze' },
+  { name: 'Кочегар', minWins: 7, icon: '🔥', color: 'text-orange-600', tier: 'bronze' },
+  { name: 'Помощник машиниста', minWins: 12, icon: '🔧', color: 'text-slate-600', tier: 'silver' },
+  { name: 'Машинист III класса', minWins: 20, icon: '🚃', color: 'text-blue-500', tier: 'silver' },
+  { name: 'Машинист II класса', minWins: 30, icon: '🚂', color: 'text-blue-600', tier: 'silver' },
+  { name: 'Машинист I класса', minWins: 45, icon: '⭐', color: 'text-amber-500', tier: 'gold' },
+  { name: 'Старший машинист', minWins: 65, icon: '🌟', color: 'text-amber-600', tier: 'gold' },
+  { name: 'Инспектор депо', minWins: 90, icon: '🎖️', color: 'text-purple-500', tier: 'platinum' },
+  { name: 'Начальник депо', minWins: 120, icon: '🏅', color: 'text-purple-600', tier: 'platinum' },
+  { name: 'Начальник станции', minWins: 160, icon: '🏆', color: 'text-yellow-500', tier: 'diamond' },
+  { name: 'Директор железных дорог', minWins: 220, icon: '👑', color: 'text-gold', tier: 'diamond' },
+  { name: 'Железнодорожный магнат', minWins: 300, icon: '💎', color: 'text-cyan-400', tier: 'master' },
+  { name: 'Легенда рельсов', minWins: 500, icon: '🌠', color: 'text-rose-500', tier: 'legend' },
 ];
 
 const TIER_STYLES: Record<string, { bg: string; border: string; glow: string }> = {
