@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useMatchHistory } from '@/hooks/useMatchHistory';
 import { toast } from 'sonner';
-import { Loader2, Camera, Trophy, Target, TrendingUp, Trash2, Award, Route, RefreshCw } from 'lucide-react';
+import { Loader2, Camera, Trophy, Target, TrendingUp, Trash2, Award, Route, RefreshCw, Train, Star, Medal, Crown, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import {
@@ -27,6 +27,30 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+// Система рангов
+const RANKS = [
+  { name: 'Кочегар', minWins: 0, icon: '🔥', color: 'text-orange-600' },
+  { name: 'Помощник машиниста', minWins: 3, icon: '🔧', color: 'text-gray-600' },
+  { name: 'Машинист', minWins: 10, icon: '🚂', color: 'text-blue-600' },
+  { name: 'Старший машинист', minWins: 25, icon: '⭐', color: 'text-amber-600' },
+  { name: 'Начальник депо', minWins: 50, icon: '🎖️', color: 'text-purple-600' },
+  { name: 'Начальник станции', minWins: 100, icon: '👑', color: 'text-gold' },
+];
+
+const getRank = (wins: number) => {
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (wins >= RANKS[i].minWins) return RANKS[i];
+  }
+  return RANKS[0];
+};
+
+const getNextRank = (wins: number) => {
+  for (const rank of RANKS) {
+    if (wins < rank.minWins) return rank;
+  }
+  return null;
+};
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -190,124 +214,189 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     );
   }
 
+  const currentRank = getRank(stats?.wins || 0);
+  const nextRank = getNextRank(stats?.wins || 0);
+  const winsToNext = nextRank ? nextRank.minWins - (stats?.wins || 0) : 0;
+  const progressToNext = nextRank 
+    ? ((stats?.wins || 0) - currentRank.minWins) / (nextRank.minWins - currentRank.minWins) * 100 
+    : 100;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-amber-50 border-amber-900/30 max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-amber-900 text-center">
-            🎫 Профиль игрока
-          </DialogTitle>
-          <DialogDescription className="text-center text-amber-700">
-            Настройки аккаунта и статистика
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-transparent border-none max-h-[90vh]">
+        {/* Vintage Railway Ticket Design */}
+        <div className="relative bg-gradient-to-b from-amber-100 via-amber-50 to-amber-100 border-4 border-amber-800 rounded-lg overflow-hidden">
+          {/* Perforation effect - top */}
+          <div className="absolute top-0 left-0 right-0 h-3 flex justify-between px-2">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div key={i} className="w-2 h-2 bg-background rounded-full -translate-y-1" />
+            ))}
+          </div>
+          
+          {/* Perforation effect - bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-3 flex justify-between px-2">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div key={i} className="w-2 h-2 bg-background rounded-full translate-y-1" />
+            ))}
+          </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 border-b border-amber-200 pb-2">
-          {(['profile', 'stats', 'history'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 rounded-t text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? 'bg-amber-700 text-white'
-                  : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-              }`}
-            >
-              {tab === 'profile' && '👤 Профиль'}
-              {tab === 'stats' && '📊 Статистика'}
-              {tab === 'history' && '📜 История'}
-            </button>
-          ))}
-        </div>
-
-        <ScrollArea className="max-h-[60vh]">
-          {/* Profile Tab */}
-          {activeTab === 'profile' && (
-            <div className="space-y-4 p-1">
-              {/* Avatar */}
-              <div className="flex justify-center">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-amber-200 border-4 border-amber-400 overflow-hidden">
-                    {profile.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
-                        🚂
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 p-1.5 bg-amber-700 text-white rounded-full hover:bg-amber-800"
-                    disabled={saving}
-                  >
-                    <Camera className="h-4 w-4" />
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
-                </div>
-              </div>
-
-              {/* Display Name */}
-              <div className="space-y-2">
-                <Label htmlFor="profileName" className="text-amber-800">
-                  Имя игрока
-                </Label>
-                <Input
-                  id="profileName"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-white border-amber-300"
-                />
-              </div>
-
-              <Button
-                onClick={handleSaveProfile}
-                className="w-full bg-amber-700 hover:bg-amber-800 text-white"
-                disabled={saving}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Сохранить'}
-              </Button>
-
-              {/* Кнопка синхронизации из Google */}
-              {hasProviderData && (
-                <Button
-                  variant="outline"
-                  onClick={handleSyncFromProvider}
-                  className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
-                  disabled={syncing}
-                >
-                  {syncing ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Синхронизировать из Google
-                </Button>
-              )}
-
-              <div className="pt-4 border-t border-amber-200">
-                <Button
-                  variant="outline"
-                  onClick={handleSignOut}
-                  className="w-full border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  Выйти из аккаунта
-                </Button>
+          {/* Header with stamp effect */}
+          <DialogHeader className="px-6 pt-6 pb-3 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-800 relative">
+            <div className="absolute top-2 right-2 w-16 h-16 border-4 border-red-600 rounded-full flex items-center justify-center rotate-12 opacity-80">
+              <div className="text-red-600 font-bold text-[8px] text-center leading-tight">
+                VERIFIED<br/>PASSENGER
               </div>
             </div>
-          )}
+            <DialogTitle className="text-xl font-display font-bold text-amber-100 flex items-center gap-2">
+              <Train className="h-6 w-6" />
+              ПРОЕЗДНОЙ БИЛЕТ
+            </DialogTitle>
+            <DialogDescription className="text-amber-200/80 font-display tracking-wider">
+              ЖЕЛЕЗНОДОРОЖНОЕ ПРИКЛЮЧЕНИЕ
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 py-4">
+            {/* Tabs styled as ticket sections */}
+            <div className="flex gap-1 mb-4 border-b-2 border-dashed border-amber-400 pb-3">
+              {(['profile', 'stats', 'history'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-2 text-sm font-display font-bold transition-all border-2 ${
+                    activeTab === tab
+                      ? 'bg-amber-800 text-amber-100 border-amber-800 shadow-md'
+                      : 'bg-amber-100 text-amber-800 border-amber-400 hover:bg-amber-200'
+                  }`}
+                >
+                  {tab === 'profile' && '👤 ПРОФИЛЬ'}
+                  {tab === 'stats' && '📊 СТАТИСТИКА'}
+                  {tab === 'history' && '📜 ИСТОРИЯ'}
+                </button>
+              ))}
+            </div>
+
+            <ScrollArea className="max-h-[55vh]">
+              {/* Profile Tab */}
+              {activeTab === 'profile' && (
+                <div className="space-y-4 p-1">
+                  {/* Ticket-style passenger info */}
+                  <div className="flex gap-4 items-start">
+                    {/* Avatar as passenger photo */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-24 h-28 bg-amber-200 border-4 border-amber-600 overflow-hidden shadow-inner">
+                        {profile.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt="Avatar"
+                            className="w-full h-full object-cover sepia-[0.2]"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-b from-amber-100 to-amber-200">
+                            🚂
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-2 -right-2 p-2 bg-amber-700 text-white rounded-full hover:bg-amber-800 shadow-lg border-2 border-amber-100"
+                        disabled={saving}
+                      >
+                        <Camera className="h-4 w-4" />
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Passenger details */}
+                    <div className="flex-1 space-y-2">
+                      <div className="border-b-2 border-dotted border-amber-400 pb-1">
+                        <span className="text-[10px] text-amber-600 font-display uppercase tracking-widest">Пассажир</span>
+                        <div className="font-display font-bold text-amber-900 text-lg truncate">
+                          {profile.display_name}
+                        </div>
+                      </div>
+                      
+                      {/* Rank display */}
+                      <div className="bg-gradient-to-r from-amber-200 to-amber-100 border-2 border-amber-400 p-2 rounded">
+                        <span className="text-[10px] text-amber-600 font-display uppercase tracking-widest">Звание</span>
+                        <div className={`font-display font-bold text-lg flex items-center gap-2 ${currentRank.color}`}>
+                          <span className="text-2xl">{currentRank.icon}</span>
+                          {currentRank.name}
+                        </div>
+                        {nextRank && (
+                          <div className="mt-2">
+                            <div className="flex justify-between text-[10px] text-amber-700 mb-1">
+                              <span>До следующего звания</span>
+                              <span>{winsToNext} побед</span>
+                            </div>
+                            <div className="h-2 bg-amber-300 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500"
+                                style={{ width: `${progressToNext}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Edit Name Field */}
+                  <div className="space-y-2 border-t-2 border-dashed border-amber-400 pt-4">
+                    <Label htmlFor="profileName" className="text-amber-800 font-display text-xs uppercase tracking-wider">
+                      Изменить имя
+                    </Label>
+                    <Input
+                      id="profileName"
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="bg-white border-2 border-amber-400 font-display"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSaveProfile}
+                    className="w-full bg-amber-700 hover:bg-amber-800 text-white font-display"
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : '✓ Сохранить изменения'}
+                  </Button>
+
+                  {/* Кнопка синхронизации из Google */}
+                  {hasProviderData && (
+                    <Button
+                      variant="outline"
+                      onClick={handleSyncFromProvider}
+                      className="w-full border-blue-400 text-blue-700 hover:bg-blue-50 font-display"
+                      disabled={syncing}
+                    >
+                      {syncing ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      Синхронизировать из Google
+                    </Button>
+                  )}
+
+                  <div className="pt-4 border-t-2 border-dashed border-amber-400">
+                    <Button
+                      variant="outline"
+                      onClick={handleSignOut}
+                      className="w-full border-red-400 text-red-700 hover:bg-red-50 font-display"
+                    >
+                      Выйти из аккаунта
+                    </Button>
+                  </div>
+                </div>
+              )}
 
           {/* Stats Tab */}
           {activeTab === 'stats' && (
@@ -453,7 +542,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               )}
             </div>
           )}
-        </ScrollArea>
+            </ScrollArea>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
