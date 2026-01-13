@@ -11,6 +11,7 @@ import {
   PlayerColor,
   GameLogEntry,
   KickVote,
+  TunnelRevealState,
   ROUTE_POINTS,
   INITIAL_TRAINS,
   INITIAL_TRAIN_CARDS,
@@ -82,6 +83,9 @@ interface GameStore {
   drawTrainCard: (fromFaceUp: boolean, cardIndex?: number) => void;
   startDrawingCards: () => void;
   claimRoute: (routeId: string, cardsUsed: TrainCardType[]) => void;
+  attemptClaimTunnel: (routeId: string, cardsUsed: TrainCardType[]) => void;
+  confirmTunnelClaim: (extraCards: TrainCardType[]) => void;
+  cancelTunnelClaim: () => void;
   drawDestinations: () => void;
   keepDestinations: (ticketIds: string[]) => void;
   cancelDestinationDraw: () => void;
@@ -101,6 +105,7 @@ interface GameStore {
   canClaimRoute: (routeId: string) => boolean;
   getRouteCardRequirement: (routeId: string) => { color: string; count: number } | null;
   getClaimRouteError: (routeId: string) => string | null;
+  canPayTunnelExtra: () => boolean;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -495,6 +500,220 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ...gameState.logs,
           createLog(localPlayerId, 'Построил маршрут', `${city1} — ${city2} (+${points} очков)`),
           createLog(nextPlayer.id, 'Начинает ход'),
+        ],
+      },
+    });
+  },
+  
+  // Tunnel mechanics: attempt to claim - reveals 3 cards first
+  attemptClaimTunnel: (routeId, cardsUsed) => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    
+    const route = gameState.routes.find(r => r.id === routeId);
+    if (!route || route.claimedBy || !route.isTunnel) return;
+    
+    const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
+    if (playerIndex === -1) return;
+    
+    const player = gameState.players[playerIndex];
+    if (player.trainsRemaining < route.length) return;
+    
+    // Determine what color the player is using
+    let colorUsed: TrainCardType = 'locomotive';
+    for (const card of cardsUsed) {
+      if (card !== 'locomotive') {
+        colorUsed = card;
+        break;
+      }
+    }
+    
+    // Helper to reshuffle if needed
+    let deck = [...gameState.trainCardDeck];
+    let discard = [...gameState.trainCardDiscard];
+    
+    const reshuffleIfNeeded = () => {
+      if (deck.length === 0 && discard.length > 0) {
+        deck = [...discard].sort(() => Math.random() - 0.5);
+        discard = [];
+      }
+    };
+    
+    // Reveal 3 cards from deck
+    const revealedCards: TrainCardType[] = [];
+    for (let i = 0; i < 3; i++) {
+      reshuffleIfNeeded();
+      const card = deck.pop();
+      if (card) revealedCards.push(card as TrainCardType);
+    }
+    
+    // Count matching cards
+    const extraCardsNeeded = revealedCards.filter(
+      card => card === colorUsed || card === 'locomotive'
+    ).length;
+    
+    // Get route name for display
+    const city1 = gameState.cities.find(c => c.id === route.cities[0])?.name || route.cities[0];
+    const city2 = gameState.cities.find(c => c.id === route.cities[1])?.name || route.cities[1];
+    const routeName = `${city1} — ${city2}`;
+    
+    // Set tunnel reveal state
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'tunnelReveal',
+        trainCardDeck: deck,
+        trainCardDiscard: [...discard, ...revealedCards], // Revealed cards go to discard
+        tunnelReveal: {
+          routeId,
+          routeName,
+          cardsUsed,
+          colorUsed,
+          revealedCards,
+          extraCardsNeeded,
+        },
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Проверяет туннель', `${routeName} — вскрыто ${revealedCards.length} карт`),
+        ],
+      },
+    });
+  },
+  
+  // Confirm tunnel claim with extra cards
+  confirmTunnelClaim: (extraCards) => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || !gameState.tunnelReveal) return;
+    if (gameState.currentPlayerId !== localPlayerId) return;
+    
+    const { routeId, cardsUsed, extraCardsNeeded, routeName } = gameState.tunnelReveal;
+    
+    // Verify extra cards count
+    if (extraCards.length !== extraCardsNeeded) return;
+    
+    const route = gameState.routes.find(r => r.id === routeId);
+    if (!route || route.claimedBy) return;
+    
+    const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
+    if (playerIndex === -1) return;
+    
+    const player = gameState.players[playerIndex];
+    
+    // Remove all used cards (original + extra) from hand
+    let newHand = [...player.trainCards];
+    const allCardsUsed = [...cardsUsed, ...extraCards];
+    for (const card of allCardsUsed) {
+      const index = newHand.indexOf(card);
+      if (index > -1) {
+        newHand.splice(index, 1);
+      }
+    }
+    
+    // Add all cards to discard
+    const newDiscard = [...gameState.trainCardDiscard, ...allCardsUsed];
+    
+    // Calculate points
+    const points = ROUTE_POINTS[route.length] || 0;
+    
+    // Play sound effect
+    playRouteClaimSound();
+    
+    // Update route
+    const newRoutes = gameState.routes.map(r => 
+      r.id === routeId ? { ...r, claimedBy: localPlayerId } : r
+    );
+    
+    // Check for end game condition
+    const newTrainsRemaining = player.trainsRemaining - route.length;
+    let newPhase = gameState.phase;
+    let lastRoundTriggeredBy = gameState.lastRoundTriggeredBy;
+    let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
+    
+    if (newTrainsRemaining <= END_GAME_TRAINS_THRESHOLD && !lastRoundTriggeredBy) {
+      newPhase = 'lastRound';
+      lastRoundTriggeredBy = localPlayerId;
+      turnsRemainingInLastRound = gameState.players.length;
+    }
+    
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined) {
+      turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+    }
+    
+    // Move to next player
+    const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
+    
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[playerIndex] = {
+      ...player,
+      trainCards: newHand,
+      trainsRemaining: newTrainsRemaining,
+      score: player.score + points,
+      isActive: false,
+    };
+    updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
+    
+    // Check if last round is over
+    if (turnsRemainingInLastRound !== undefined && turnsRemainingInLastRound <= 0) {
+      set({
+        gameState: {
+          ...gameState,
+          phase: 'lastRound',
+          players: updatedPlayers,
+          currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+          currentAction: 'none',
+          routes: newRoutes,
+          trainCardDiscard: newDiscard,
+          turnNumber: gameState.turnNumber + 1,
+          lastRoundTriggeredBy,
+          turnsRemainingInLastRound: 0,
+          tunnelReveal: undefined,
+        },
+      });
+      setTimeout(() => get().calculateFinalScores(), 100);
+      return;
+    }
+    
+    const nextPlayer = updatedPlayers[nextPlayerIndex];
+    const extraInfo = extraCardsNeeded > 0 ? ` (доплата: ${extraCardsNeeded})` : '';
+    
+    set({
+      gameState: {
+        ...gameState,
+        phase: newPhase,
+        players: updatedPlayers,
+        currentPlayerId: nextPlayer.id,
+        currentAction: 'none',
+        routes: newRoutes,
+        trainCardDiscard: newDiscard,
+        turnNumber: gameState.turnNumber + 1,
+        lastRoundTriggeredBy,
+        turnsRemainingInLastRound,
+        tunnelReveal: undefined,
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Построил туннель', `${routeName} (+${points} очков)${extraInfo}`),
+          createLog(nextPlayer.id, 'Начинает ход'),
+        ],
+      },
+    });
+  },
+  
+  // Cancel tunnel claim attempt
+  cancelTunnelClaim: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || !gameState.tunnelReveal) return;
+    if (gameState.currentPlayerId !== localPlayerId) return;
+    
+    const { routeName } = gameState.tunnelReveal;
+    
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'none',
+        tunnelReveal: undefined,
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Отменил туннель', routeName),
         ],
       },
     });
@@ -1026,6 +1245,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     return null;
+  },
+  
+  canPayTunnelExtra: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || !gameState.tunnelReveal) return false;
+    
+    const { colorUsed, extraCardsNeeded } = gameState.tunnelReveal;
+    if (extraCardsNeeded === 0) return true;
+    
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player) return false;
+    
+    // Count available cards (color used + locomotives) minus already selected cards
+    const { cardsUsed } = gameState.tunnelReveal;
+    
+    // Build a map of remaining cards in hand after original selection
+    const remainingCards: Record<string, number> = {};
+    player.trainCards.forEach(card => {
+      remainingCards[card] = (remainingCards[card] || 0) + 1;
+    });
+    
+    // Remove already used cards from count
+    for (const card of cardsUsed) {
+      if (remainingCards[card]) remainingCards[card]--;
+    }
+    
+    // Count available matching cards
+    const matchingCount = (remainingCards[colorUsed] || 0) + (remainingCards['locomotive'] || 0);
+    
+    return matchingCount >= extraCardsNeeded;
   },
   
   initiateKickVote: (targetPlayerId, initiatorId) => {

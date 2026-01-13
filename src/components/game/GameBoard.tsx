@@ -12,6 +12,7 @@ import { AuthControls } from '@/components/auth/AuthControls';
 import { LeaveGameButton } from '@/components/game/LeaveGameButton';
 import { PlayerProfileModal } from '@/components/game/PlayerProfileModal';
 import { KickVoteModal } from '@/components/game/KickVoteModal';
+import { TunnelRevealModal } from '@/components/game/TunnelRevealModal';
 import { useGameStore } from '@/stores/gameStore';
 import { TrainCardType, DestinationTicket, Player } from '@/types/game';
 import { useGameSyncContext } from '@/contexts/gameSyncContext';
@@ -19,7 +20,14 @@ import { usePresence } from '@/hooks/usePresence';
 import { playTurnNotificationSound } from '@/hooks/useGameSounds';
 
 export const GameBoard: React.FC = () => {
-  const { gameState, localPlayerId, currentRoom, drawTrainCard, startDrawingCards, cancelDrawingCards, claimRoute, canClaimRoute, drawDestinations, keepDestinations, getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError, initiateKickVote, castKickVote, resolveKickVote, cancelKickVote } = useGameStore();
+  const { 
+    gameState, localPlayerId, currentRoom, 
+    drawTrainCard, startDrawingCards, cancelDrawingCards, 
+    claimRoute, attemptClaimTunnel, confirmTunnelClaim, cancelTunnelClaim, canPayTunnelExtra,
+    canClaimRoute, drawDestinations, keepDestinations, 
+    getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError, 
+    initiateKickVote, castKickVote, resolveKickVote, cancelKickVote 
+  } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -236,14 +244,79 @@ export const GameBoard: React.FC = () => {
       return;
     }
     
-    if (isHost) {
-      claimRoute(selectedRoute, selectedCards);
+    // Если это туннель - используем специальную механику
+    if (route.isTunnel) {
+      if (isHost) {
+        attemptClaimTunnel(selectedRoute, selectedCards);
+      } else {
+        sendActionToHost({ type: 'attemptClaimTunnel', routeId: selectedRoute, cardsUsed: selectedCards });
+      }
     } else {
-      sendActionToHost({ type: 'claimRoute', routeId: selectedRoute, cardsUsed: selectedCards });
+      if (isHost) {
+        claimRoute(selectedRoute, selectedCards);
+      } else {
+        sendActionToHost({ type: 'claimRoute', routeId: selectedRoute, cardsUsed: selectedCards });
+      }
     }
     setSelectedRoute(null);
     setSelectedCards([]);
     setSelectedCardIndices([]);
+  };
+
+  // Handle tunnel confirmation
+  const handleConfirmTunnel = () => {
+    if (!gameState?.tunnelReveal) return;
+    
+    const { colorUsed, extraCardsNeeded, cardsUsed } = gameState.tunnelReveal;
+    
+    // Find extra cards to pay (from remaining hand)
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player) return;
+    
+    // Build remaining cards after original selection
+    const remainingCards = [...player.trainCards];
+    for (const card of cardsUsed) {
+      const idx = remainingCards.indexOf(card);
+      if (idx > -1) remainingCards.splice(idx, 1);
+    }
+    
+    // Select extra cards to pay
+    const extraCards: TrainCardType[] = [];
+    let needed = extraCardsNeeded;
+    
+    // First try to use same color
+    for (let i = 0; i < remainingCards.length && needed > 0; i++) {
+      if (remainingCards[i] === colorUsed) {
+        extraCards.push(remainingCards[i]);
+        remainingCards.splice(i, 1);
+        i--;
+        needed--;
+      }
+    }
+    
+    // Then use locomotives
+    for (let i = 0; i < remainingCards.length && needed > 0; i++) {
+      if (remainingCards[i] === 'locomotive') {
+        extraCards.push(remainingCards[i]);
+        remainingCards.splice(i, 1);
+        i--;
+        needed--;
+      }
+    }
+    
+    if (isHost) {
+      confirmTunnelClaim(extraCards);
+    } else {
+      sendActionToHost({ type: 'confirmTunnelClaim', extraCards });
+    }
+  };
+
+  const handleCancelTunnel = () => {
+    if (isHost) {
+      cancelTunnelClaim();
+    } else {
+      sendActionToHost({ type: 'cancelTunnelClaim' });
+    }
   };
 
   // Получаем требования выбранного маршрута
@@ -390,6 +463,19 @@ export const GameBoard: React.FC = () => {
         canKick={!selectedPlayer?.id?.includes(localPlayerId || '') && gameState.players.length > 2 && !gameState.activeKickVote}
         onInitiateKick={handleInitiateKick}
       />
+
+      {/* Tunnel reveal modal */}
+      {gameState?.tunnelReveal && gameState.currentPlayerId === localPlayerId && (
+        <TunnelRevealModal
+          routeName={gameState.tunnelReveal.routeName}
+          revealedCards={gameState.tunnelReveal.revealedCards}
+          extraCardsNeeded={gameState.tunnelReveal.extraCardsNeeded}
+          colorUsed={gameState.tunnelReveal.colorUsed}
+          onPayExtra={handleConfirmTunnel}
+          onCancel={handleCancelTunnel}
+          canPayExtra={canPayTunnelExtra()}
+        />
+      )}
 
       {/* Kick vote modal */}
       <KickVoteModal
