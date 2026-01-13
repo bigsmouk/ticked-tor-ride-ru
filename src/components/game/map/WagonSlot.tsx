@@ -14,6 +14,7 @@ export const WagonSlot = memo<WagonSlotProps>(({ x, y, angle, color, isTunnel, i
   <g 
     transform={`translate(${x}, ${y}) rotate(${angle})`}
     className="wagon-slot"
+    style={{ pointerEvents: 'none' }}
   >
     {/* Slot background */}
     <rect

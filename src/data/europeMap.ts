@@ -464,4 +464,14 @@ export const ROUTE_WAGON_POSITIONS: Record<string, { x: number; y: number; angle
   'frankfurt-essen': [{ x: 314, y: 211, angle: -37 }, { x: 329, y: 195, angle: -114 }],
   'petrograd-wilno': [{ x: 667, y: 73, angle: 122 }, { x: 651, y: 97, angle: 130 }, { x: 633, y: 119, angle: 122 }, { x: 618, y: 138, angle: 122 }],
   'palermo-smyrna': [{ x: 430, y: 514, angle: 0 }, { x: 460, y: 514, angle: 0 }, { x: 489, y: 515, angle: 0 }, { x: 517, y: 515, angle: 0 }, { x: 547, y: 516, angle: 0 }, { x: 576, y: 514, angle: 0 }],
+  // Missing routes - calculated based on city coordinates
+  'amsterdam-bruxelles': [{ x: 242, y: 186, angle: 110 }],
+  'dieppe-paris': [{ x: 186, y: 255, angle: 50 }],
+  'pamplona-barcelona': [{ x: 158, y: 420, angle: 82 }, { x: 163, y: 445, angle: 82 }],
+  'berlin-wien': [{ x: 413, y: 215, angle: 115 }, { x: 420, y: 243, angle: 115 }, { x: 429, y: 264, angle: 105 }],
+  'sochi-erzurum': [{ x: 767, y: 398, angle: 120 }, { x: 762, y: 425, angle: 120 }, { x: 759, y: 455, angle: 105 }],
+  'sofia-bucuresti': [{ x: 558, y: 388, angle: -40 }, { x: 580, y: 372, angle: -40 }],
+  'bucuresti-budapest': [{ x: 574, y: 340, angle: -155 }, { x: 549, y: 328, angle: -155 }, { x: 520, y: 316, angle: -155 }, { x: 495, y: 306, angle: -155 }],
+  'budapest-sarajevo': [{ x: 486, y: 320, angle: 125 }, { x: 486, y: 348, angle: 90 }, { x: 489, y: 375, angle: 90 }],
+  'budapest-zagreb': [{ x: 464, y: 314, angle: 150 }, { x: 445, y: 331, angle: 150 }],
 };
