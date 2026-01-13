@@ -86,7 +86,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
             fill="none"
             strokeLinecap="round"
           />
-          {/* Individual claimed wagon cars */}
+          {/* Individual claimed wagon cars with staggered animation */}
           {segments.map((seg, i) => (
             <ClaimedWagon
               key={i}
@@ -94,6 +94,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               y={seg.y}
               angle={seg.angle}
               playerColor={playerColor}
+              animationIndex={i}
             />
           ))}
         </>
