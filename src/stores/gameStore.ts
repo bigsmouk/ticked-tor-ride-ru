@@ -1011,9 +1011,49 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return connections;
     };
     
-    // Check if two cities are connected for a player
-    const areCitiesConnected = (playerId: string, city1: string, city2: string): boolean => {
-      const connections = getPlayerConnections(playerId);
+    // Get connections including one station-borrowed route
+    const getConnectionsWithStation = (
+      playerId: string, 
+      stationCityId: string | null, 
+      usedRouteId: string | null
+    ): Map<string, Set<string>> => {
+      const connections = new Map<string, Set<string>>();
+      
+      // Add player's own routes
+      gameState.routes.forEach(route => {
+        if (route.claimedBy === playerId) {
+          const [city1, city2] = route.cities;
+          if (!connections.has(city1)) connections.set(city1, new Set());
+          if (!connections.has(city2)) connections.set(city2, new Set());
+          connections.get(city1)!.add(city2);
+          connections.get(city2)!.add(city1);
+        }
+      });
+      
+      // Add one borrowed route from station (if using a station)
+      if (stationCityId && usedRouteId) {
+        const borrowedRoute = gameState.routes.find(r => r.id === usedRouteId);
+        if (borrowedRoute && borrowedRoute.claimedBy && borrowedRoute.claimedBy !== playerId) {
+          const [city1, city2] = borrowedRoute.cities;
+          // Station must be in one of the route's cities
+          if (city1 === stationCityId || city2 === stationCityId) {
+            if (!connections.has(city1)) connections.set(city1, new Set());
+            if (!connections.has(city2)) connections.set(city2, new Set());
+            connections.get(city1)!.add(city2);
+            connections.get(city2)!.add(city1);
+          }
+        }
+      }
+      
+      return connections;
+    };
+    
+    // BFS to check connectivity
+    const checkConnectivity = (
+      connections: Map<string, Set<string>>, 
+      city1: string, 
+      city2: string
+    ): boolean => {
       if (!connections.has(city1) || !connections.has(city2)) return false;
       
       const visited = new Set<string>();
@@ -1032,6 +1072,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
           });
         }
       }
+      return false;
+    };
+    
+    // Get all routes available at a station city that belong to other players
+    const getAvailableStationRoutes = (playerId: string, stationCityId: string): Route[] => {
+      return gameState.routes.filter(route => 
+        route.claimedBy && 
+        route.claimedBy !== playerId && 
+        route.cities.includes(stationCityId)
+      );
+    };
+    
+    // Check if two cities are connected for a player (considering stations)
+    // Station allows using ONE route of another player at that city
+    const areCitiesConnected = (playerId: string, city1: string, city2: string): boolean => {
+      // First, check without using any stations
+      const ownConnections = getConnectionsWithStation(playerId, null, null);
+      if (checkConnectivity(ownConnections, city1, city2)) return true;
+      
+      // Get player's stations
+      const playerStations = gameState.placedStations.filter(s => s.playerId === playerId);
+      if (playerStations.length === 0) return false;
+      
+      // Try each station with each available borrowed route
+      for (const station of playerStations) {
+        const availableRoutes = getAvailableStationRoutes(playerId, station.cityId);
+        
+        for (const route of availableRoutes) {
+          const connectionsWithBorrow = getConnectionsWithStation(playerId, station.cityId, route.id);
+          if (checkConnectivity(connectionsWithBorrow, city1, city2)) {
+            return true;
+          }
+        }
+      }
+      
       return false;
     };
     
@@ -1103,9 +1178,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       console.log(`\n--- Игрок: ${player.name} (${player.color}) ---`);
       console.log(`Очки за построенные маршруты: ${player.score}`);
       
+      // Log player's stations
+      const playerStations = gameState.placedStations.filter(s => s.playerId === player.id);
+      if (playerStations.length > 0) {
+        console.log(`  Станции: ${playerStations.map(s => {
+          const city = gameState.cities.find(c => c.id === s.cityId);
+          return city?.name || s.cityId;
+        }).join(', ')}`);
+      }
+      
       player.destinationTickets.forEach(ticket => {
         const isCompleted = areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1]);
-        console.log(`  Маршрут ${ticket.cities[0]} — ${ticket.cities[1]} (${ticket.points} очков): ${isCompleted ? 'ВЫПОЛНЕН ✓' : 'НЕ ВЫПОЛНЕН ✗'}`);
+        const city1Name = gameState.cities.find(c => c.id === ticket.cities[0])?.name || ticket.cities[0];
+        const city2Name = gameState.cities.find(c => c.id === ticket.cities[1])?.name || ticket.cities[1];
+        console.log(`  Маршрут ${city1Name} — ${city2Name} (${ticket.points} очков): ${isCompleted ? 'ВЫПОЛНЕН ✓' : 'НЕ ВЫПОЛНЕН ✗'}`);
         
         if (isCompleted) {
           ticketBonus += ticket.points;
