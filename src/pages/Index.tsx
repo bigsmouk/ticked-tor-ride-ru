@@ -212,12 +212,12 @@ const Index = () => {
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
-      <header className="retro-header py-4 md:py-6 text-center relative z-10 flex-shrink-0">
+      <header className="retro-header py-4 md:py-6 text-center relative z-10 flex-shrink-0 animate-fade-in">
         {/* Auth controls */}
         <AuthControls className="absolute right-4 top-1/2 -translate-y-1/2" />
         
         {/* Decorative train icon */}
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block">
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block animate-scale-in">
           <Train className="h-10 w-10 text-gold opacity-80" />
         </div>
 
@@ -236,7 +236,7 @@ const Index = () => {
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-lg w-full flex-shrink-0">
+        <div className="max-w-lg w-full flex-shrink-0 animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
           <div className="vintage-card rounded-xl p-5 md:p-6">
             {/* Welcome text */}
             <div className="text-center mb-4">
@@ -262,14 +262,14 @@ const Index = () => {
             {!showCreate && !showJoin ? (
               <div className="space-y-3">
                 <button
-                  className="btn-gold w-full rounded-lg py-3 text-base"
+                  className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
                   onClick={() => setShowCreate(true)}
                 >
                   ➕ Создать комнату
                 </button>
                 
                 <button
-                  className="btn-vintage w-full rounded-lg py-2"
+                  className="btn-vintage w-full rounded-lg py-2 hover-scale"
                   onClick={() => setShowJoin(true)}
                 >
                   🔗 Присоединиться по коду
@@ -447,17 +447,17 @@ const Index = () => {
           </div>
 
           {/* Game info and rules */}
-          <div className="mt-4 text-center space-y-2 flex-shrink-0">
+          <div className="mt-4 text-center space-y-2 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             <div className="inline-flex flex-wrap justify-center gap-2 md:gap-4 text-xs md:text-sm">
-              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30 hover-scale">
                 <span className="text-gold">👥</span>
                 <span className="text-foreground font-medium">2-4 игрока</span>
               </span>
-              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30 hover-scale">
                 <span className="text-gold">⏱️</span>
                 <span className="text-foreground font-medium">30-60 мин</span>
               </span>
-              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30">
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30 hover-scale">
                 <span className="text-gold">🏙️</span>
                 <span className="text-foreground font-medium">46 городов</span>
               </span>
@@ -471,7 +471,7 @@ const Index = () => {
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-3 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0">
+      <footer className="py-3 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
         <div className="flex items-center justify-center gap-2">
           <p className="text-primary-foreground font-display text-sm md:text-base">
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
