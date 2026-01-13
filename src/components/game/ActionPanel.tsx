@@ -126,12 +126,6 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
           <div className="text-sm text-gold font-display animate-pulse">
             Выберите первую карту из открытых или из колоды
           </div>
-          <button
-            className="btn-vintage rounded-lg text-sm"
-            onClick={onCancelAction}
-          >
-            ❌ Отмена
-          </button>
         </div>
       )}
       
