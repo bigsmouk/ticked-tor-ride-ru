@@ -165,6 +165,16 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
+
+  // Memoize route path calculations - only recalculate when routes or cities change
+  const routePathsCache = useMemo(() => {
+    const cache: Record<string, { path: string; segments: { x: number; y: number; angle: number }[] }> = {};
+    routes.forEach(route => {
+      const { path, segments } = getRoutePath(route, cities, routes);
+      cache[route.id] = { path, segments };
+    });
+    return cache;
+  }, [routes, cities]);
   
   return (
     <div 
@@ -297,10 +307,13 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           preserveAspectRatio="xMidYMid slice"
         />
         
-        {/* Routes - using memoized components */}
+        {/* Routes - using memoized components with cached paths */}
         <g className="routes">
           {routes.map((route) => {
-            const { path, segments } = getRoutePath(route, cities, routes);
+            const cached = routePathsCache[route.id];
+            if (!cached) return null;
+            
+            const { path, segments } = cached;
             const isSelected = selectedRoute === route.id;
             const isClaimed = !!route.claimedBy;
             const isClaimable = !isClaimed && canClaimRoute(route.id);
