@@ -61,7 +61,6 @@ export const RouteSegment = memo<RouteSegmentProps>(({
 }) => {
   const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
   const isClaimed = !!route.claimedBy;
-  const playerColor = claimingPlayerColor ? PLAYER_COLORS[claimingPlayerColor] : null;
 
   const handleClick = useCallback(() => {
     if (!isClaimed && onClick) {
@@ -77,7 +76,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
-      {isClaimed && playerColor ? (
+      {isClaimed && claimingPlayerColor ? (
         // Claimed route - show player wagons on each segment
         <>
           {/* Dark outline for contrast */}
@@ -95,7 +94,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               x={seg.x}
               y={seg.y}
               angle={seg.angle}
-              playerColor={playerColor}
+              playerColor={claimingPlayerColor}
               playerName={claimingPlayerName || undefined}
               animationIndex={i}
             />
