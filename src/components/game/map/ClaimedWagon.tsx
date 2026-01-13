@@ -123,14 +123,38 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
         fill="rgba(255,255,255,0.5)"
       />
       
-      {/* Center icon/symbol */}
-      <circle
-        cx={0}
-        cy={0}
-        r={3}
-        fill={textColor}
-        opacity={0.9}
-      />
+      {/* Mini train icon in center */}
+      <g transform="translate(0, -0.5)">
+        {/* Train body */}
+        <rect
+          x={-4}
+          y={-2}
+          width={8}
+          height={4}
+          rx={1}
+          fill={textColor}
+          opacity={0.9}
+        />
+        {/* Chimney */}
+        <rect
+          x={-3}
+          y={-4}
+          width={2}
+          height={2}
+          fill={textColor}
+          opacity={0.9}
+        />
+        {/* Cabin window */}
+        <rect
+          x={1}
+          y={-1}
+          width={2}
+          height={2}
+          rx={0.5}
+          fill={strokeColor}
+          opacity={0.8}
+        />
+      </g>
       
       {/* Wheel indicators */}
       <circle cx={-width / 2 + 4} cy={height / 2 - 1} r={2} fill={strokeColor} />
