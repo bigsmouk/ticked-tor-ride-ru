@@ -38,6 +38,7 @@ interface RouteSegmentProps {
   isSelected: boolean;
   isClaimable: boolean;
   claimingPlayerColor: PlayerColor | null;
+  claimingPlayerName: string | null;
   onClick?: () => void;
   onMouseEnter: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
@@ -52,6 +53,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
   isSelected,
   isClaimable,
   claimingPlayerColor,
+  claimingPlayerName,
   onClick,
   onMouseEnter,
   onMouseMove,
@@ -94,6 +96,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               y={seg.y}
               angle={seg.angle}
               playerColor={playerColor}
+              playerName={claimingPlayerName || undefined}
               animationIndex={i}
             />
           ))}
@@ -148,6 +151,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isClaimable === nextProps.isClaimable &&
     prevProps.claimingPlayerColor === nextProps.claimingPlayerColor &&
+    prevProps.claimingPlayerName === nextProps.claimingPlayerName &&
     prevProps.path === nextProps.path
   );
 });

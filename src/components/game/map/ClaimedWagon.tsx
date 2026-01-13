@@ -42,11 +42,12 @@ interface ClaimedWagonProps {
   y: number;
   angle: number;
   playerColor: string;
+  playerName?: string;
   animationIndex?: number;
 }
 
 // Compact wagon with contrasting text label
-export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, animationIndex = 0 }) => {
+export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, playerName, animationIndex = 0 }) => {
   const color = playerColor as PlayerColor;
   const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
   const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
@@ -120,6 +121,9 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
       >
         {label}
       </text>
+      
+      {/* Tooltip on hover */}
+      {playerName && <title>🚃 {playerName}</title>}
     </g>
   );
 });
