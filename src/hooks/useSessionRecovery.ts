@@ -180,7 +180,7 @@ export const useSessionRecovery = () => {
         }
 
         const usedColors = allPlayers?.map(p => p.color) || [];
-        const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
+        const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
         const availableColor = PLAYER_COLORS.find(c => !usedColors.includes(c)) || PLAYER_COLORS[0];
 
         // Добавляемся обратно в комнату
