@@ -595,4 +595,36 @@
     color: hsl(var(--gold));
     font-size: 1rem;
   }
+  
+  /* Wagon appear animation */
+  @keyframes wagon-appear {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translateY(-10px);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15) translateY(0);
+    }
+    75% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  .wagon-animated {
+    animation: wagon-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  /* Staggered wagon animation delay */
+  .wagon-delay-1 { animation-delay: 0.05s; }
+  .wagon-delay-2 { animation-delay: 0.1s; }
+  .wagon-delay-3 { animation-delay: 0.15s; }
+  .wagon-delay-4 { animation-delay: 0.2s; }
+  .wagon-delay-5 { animation-delay: 0.25s; }
+  .wagon-delay-6 { animation-delay: 0.3s; }
+  .wagon-delay-7 { animation-delay: 0.35s; }
+  .wagon-delay-8 { animation-delay: 0.4s; }
 }

@@ -24,10 +24,11 @@ interface ClaimedWagonProps {
   y: number;
   angle: number;
   playerColor: string;
+  animationIndex?: number;
 }
 
-// Highly visible wagon with white outline and shadow
-export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor }) => {
+// Highly visible wagon with white outline, shadow, and appear animation
+export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, animationIndex = 0 }) => {
   const color = playerColor as PlayerColor;
   const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
   const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
@@ -36,8 +37,15 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor 
   const width = 30;
   const height = 12;
   
+  // Animation class with staggered delay
+  const animationClass = `wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`;
+  
   return (
-    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
+    <g 
+      transform={`translate(${x}, ${y}) rotate(${angle})`}
+      className={animationClass}
+      style={{ opacity: 0 }}
+    >
       {/* Drop shadow for depth */}
       <rect
         x={-width / 2 + 1}
