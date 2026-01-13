@@ -105,7 +105,7 @@ export const EUROPE_CITIES: City[] = [
 // All routes between cities
 export const EUROPE_ROUTES: Route[] = [
   // Edinburgh connections
-  { id: 'edinburgh-london-1', cities: ['edinburgh', 'london'], length: 4, color: 'black' },
+  { id: 'edinburgh-london-1', cities: ['edinburgh', 'london'], length: 4, color: 'black', parallelRouteId: 'edinburgh-london-2' },
   { id: 'edinburgh-london-2', cities: ['edinburgh', 'london'], length: 4, color: 'orange', parallelRouteId: 'edinburgh-london-1' },
   
   // London connections

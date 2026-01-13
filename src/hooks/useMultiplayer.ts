@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { saveSession, clearSession } from './useSessionRecovery';
 import { useAuth } from './useAuth';
 
-const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow'];
+const PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
 
 // Схемы валидации
 const playerNameSchema = z.string()
