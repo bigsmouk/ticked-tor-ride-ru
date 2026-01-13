@@ -97,6 +97,12 @@ export const useSessionRecovery = () => {
   const [savedSessionData, setSavedSessionData] = useState<SavedSession | null>(null);
   const [autoRecoveryTriggered, setAutoRecoveryTriggered] = useState(false);
 
+  const isNetworkIssue = useCallback((err: any) => {
+    const offline = typeof navigator !== 'undefined' && navigator && navigator.onLine === false;
+    const msg = String(err?.message || err?.error_description || err?.details || err || '');
+    return offline || msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network');
+  }, []);
+
   // Попытка восстановить сессию
   const attemptRecovery = useCallback(async () => {
     if (currentRoom || isRecovering || hasAttemptedRecovery) return false;
@@ -116,6 +122,14 @@ export const useSessionRecovery = () => {
         .maybeSingle();
 
       if (roomError || !room) {
+        if (roomError && isNetworkIssue(roomError)) {
+          console.log('[SessionRecovery] Network issue while loading room, keep session for retry');
+          toast.error('Нет соединения. Вернитесь в игру, когда интернет появится.');
+          setIsRecovering(false);
+          // Важно: НЕ чистим сессию и НЕ ставим hasAttemptedRecovery, чтобы можно было повторить
+          return false;
+        }
+
         console.log('[SessionRecovery] Room not found, clearing session');
         clearSession();
         return false;
@@ -130,6 +144,14 @@ export const useSessionRecovery = () => {
         .maybeSingle();
 
       if (playerError) {
+        // Если это сеть/оффлайн — не удаляем сессию, дадим повторить
+        if (isNetworkIssue(playerError)) {
+          console.error('[SessionRecovery] Network issue checking player:', playerError);
+          toast.error('Нет соединения. Повторите попытку после восстановления интернета.');
+          setIsRecovering(false);
+          return false;
+        }
+
         console.error('[SessionRecovery] Error checking player:', playerError);
         clearSession();
         return false;
@@ -182,6 +204,13 @@ export const useSessionRecovery = () => {
         .order('joined_at', { ascending: true });
 
       if (playersError || !players) {
+        if (playersError && isNetworkIssue(playersError)) {
+          console.error('[SessionRecovery] Network issue fetching players:', playersError);
+          toast.error('Нет соединения. Повторите попытку позже.');
+          setIsRecovering(false);
+          return false;
+        }
+
         console.error('[SessionRecovery] Error fetching players:', playersError);
         clearSession();
         return false;
@@ -248,6 +277,14 @@ export const useSessionRecovery = () => {
 
       return true;
     } catch (err) {
+      // На сетевых ошибках НЕ очищаем сессию — это ключ к переподключению после оффлайна.
+      if (isNetworkIssue(err)) {
+        console.error('[SessionRecovery] Recovery failed due to network:', err);
+        toast.error('Нет интернета. Как появится связь — нажмите «Повторить подключение».');
+        setIsRecovering(false);
+        return false;
+      }
+
       console.error('[SessionRecovery] Recovery failed:', err);
       clearSession();
       setIsRecovering(false);
