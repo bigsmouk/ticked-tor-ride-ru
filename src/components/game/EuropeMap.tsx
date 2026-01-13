@@ -141,6 +141,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showCityNames, setShowCityNames] = useState(false);
+  const [hoveredRoute, setHoveredRoute] = useState<Route | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   
   const MIN_SCALE = 0.5;
@@ -222,6 +224,31 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           🏙️
         </button>
       </div>
+      
+      {/* Route tooltip */}
+      {hoveredRoute && !isDragging && (
+        <div 
+          className="absolute z-50 pointer-events-none bg-background/95 border border-border rounded-lg px-3 py-2 shadow-lg text-sm"
+          style={{
+            left: tooltipPosition.x,
+            top: tooltipPosition.y - 60,
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="font-bold text-foreground flex items-center gap-2">
+            {cities.find(c => c.id === hoveredRoute.cities[0])?.name} — {cities.find(c => c.id === hoveredRoute.cities[1])?.name}
+            {hoveredRoute.isTunnel && <span>🚇</span>}
+            {hoveredRoute.ferryLocomotives && <span>⛵</span>}
+          </div>
+          <div className="text-muted-foreground text-xs flex gap-2 mt-1">
+            <span>Длина: {hoveredRoute.length}</span>
+            <span>•</span>
+            <span className="capitalize">{hoveredRoute.color === 'gray' ? 'Любой' : hoveredRoute.color}</span>
+            {hoveredRoute.isTunnel && <span>• Туннель</span>}
+            {hoveredRoute.ferryLocomotives && <span>• Паром ({hoveredRoute.ferryLocomotives}🚂)</span>}
+          </div>
+        </div>
+      )}
       
       {/* Scale indicator */}
       <div className="absolute bottom-4 right-4 z-10 bg-background/90 border border-border rounded px-2 py-1 text-xs">
@@ -310,6 +337,26 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 key={route.id}
                 className={`route-segment ${isClaimable ? 'cursor-pointer route-claimable' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
                 onClick={() => !isClaimed && onRouteClick?.(route.id)}
+                onMouseEnter={(e) => {
+                  if (containerRef.current) {
+                    const rect = containerRef.current.getBoundingClientRect();
+                    setTooltipPosition({
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    });
+                  }
+                  setHoveredRoute(route);
+                }}
+                onMouseMove={(e) => {
+                  if (containerRef.current && hoveredRoute) {
+                    const rect = containerRef.current.getBoundingClientRect();
+                    setTooltipPosition({
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    });
+                  }
+                }}
+                onMouseLeave={() => setHoveredRoute(null)}
               >
                 {isClaimed && playerColor ? (
                   // Claimed route - show player wagons on each segment
