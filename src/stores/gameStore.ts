@@ -12,10 +12,13 @@ import {
   GameLogEntry,
   KickVote,
   TunnelRevealState,
+  PlacedStation,
   ROUTE_POINTS,
   INITIAL_TRAINS,
   INITIAL_TRAIN_CARDS,
   END_GAME_TRAINS_THRESHOLD,
+  STATION_COSTS,
+  UNUSED_STATION_POINTS,
 } from '@/types/game';
 import { playRouteClaimSound, playCardDrawSound, playSuccessSound } from '@/hooks/useGameSounds';
 import { 
@@ -94,6 +97,13 @@ interface GameStore {
   calculateFinalScores: () => void;
   addLog: (playerId: string | undefined, action: string, details?: string) => void;
   removePlayer: (playerId: string, playerName: string) => void;
+  
+  // Station actions
+  startBuildStation: () => void;
+  buildStation: (cityId: string, cardsUsed: TrainCardType[]) => void;
+  cancelBuildStation: () => void;
+  canBuildStation: (cityId: string) => boolean;
+  getStationCost: () => number;
   
   // Kick voting actions
   initiateKickVote: (targetPlayerId: string, initiatorId: string) => void;
@@ -187,6 +197,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       destinationDeck,
       cities: EUROPE_CITIES,
       routes: EUROPE_ROUTES.map(route => ({ ...route })),
+      placedStations: [],
       turnNumber: 1,
       logs: [
         {
@@ -1071,6 +1082,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ticketBonus: number;
       ticketPenalty: number;
       longestPathBonus: number;
+      unusedStationsBonus: number;
       totalScore: number;
       longestPath: number; 
       completedTickets: number; 
@@ -1108,13 +1120,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       console.log(`  Штраф за невыполненные маршруты: -${ticketPenalty}`);
       console.log(`  Длина самого длинного пути: ${longestPath}`);
       
+      // Calculate unused stations bonus (+4 per unused station)
+      const unusedStationsBonus = player.stationsRemaining * UNUSED_STATION_POINTS;
+      console.log(`  Неиспользованные станции: ${player.stationsRemaining} x ${UNUSED_STATION_POINTS} = +${unusedStationsBonus}`);
+      
       finalScores.push({
         playerId: player.id,
         routePoints: player.score,
         ticketBonus,
         ticketPenalty,
         longestPathBonus: 0, // Will be set in second pass
-        totalScore: player.score + ticketBonus - ticketPenalty,
+        unusedStationsBonus,
+        totalScore: player.score + ticketBonus - ticketPenalty + unusedStationsBonus,
         longestPath,
         completedTickets: completedCount,
         failedTickets: failedCount,
@@ -1494,5 +1511,199 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ],
       },
     });
+  },
+  
+  // Station building functions
+  startBuildStation: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    if (gameState.currentAction !== 'none') return;
+    
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player || player.stationsRemaining <= 0) return;
+    
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'buildStation',
+      },
+    });
+  },
+  
+  buildStation: (cityId, cardsUsed) => {
+    const { gameState, localPlayerId, currentRoom } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    if (gameState.currentAction !== 'buildStation') return;
+    
+    const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
+    if (playerIndex === -1) return;
+    
+    const player = gameState.players[playerIndex];
+    if (player.stationsRemaining <= 0) return;
+    
+    // Check if city already has a station
+    if (gameState.placedStations.some(s => s.cityId === cityId)) return;
+    
+    // Calculate cost based on how many stations player has already built
+    const stationsBuilt = 3 - player.stationsRemaining; // 0, 1, or 2
+    const cost = STATION_COSTS[stationsBuilt]; // 1, 2, or 3 cards
+    
+    // Verify cards used
+    if (cardsUsed.length !== cost) return;
+    
+    // For 2nd and 3rd stations, all cards must be the same color or locomotives
+    if (cost > 1) {
+      const nonLocos = cardsUsed.filter(c => c !== 'locomotive');
+      if (nonLocos.length > 0) {
+        const firstColor = nonLocos[0];
+        if (!nonLocos.every(c => c === firstColor)) return; // Must be same color
+      }
+    }
+    
+    // Remove used cards from player's hand
+    let newHand = [...player.trainCards];
+    for (const card of cardsUsed) {
+      const index = newHand.indexOf(card);
+      if (index > -1) {
+        newHand.splice(index, 1);
+      }
+    }
+    
+    // Add cards to discard
+    const newDiscard = [...gameState.trainCardDiscard, ...cardsUsed];
+    
+    // Create new placed station
+    const newStation: PlacedStation = {
+      cityId,
+      playerId: localPlayerId!,
+    };
+    
+    // Get city name for log
+    const city = gameState.cities.find(c => c.id === cityId);
+    const cityName = city?.name || cityId;
+    
+    // Play sound effect
+    playRouteClaimSound();
+    
+    // Move to next player
+    const isSolo = currentRoom?.isSoloMode;
+    const nextPlayerIndex = isSolo ? playerIndex : (playerIndex + 1) % gameState.players.length;
+    
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[playerIndex] = {
+      ...player,
+      trainCards: newHand,
+      stationsRemaining: player.stationsRemaining - 1,
+      isActive: isSolo ? true : false,
+    };
+    if (!isSolo) {
+      updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
+    }
+    
+    // Handle last round turn counting
+    let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined && !isSolo) {
+      turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+    }
+    
+    // Check if last round is over
+    if (turnsRemainingInLastRound !== undefined && turnsRemainingInLastRound <= 0) {
+      set({
+        gameState: {
+          ...gameState,
+          players: updatedPlayers,
+          currentPlayerId: updatedPlayers[nextPlayerIndex].id,
+          currentAction: 'none',
+          trainCardDiscard: newDiscard,
+          placedStations: [...gameState.placedStations, newStation],
+          turnNumber: gameState.turnNumber + 1,
+          turnsRemainingInLastRound: 0,
+          logs: [
+            ...gameState.logs,
+            createLog(localPlayerId, 'Построил станцию', cityName),
+          ],
+        },
+      });
+      setTimeout(() => get().calculateFinalScores(), 100);
+      return;
+    }
+    
+    const nextPlayer = updatedPlayers[nextPlayerIndex];
+    set({
+      gameState: {
+        ...gameState,
+        players: updatedPlayers,
+        currentPlayerId: nextPlayer.id,
+        currentAction: 'none',
+        trainCardDiscard: newDiscard,
+        placedStations: [...gameState.placedStations, newStation],
+        turnNumber: gameState.turnNumber + 1,
+        turnsRemainingInLastRound,
+        logs: [
+          ...gameState.logs,
+          createLog(localPlayerId, 'Построил станцию', cityName),
+          ...(isSolo ? [] : [createLog(nextPlayer.id, 'Начинает ход')]),
+        ],
+      },
+    });
+  },
+  
+  cancelBuildStation: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    if (gameState.currentAction !== 'buildStation') return;
+    
+    set({
+      gameState: {
+        ...gameState,
+        currentAction: 'none',
+      },
+    });
+  },
+  
+  canBuildStation: (cityId) => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState || gameState.currentPlayerId !== localPlayerId) return false;
+    
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player || player.stationsRemaining <= 0) return false;
+    
+    // Check if city already has a station
+    if (gameState.placedStations.some(s => s.cityId === cityId)) return false;
+    
+    // Calculate cost
+    const stationsBuilt = 3 - player.stationsRemaining;
+    const cost = STATION_COSTS[stationsBuilt];
+    
+    // Check if player has enough cards of the same color
+    const cardCounts: Record<string, number> = {};
+    player.trainCards.forEach(card => {
+      cardCounts[card] = (cardCounts[card] || 0) + 1;
+    });
+    
+    const locomotives = cardCounts['locomotive'] || 0;
+    
+    // For cost 1, any card works
+    if (cost === 1) {
+      return player.trainCards.length >= 1;
+    }
+    
+    // For cost 2 or 3, need cards of same color + locomotives
+    const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
+    return colors.some(color => {
+      const colorCount = cardCounts[color] || 0;
+      return colorCount + locomotives >= cost;
+    }) || locomotives >= cost;
+  },
+  
+  getStationCost: () => {
+    const { gameState, localPlayerId } = get();
+    if (!gameState) return 1;
+    
+    const player = gameState.players.find(p => p.id === localPlayerId);
+    if (!player) return 1;
+    
+    const stationsBuilt = 3 - player.stationsRemaining;
+    return STATION_COSTS[stationsBuilt] || 1;
   },
 }));

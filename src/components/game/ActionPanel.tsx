@@ -12,9 +12,12 @@ interface ActionPanelProps {
   onDrawDestinations: () => void;
   onClaimRoute: () => void;
   onCancelAction: () => void;
+  onBuildStation?: () => void;
   trainsRemaining: number;
+  stationsRemaining: number;
   routeRequirement?: { color: string; count: number } | null;
   claimError?: string | null;
+  stationCost?: number;
 }
 
 export const ActionPanel: React.FC<ActionPanelProps> = ({
@@ -27,9 +30,12 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
   onDrawDestinations,
   onClaimRoute,
   onCancelAction,
+  onBuildStation,
   trainsRemaining,
+  stationsRemaining,
   routeRequirement,
   claimError,
+  stationCost = 1,
 }) => {
   if (!isMyTurn) {
     return (

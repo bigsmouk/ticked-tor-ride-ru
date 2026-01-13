@@ -116,7 +116,7 @@ const TestSandbox = () => {
         trainCards: initialCards,
         destinationTickets: initialDestinations,
         trainsRemaining: INITIAL_TRAINS,
-        stations: 3,
+        stationsRemaining: 3,
         score: 0,
         isActive: i === 0,
         isConnected: true,
@@ -143,6 +143,7 @@ const TestSandbox = () => {
       destinationDeck,
       cities: mapData.cities,
       routes: mapData.routes,
+      placedStations: [],
       turnNumber: 1,
       logs: [
         {

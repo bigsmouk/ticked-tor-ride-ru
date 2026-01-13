@@ -414,6 +414,7 @@ export const GameBoard: React.FC = () => {
               onClaimRoute={handleClaimRoute}
               onCancelAction={handleCancelDrawingCards}
               trainsRemaining={localPlayer?.trainsRemaining || 0}
+              stationsRemaining={localPlayer?.stationsRemaining || 0}
               routeRequirement={routeRequirement}
               claimError={claimError}
             />

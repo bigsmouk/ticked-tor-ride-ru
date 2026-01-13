@@ -223,7 +223,7 @@ export const useSessionRecovery = () => {
         trainCards: [],
         destinationTickets: [],
         trainsRemaining: 45,
-        stations: 3,
+        stationsRemaining: 3,
         score: 0,
         isActive: false,
         isConnected: true,
