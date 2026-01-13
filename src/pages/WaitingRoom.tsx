@@ -39,6 +39,8 @@ const WaitingRoom = () => {
   useEffect(() => {
     if (!currentRoom?.id || !localPlayerId) return;
 
+    console.log('[KickListener] Setting up for room:', currentRoom.id, 'player:', localPlayerId);
+
     const channel = supabase
       .channel(`kick-listener-${currentRoom.id}`)
       .on(
@@ -50,10 +52,14 @@ const WaitingRoom = () => {
           filter: `room_id=eq.${currentRoom.id}`,
         },
         (payload) => {
+          console.log('[KickListener] DELETE received:', payload);
           // Проверяем, что удалили именно нас
           const deletedPlayerId = (payload.old as { player_id?: string })?.player_id;
+          console.log('[KickListener] Deleted player_id:', deletedPlayerId, 'local:', localPlayerId);
+          
           if (deletedPlayerId === localPlayerId) {
             // Нас кикнули!
+            console.log('[KickListener] WE WERE KICKED!');
             toast.error('Вы были исключены из комнаты хостом', {
               duration: 5000,
               icon: '🚫',
@@ -63,7 +69,9 @@ const WaitingRoom = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[KickListener] Subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
