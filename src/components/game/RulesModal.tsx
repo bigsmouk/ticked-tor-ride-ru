@@ -7,6 +7,20 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Target, 
+  Layers, 
+  RefreshCw, 
+  Star, 
+  Flag, 
+  Globe, 
+  Lightbulb,
+  Train,
+  Ticket,
+  Mountain,
+  Ship,
+  Route
+} from 'lucide-react';
 
 interface RulesModalProps {
   trigger?: React.ReactNode;
@@ -22,168 +36,383 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle className="font-display text-2xl flex items-center gap-3">
-            📜 Правила игры «Железнодорожное Приключение»
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden bg-gradient-to-b from-card to-muted border-4 border-ornament">
+        {/* Decorative header */}
+        <DialogHeader className="px-6 pt-6 pb-4 bg-primary border-b-4 border-gold">
+          <DialogTitle className="font-display text-2xl md:text-3xl text-primary-foreground flex items-center justify-center gap-3">
+            <Train className="h-8 w-8 text-gold" />
+            <span>Правила игры</span>
+            <Train className="h-8 w-8 text-gold scale-x-[-1]" />
           </DialogTitle>
+          <p className="text-center text-gold font-display text-lg tracking-widest mt-1">
+            ЖЕЛЕЗНОДОРОЖНОЕ ПРИКЛЮЧЕНИЕ: ЕВРОПА
+          </p>
         </DialogHeader>
         
-        <ScrollArea className="h-[60vh] px-6 py-4">
-          <div className="space-y-6 text-sm leading-relaxed">
+        <ScrollArea className="h-[65vh] px-6 py-6">
+          <div className="space-y-8 text-sm leading-relaxed">
             
             {/* Цель игры */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                🎯 Цель игры
-              </h3>
-              <p className="text-foreground/90">
-                Набрать наибольшее количество очков, строя железнодорожные маршруты между городами Европы. 
-                Очки начисляются за построенные маршруты и выполненные карточки назначений. 
-                За невыполненные назначения очки вычитаются.
-              </p>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Target className="h-5 w-5 text-gold" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Цель игры
+                </h3>
+              </div>
+              <div className="pl-12">
+                <p className="text-foreground leading-relaxed">
+                  Набрать наибольшее количество очков, строя железнодорожные маршруты между городами Европы. 
+                  Очки начисляются за построенные маршруты и выполненные карточки назначений. 
+                  За невыполненные назначения очки вычитаются из вашего счёта!
+                </p>
+              </div>
             </section>
 
             {/* Подготовка */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                🃏 Подготовка к игре
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                <li>Каждый игрок получает <strong>4 карты вагонов</strong> из колоды</li>
-                <li>Каждый игрок получает <strong>45 вагончиков</strong> своего цвета</li>
-                <li>Игрокам раздаются <strong>3 карты назначений</strong>, из которых нужно оставить минимум 2</li>
-                <li>5 карт вагонов выкладываются в открытую рядом с колодой</li>
-              </ul>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Layers className="h-5 w-5 text-gold" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Подготовка к игре
+                </h3>
+              </div>
+              <div className="pl-12">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-2xl">🃏</span>
+                    <div>
+                      <strong className="text-foreground">4 карты вагонов</strong>
+                      <p className="text-xs text-muted-foreground">Стартовая рука из колоды</p>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-2xl">🚃</span>
+                    <div>
+                      <strong className="text-foreground">45 вагончиков</strong>
+                      <p className="text-xs text-muted-foreground">Вашего цвета для постройки</p>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-2xl">🎫</span>
+                    <div>
+                      <strong className="text-foreground">3 карты назначений</strong>
+                      <p className="text-xs text-muted-foreground">Оставьте минимум 2 карты</p>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-2xl">🎴</span>
+                    <div>
+                      <strong className="text-foreground">5 открытых карт</strong>
+                      <p className="text-xs text-muted-foreground">Рядом с колодой вагонов</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
 
             {/* Ход игры */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                🔄 Ход игры
-              </h3>
-              <p className="text-foreground/90 mb-3">
-                Игроки ходят по очереди. В свой ход игрок должен выполнить <strong>одно</strong> из трёх действий:
-              </p>
-              
-              <div className="space-y-4">
-                <div className="p-3 rounded-lg bg-accent/30 border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">1. Взять карты вагонов 🎴</h4>
-                  <ul className="list-disc list-inside text-foreground/80 text-xs space-y-1">
-                    <li>Возьмите <strong>2 карты</strong> — из открытых или из колоды</li>
-                    <li>Если берёте <strong>локомотив</strong> из открытых — это единственная карта за ход</li>
-                    <li>Локомотив из колоды считается обычной картой</li>
-                  </ul>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <RefreshCw className="h-5 w-5 text-gold" />
                 </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Ход игры
+                </h3>
+              </div>
+              <div className="pl-12">
+                <p className="text-foreground mb-4">
+                  Игроки ходят по очереди. В свой ход выполните <strong className="text-gold">одно</strong> из трёх действий:
+                </p>
+                
+                <div className="space-y-4">
+                  {/* Действие 1 */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-2 border-blue-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-500 text-white font-bold text-sm">1</span>
+                      <h4 className="font-display font-bold text-foreground text-base">Взять карты вагонов</h4>
+                    </div>
+                    <ul className="list-none space-y-2 text-foreground/90">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500">•</span>
+                        Возьмите <strong>2 карты</strong> — из открытых или из колоды (вслепую)
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500">•</span>
+                        <strong className="text-amber-600">Локомотив</strong> из открытых — засчитывается за 2 карты (единственная карта за ход)
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500">•</span>
+                        Локомотив из колоды считается обычной картой
+                      </li>
+                    </ul>
+                  </div>
 
-                <div className="p-3 rounded-lg bg-accent/30 border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">2. Занять маршрут 🛤️</h4>
-                  <ul className="list-disc list-inside text-foreground/80 text-xs space-y-1">
-                    <li>Сыграйте карты нужного цвета по количеству вагонов на маршруте</li>
-                    <li>Для <strong>серых маршрутов</strong> подойдут карты любого одного цвета</li>
-                    <li><strong>Локомотивы</strong> заменяют карты любого цвета</li>
-                    <li>На <strong>паромах</strong> 🚢 требуется определённое число локомотивов</li>
-                    <li><strong>Туннели</strong> 🚇 — потяните 3 карты из колоды; за каждое совпадение цвета доплатите 1 карту</li>
-                  </ul>
-                </div>
+                  {/* Действие 2 */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-green-600/5 border-2 border-green-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 text-white font-bold text-sm">2</span>
+                      <h4 className="font-display font-bold text-foreground text-base">Занять маршрут</h4>
+                    </div>
+                    <ul className="list-none space-y-2 text-foreground/90">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">•</span>
+                        Сыграйте карты нужного цвета в количестве вагонов на маршруте
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">•</span>
+                        <strong>Серые маршруты</strong> — подойдут карты любого одного цвета
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">•</span>
+                        <strong className="text-amber-600">Локомотивы</strong> заменяют карты любого цвета
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">•</span>
+                        <strong>Паромы</strong> ⛵ — требуют определённое число локомотивов
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">•</span>
+                        <strong>Туннели</strong> ⛰️ — вытяните 3 карты из колоды; за каждое совпадение цвета доплатите 1 карту
+                      </li>
+                    </ul>
+                  </div>
 
-                <div className="p-3 rounded-lg bg-accent/30 border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">3. Взять карты назначений 🎫</h4>
-                  <ul className="list-disc list-inside text-foreground/80 text-xs space-y-1">
-                    <li>Возьмите <strong>3 карты назначений</strong> из колоды</li>
-                    <li>Оставьте минимум <strong>1 карту</strong>, остальные сбросьте</li>
-                    <li>Выполненные назначения приносят очки в конце игры</li>
-                    <li>Невыполненные — вычитаются из вашего счёта!</li>
-                  </ul>
+                  {/* Действие 3 */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-purple-600/5 border-2 border-purple-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500 text-white font-bold text-sm">3</span>
+                      <h4 className="font-display font-bold text-foreground text-base">Взять карты назначений</h4>
+                    </div>
+                    <ul className="list-none space-y-2 text-foreground/90">
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-500">•</span>
+                        Возьмите <strong>3 карты назначений</strong> из колоды
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-500">•</span>
+                        Оставьте минимум <strong>1 карту</strong>, остальные можно сбросить
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-500">•</span>
+                        Выполненные назначения приносят указанные очки в конце игры
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-500">•</span>
+                        <strong className="text-red-500">Невыполненные</strong> — вычитаются из вашего счёта!
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </section>
 
             {/* Очки */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                ⭐ Подсчёт очков
-              </h3>
-              
-              <div className="mb-3">
-                <h4 className="font-semibold text-foreground mb-2">Очки за маршруты:</h4>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2 rounded bg-muted">1 вагон → <strong>1 очко</strong></div>
-                  <div className="p-2 rounded bg-muted">2 вагона → <strong>2 очка</strong></div>
-                  <div className="p-2 rounded bg-muted">3 вагона → <strong>4 очка</strong></div>
-                  <div className="p-2 rounded bg-muted">4 вагона → <strong>7 очков</strong></div>
-                  <div className="p-2 rounded bg-muted">5 вагонов → <strong>10 очков</strong></div>
-                  <div className="p-2 rounded bg-muted">6 вагонов → <strong>15 очков</strong></div>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Star className="h-5 w-5 text-gold" />
                 </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Подсчёт очков
+                </h3>
               </div>
+              <div className="pl-12 space-y-4">
+                {/* Таблица очков */}
+                <div>
+                  <h4 className="font-display font-semibold text-foreground mb-3">Очки за построенные маршруты:</h4>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃</div>
+                      <div className="text-xs text-muted-foreground">1 вагон</div>
+                      <div className="font-bold text-gold text-lg">1</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃🚃</div>
+                      <div className="text-xs text-muted-foreground">2 вагона</div>
+                      <div className="font-bold text-gold text-lg">2</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃×3</div>
+                      <div className="text-xs text-muted-foreground">3 вагона</div>
+                      <div className="font-bold text-gold text-lg">4</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃×4</div>
+                      <div className="text-xs text-muted-foreground">4 вагона</div>
+                      <div className="font-bold text-gold text-lg">7</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃×5</div>
+                      <div className="text-xs text-muted-foreground">5 вагонов</div>
+                      <div className="font-bold text-gold text-lg">10</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
+                      <div className="text-2xl mb-1">🚃×6</div>
+                      <div className="text-xs text-muted-foreground">6 вагонов</div>
+                      <div className="font-bold text-gold text-lg">15</div>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="space-y-2 text-foreground/90">
-                <p><strong>🎫 Карты назначений:</strong> Если города соединены вашими маршрутами — получите указанные очки. Иначе — потеряете столько же.</p>
-                <p><strong>🏆 Самый длинный путь:</strong> Игрок с самым длинным непрерывным маршрутом получает <strong>+10 очков</strong>.</p>
+                {/* Бонусы */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-2 border-amber-500/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Ticket className="h-5 w-5 text-amber-600" />
+                      <h4 className="font-display font-bold text-foreground">Карты назначений</h4>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Если города соединены вашими маршрутами — получите указанные очки. 
+                      Иначе — <strong className="text-red-500">потеряете</strong> столько же!
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-gold/30 to-gold/10 border-2 border-gold">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Route className="h-5 w-5 text-gold" />
+                      <h4 className="font-display font-bold text-foreground">Самый длинный путь</h4>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Игрок с самым длинным непрерывным маршрутом получает бонус
+                    </p>
+                    <div className="mt-2 text-center">
+                      <span className="inline-block px-4 py-2 rounded-full bg-gold text-primary-foreground font-display font-bold text-xl">
+                        +21 очко
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
             {/* Конец игры */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                🏁 Конец игры
-              </h3>
-              <p className="text-foreground/90">
-                Когда у любого игрока остаётся <strong>2 или меньше вагончиков</strong>, 
-                начинается последний раунд. Все игроки (включая триггера) делают ещё по одному ходу, 
-                после чего подсчитываются финальные очки.
-              </p>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Flag className="h-5 w-5 text-gold" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Конец игры
+                </h3>
+              </div>
+              <div className="pl-12">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 border-2 border-red-500/30">
+                  <p className="text-foreground leading-relaxed">
+                    Когда у любого игрока остаётся <strong className="text-red-500">2 или меньше вагончиков</strong>, 
+                    начинается <strong>последний раунд</strong>. Все игроки (включая того, кто запустил финал) 
+                    делают ещё по одному ходу, после чего подсчитываются финальные очки.
+                  </p>
+                </div>
+              </div>
             </section>
 
             {/* Особенности Europe */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                🌍 Особенности версии Europe
-              </h3>
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">🚇 Туннели</h4>
-                  <p className="text-foreground/80 text-xs">
-                    Маршруты, помеченные как туннели, требуют проверки: вытяните 3 карты из колоды. 
-                    За каждую карту того же цвета (или локомотив) нужно доплатить по 1 карте. 
-                    Если не можете — маршрут не занимается, карты остаются на руке.
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Globe className="h-5 w-5 text-gold" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Особенности версии Europe
+                </h3>
+              </div>
+              <div className="pl-12 space-y-3">
+                {/* Туннели */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-slate-500/10 to-slate-600/5 border-2 border-slate-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mountain className="h-5 w-5 text-slate-600" />
+                    <h4 className="font-display font-bold text-foreground">Туннели ⛰️</h4>
+                  </div>
+                  <p className="text-foreground/80">
+                    Маршруты с зигзагообразной границей — это туннели. При попытке занять такой маршрут:
+                  </p>
+                  <ol className="list-decimal list-inside mt-2 space-y-1 text-foreground/80">
+                    <li>Вытяните <strong>3 карты</strong> из колоды вагонов</li>
+                    <li>За каждую карту <strong>совпадающего цвета</strong> (или локомотив) — доплатите 1 карту</li>
+                    <li>Если не можете доплатить — маршрут не занимается, ваши карты остаются на руке</li>
+                  </ol>
+                </div>
+                
+                {/* Паромы */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-cyan-600/5 border-2 border-cyan-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Ship className="h-5 w-5 text-cyan-600" />
+                    <h4 className="font-display font-bold text-foreground">Паромы ⛵</h4>
+                  </div>
+                  <p className="text-foreground/80">
+                    На паромных маршрутах некоторые позиции отмечены символом локомотива. 
+                    Эти позиции <strong className="text-amber-600">можно заполнить только картами локомотивов</strong>.
                   </p>
                 </div>
                 
-                <div className="p-3 rounded-lg border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">🚢 Паромы</h4>
-                  <p className="text-foreground/80 text-xs">
-                    На паромных маршрутах часть вагонов отмечена символом локомотива — 
-                    эти позиции можно заполнить только картами локомотивов.
+                {/* Двойные маршруты */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-violet-600/5 border-2 border-violet-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Route className="h-5 w-5 text-violet-600" />
+                    <h4 className="font-display font-bold text-foreground">Двойные маршруты</h4>
+                  </div>
+                  <p className="text-foreground/80">
+                    Между некоторыми городами есть два параллельных маршрута разных цветов.
                   </p>
-                </div>
-                
-                <div className="p-3 rounded-lg border border-border">
-                  <h4 className="font-semibold text-foreground mb-1">🚃 Двойные маршруты</h4>
-                  <p className="text-foreground/80 text-xs">
-                    Между некоторыми городами есть два параллельных маршрута. 
-                    Один игрок не может занять оба. При игре вдвоём второй маршрут блокируется после занятия первого.
-                  </p>
+                  <ul className="mt-2 space-y-1 text-foreground/80">
+                    <li>• Один игрок <strong>не может</strong> занять оба маршрута</li>
+                    <li>• При игре <strong>вдвоём</strong> — второй маршрут блокируется после занятия первого</li>
+                  </ul>
                 </div>
               </div>
             </section>
 
             {/* Советы */}
-            <section>
-              <h3 className="font-display text-lg font-bold text-primary mb-2 flex items-center gap-2">
-                💡 Советы новичкам
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                <li>Планируйте маршруты заранее, но будьте гибкими</li>
-                <li>Не берите слишком много назначений — рискуете потерять очки</li>
-                <li>Следите за вагонами противников — могут занять ваш маршрут</li>
-                <li>Локомотивы ценны — не тратьте их попусту</li>
-                <li>Длинные маршруты приносят больше очков за вагон</li>
-              </ul>
+            <section className="rules-section">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-gold/20 border-2 border-gold">
+                  <Lightbulb className="h-5 w-5 text-gold" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  Советы новичкам
+                </h3>
+              </div>
+              <div className="pl-12">
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-lg">🗺️</span>
+                    <p className="text-sm text-foreground/90">Планируйте маршруты заранее, но будьте гибкими</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-lg">⚠️</span>
+                    <p className="text-sm text-foreground/90">Не берите слишком много назначений — рискуете потерять очки</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-lg">👀</span>
+                    <p className="text-sm text-foreground/90">Следите за вагонами противников — могут занять ваш маршрут</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
+                    <span className="text-lg">🚂</span>
+                    <p className="text-sm text-foreground/90">Локомотивы ценны — не тратьте их попусту</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3 md:col-span-2">
+                    <span className="text-lg">📈</span>
+                    <p className="text-sm text-foreground/90">Длинные маршруты приносят больше очков за каждый вагон — старайтесь строить маршруты по 5-6 вагонов</p>
+                  </div>
+                </div>
+              </div>
             </section>
 
           </div>
         </ScrollArea>
+        
+        {/* Footer */}
+        <div className="px-6 py-4 border-t-2 border-gold/30 bg-muted/50 text-center">
+          <p className="text-sm text-muted-foreground">
+            Удачи в строительстве вашей железнодорожной империи! 🚂
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
