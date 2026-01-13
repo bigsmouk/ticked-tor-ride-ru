@@ -166,6 +166,12 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
           <span className="font-bold">{player.trainsRemaining}</span>
         </div>
         
+        {/* Stations remaining */}
+        <div className="flex items-center gap-1" title="Станции">
+          <span className="text-base">🏛️</span>
+          <span className="font-bold">{player.stationsRemaining}</span>
+        </div>
+        
         {/* Cards in hand */}
         <div className="flex items-center gap-1" title="Карты вагонов">
           <span className="text-base">🎴</span>

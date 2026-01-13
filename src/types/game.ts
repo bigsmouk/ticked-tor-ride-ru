@@ -36,6 +36,13 @@ export interface DestinationTicket {
   isLongRoute?: boolean; // Long routes worth more points
 }
 
+// Station placed on the map
+export interface PlacedStation {
+  cityId: string;
+  playerId: string;
+  usedRouteId?: string; // The route this station is using for path completion
+}
+
 // Player state
 export interface Player {
   id: string;
@@ -45,7 +52,7 @@ export interface Player {
   trainCards: TrainCardType[];
   destinationTickets: DestinationTicket[];
   trainsRemaining: number; // Starts at 45
-  stations: number; // Starts at 3
+  stationsRemaining: number; // Starts at 3
   score: number;
   isActive: boolean;
   isConnected: boolean;
@@ -67,7 +74,8 @@ export type TurnAction =
   | 'drawTrainCards' // Already drew first card, drawing second
   | 'claimRoute' // Claiming a route
   | 'drawDestinations' // Drawing destination tickets
-  | 'tunnelReveal'; // Revealing cards for tunnel check
+  | 'tunnelReveal' // Revealing cards for tunnel check
+  | 'buildStation'; // Building a station
 
 // Tunnel reveal state
 export interface TunnelRevealState {
@@ -118,6 +126,7 @@ export interface GameState {
   // Map data
   cities: City[];
   routes: Route[];
+  placedStations: PlacedStation[];
   
   // Game tracking
   turnNumber: number;
@@ -171,7 +180,7 @@ export const ROUTE_POINTS: Record<number, number> = {
 // Initial train count per player
 export const INITIAL_TRAINS = 45;
 
-// Initial stations per player
+// Initial stations per player (each player starts with 3 stations)
 export const INITIAL_STATIONS = 3;
 
 // Initial train cards dealt
@@ -190,3 +199,9 @@ export const END_GAME_TRAINS_THRESHOLD = 2;
 
 // Longest path bonus
 export const LONGEST_PATH_BONUS = 10;
+
+// Points for unused stations at game end
+export const UNUSED_STATION_POINTS = 4;
+
+// Station building costs (1st = 1 card, 2nd = 2 cards, 3rd = 3 cards)
+export const STATION_COSTS = [1, 2, 3];
