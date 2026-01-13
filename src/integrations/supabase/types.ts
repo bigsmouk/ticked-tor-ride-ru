@@ -44,6 +44,13 @@ export type Database = {
             foreignKeyName: "game_states_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: true
+            referencedRelation: "public_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_states_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
@@ -75,6 +82,13 @@ export type Database = {
           room_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "match_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "public_rooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_history_room_id_fkey"
             columns: ["room_id"]
@@ -223,6 +237,13 @@ export type Database = {
             foreignKeyName: "room_players_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "public_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
@@ -323,10 +344,50 @@ export type Database = {
             foreignKeyName: "room_players_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "public_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_rooms: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: string | null
+          is_private: boolean | null
+          max_players: number | null
+          name: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_private?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_private?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
