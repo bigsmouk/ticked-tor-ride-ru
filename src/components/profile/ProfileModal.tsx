@@ -28,15 +28,33 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Система рангов
+// Система рангов (ММР на основе побед)
 const RANKS = [
-  { name: 'Кочегар', minWins: 0, icon: '🔥', color: 'text-orange-600' },
-  { name: 'Помощник машиниста', minWins: 3, icon: '🔧', color: 'text-gray-600' },
-  { name: 'Машинист', minWins: 10, icon: '🚂', color: 'text-blue-600' },
-  { name: 'Старший машинист', minWins: 25, icon: '⭐', color: 'text-amber-600' },
-  { name: 'Начальник депо', minWins: 50, icon: '🎖️', color: 'text-purple-600' },
-  { name: 'Начальник станции', minWins: 100, icon: '👑', color: 'text-gold' },
+  { name: 'Новичок', minWins: 0, icon: '🎫', color: 'text-gray-500', tier: 'bronze' },
+  { name: 'Пассажир', minWins: 1, icon: '🧳', color: 'text-amber-700', tier: 'bronze' },
+  { name: 'Кочегар', minWins: 3, icon: '🔥', color: 'text-orange-600', tier: 'bronze' },
+  { name: 'Помощник машиниста', minWins: 5, icon: '🔧', color: 'text-slate-600', tier: 'silver' },
+  { name: 'Машинист III класса', minWins: 10, icon: '🚃', color: 'text-blue-500', tier: 'silver' },
+  { name: 'Машинист II класса', minWins: 15, icon: '🚂', color: 'text-blue-600', tier: 'silver' },
+  { name: 'Машинист I класса', minWins: 25, icon: '⭐', color: 'text-amber-500', tier: 'gold' },
+  { name: 'Старший машинист', minWins: 40, icon: '🌟', color: 'text-amber-600', tier: 'gold' },
+  { name: 'Инспектор депо', minWins: 60, icon: '🎖️', color: 'text-purple-500', tier: 'platinum' },
+  { name: 'Начальник депо', minWins: 80, icon: '🏅', color: 'text-purple-600', tier: 'platinum' },
+  { name: 'Начальник станции', minWins: 100, icon: '🏆', color: 'text-yellow-500', tier: 'diamond' },
+  { name: 'Директор железных дорог', minWins: 150, icon: '👑', color: 'text-gold', tier: 'diamond' },
+  { name: 'Железнодорожный магнат', minWins: 200, icon: '💎', color: 'text-cyan-400', tier: 'master' },
+  { name: 'Легенда рельсов', minWins: 300, icon: '🌠', color: 'text-rose-500', tier: 'legend' },
 ];
+
+const TIER_STYLES: Record<string, { bg: string; border: string; glow: string }> = {
+  bronze: { bg: 'from-amber-800/20 to-amber-900/10', border: 'border-amber-700', glow: '' },
+  silver: { bg: 'from-slate-400/20 to-slate-500/10', border: 'border-slate-400', glow: '' },
+  gold: { bg: 'from-yellow-500/30 to-amber-500/20', border: 'border-yellow-500', glow: 'shadow-yellow-500/30' },
+  platinum: { bg: 'from-purple-500/25 to-indigo-500/15', border: 'border-purple-400', glow: 'shadow-purple-500/30' },
+  diamond: { bg: 'from-cyan-400/30 to-blue-500/20', border: 'border-cyan-400', glow: 'shadow-cyan-400/40' },
+  master: { bg: 'from-cyan-300/35 to-teal-400/25', border: 'border-cyan-300', glow: 'shadow-cyan-300/50' },
+  legend: { bg: 'from-rose-500/30 to-pink-500/20', border: 'border-rose-400', glow: 'shadow-rose-500/50' },
+};
 
 const getRank = (wins: number) => {
   for (let i = RANKS.length - 1; i >= 0; i--) {
@@ -323,27 +341,40 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                       </div>
                       
                       {/* Rank display */}
-                      <div className="bg-gradient-to-r from-amber-200 to-amber-100 border-2 border-amber-400 p-2 rounded">
-                        <span className="text-[10px] text-amber-600 font-display uppercase tracking-widest">Звание</span>
-                        <div className={`font-display font-bold text-lg flex items-center gap-2 ${currentRank.color}`}>
-                          <span className="text-2xl">{currentRank.icon}</span>
-                          {currentRank.name}
-                        </div>
-                        {nextRank && (
-                          <div className="mt-2">
-                            <div className="flex justify-between text-[10px] text-amber-700 mb-1">
-                              <span>До следующего звания</span>
-                              <span>{winsToNext} побед</span>
+                      {(() => {
+                        const tierStyle = TIER_STYLES[currentRank.tier] || TIER_STYLES.bronze;
+                        return (
+                          <div className={`bg-gradient-to-r ${tierStyle.bg} border-2 ${tierStyle.border} p-3 rounded-lg ${tierStyle.glow ? `shadow-lg ${tierStyle.glow}` : ''}`}>
+                            <span className="text-[10px] text-amber-600 font-display uppercase tracking-widest">Звание</span>
+                            <div className={`font-display font-bold text-lg flex items-center gap-2 ${currentRank.color}`}>
+                              <span className="text-2xl">{currentRank.icon}</span>
+                              <span>{currentRank.name}</span>
                             </div>
-                            <div className="h-2 bg-amber-300 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-500"
-                                style={{ width: `${progressToNext}%` }}
-                              />
+                            <div className="text-[10px] text-amber-700 mt-1">
+                              Побед: <span className="font-bold">{stats?.wins || 0}</span>
                             </div>
+                            {nextRank && (
+                              <div className="mt-2">
+                                <div className="flex justify-between text-[10px] text-amber-700 mb-1">
+                                  <span>→ {nextRank.icon} {nextRank.name}</span>
+                                  <span>{winsToNext} побед</span>
+                                </div>
+                                <div className="h-2.5 bg-amber-300/50 rounded-full overflow-hidden border border-amber-400/50">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500 rounded-full"
+                                    style={{ width: `${progressToNext}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {!nextRank && (
+                              <div className="mt-2 text-[10px] text-gold font-bold flex items-center gap-1">
+                                ✨ Максимальный ранг достигнут!
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
