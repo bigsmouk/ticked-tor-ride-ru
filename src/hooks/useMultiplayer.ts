@@ -600,6 +600,61 @@ export const useMultiplayer = () => {
     return soloRoomId;
   }, [playerId, profile, setCurrentRoom, setView]);
 
+  // Сменить цвет игрока в комнате ожидания
+  const changePlayerColor = useCallback(async (roomId: string, newColor: PlayerColor) => {
+    if (!playerId || !user) {
+      toast.error('Требуется авторизация');
+      return false;
+    }
+    
+    try {
+      // Проверяем, не занят ли уже этот цвет другим игроком
+      const { data: existingPlayers } = await supabase
+        .from('room_players')
+        .select('player_id, color')
+        .eq('room_id', roomId);
+      
+      if (existingPlayers) {
+        const colorTaken = existingPlayers.find(
+          p => p.color === newColor && p.player_id !== playerId
+        );
+        
+        if (colorTaken) {
+          toast.error('Этот цвет уже занят другим игроком');
+          return false;
+        }
+      }
+      
+      // Обновляем цвет игрока
+      const { error } = await supabase
+        .from('room_players')
+        .update({ color: newColor })
+        .eq('room_id', roomId)
+        .eq('player_id', playerId);
+      
+      if (error) throw error;
+      
+      // Обновляем локальное состояние немедленно
+      const { currentRoom } = useGameStore.getState();
+      if (currentRoom) {
+        const updatedPlayers = currentRoom.players.map(p => 
+          p.id === playerId ? { ...p, color: newColor } : p
+        );
+        setCurrentRoom({
+          ...currentRoom,
+          players: updatedPlayers,
+        });
+      }
+      
+      toast.success('Цвет изменён!');
+      return true;
+    } catch (err: any) {
+      console.error('Error changing color:', err);
+      toast.error(`Ошибка смены цвета: ${err.message}`);
+      return false;
+    }
+  }, [playerId, user, setCurrentRoom]);
+
   return {
     playerId,
     isLoading,
@@ -613,6 +668,7 @@ export const useMultiplayer = () => {
     startGame,
     kickPlayer,
     startSoloGame,
+    changePlayerColor,
   };
 };
 
