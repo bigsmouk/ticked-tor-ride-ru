@@ -127,7 +127,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
               </div>
               <div className="pl-12">
                 <p className="text-foreground mb-4">
-                  Игроки ходят по очереди. В свой ход выполните <strong className="text-gold">одно</strong> из трёх действий:
+                  Игроки ходят по очереди. В свой ход выполните <strong className="text-gold">одно</strong> из четырёх действий:
                 </p>
                 
                 <div className="space-y-4">
@@ -208,6 +208,36 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                       </li>
                     </ul>
                   </div>
+
+                  {/* Действие 4 - Станции */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/5 border-2 border-amber-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-500 text-white font-bold text-sm">4</span>
+                      <h4 className="font-display font-bold text-foreground text-base">Построить станцию 🏛️</h4>
+                    </div>
+                    <ul className="list-none space-y-2 text-foreground/90">
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500">•</span>
+                        У каждого игрока <strong>3 станции</strong> в начале игры
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500">•</span>
+                        Станцию можно построить в любом городе <strong>без станции</strong>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500">•</span>
+                        <strong>Стоимость:</strong> 1-я станция — 1 карта, 2-я — 2 карты одного цвета, 3-я — 3 карты
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500">•</span>
+                        Станция позволяет использовать <strong>1 чужой маршрут</strong> из этого города для выполнения назначений
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500">•</span>
+                        <strong className="text-green-500">Неиспользованные станции</strong> приносят +4 очка каждая в конце игры
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </section>
@@ -266,7 +296,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                 </div>
 
                 {/* Бонусы */}
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-3">
                   <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-2 border-amber-500/50">
                     <div className="flex items-center gap-2 mb-2">
                       <Ticket className="h-5 w-5 text-amber-600" />
@@ -276,6 +306,21 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                       Если города соединены вашими маршрутами — получите указанные очки. 
                       Иначе — <strong className="text-red-500">потеряете</strong> столько же!
                     </p>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-2 border-purple-500/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">🏛️</span>
+                      <h4 className="font-display font-bold text-foreground">Неиспользованные станции</h4>
+                    </div>
+                    <p className="text-sm text-foreground/80">
+                      Каждая станция, которую вы <strong>не построили</strong>, приносит бонус
+                    </p>
+                    <div className="mt-2 text-center">
+                      <span className="inline-block px-4 py-2 rounded-full bg-purple-500 text-white font-display font-bold text-xl">
+                        +4 очка
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="p-4 rounded-xl bg-gradient-to-br from-gold/30 to-gold/10 border-2 border-gold">
