@@ -698,22 +698,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
   
-  // Cancel tunnel claim attempt
+  // Cancel tunnel claim attempt - player keeps their cards, revealed cards go to discard, turn passes
   cancelTunnelClaim: () => {
     const { gameState, localPlayerId } = get();
     if (!gameState || !gameState.tunnelReveal) return;
     if (gameState.currentPlayerId !== localPlayerId) return;
     
-    const { routeName } = gameState.tunnelReveal;
+    const { routeName, revealedCards } = gameState.tunnelReveal;
+    
+    // Find current player index
+    const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
+    if (playerIndex === -1) return;
+    
+    // Revealed cards go to discard pile
+    const newDiscard = [...gameState.trainCardDiscard, ...revealedCards];
+    
+    // Move to next player
+    const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
+    const nextPlayer = gameState.players[nextPlayerIndex];
+    
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], isActive: false };
+    updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
+    
+    // Handle last round turn counting
+    let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined) {
+      turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
+    }
+    
+    // Check if last round is over
+    if (turnsRemainingInLastRound !== undefined && turnsRemainingInLastRound <= 0) {
+      set({
+        gameState: {
+          ...gameState,
+          players: updatedPlayers,
+          currentPlayerId: nextPlayer.id,
+          currentAction: 'none',
+          trainCardDiscard: newDiscard,
+          turnNumber: gameState.turnNumber + 1,
+          turnsRemainingInLastRound: 0,
+          tunnelReveal: undefined,
+          logs: [
+            ...gameState.logs,
+            createLog(localPlayerId, 'Отменил туннель', routeName),
+          ],
+        },
+      });
+      setTimeout(() => get().calculateFinalScores(), 100);
+      return;
+    }
     
     set({
       gameState: {
         ...gameState,
+        players: updatedPlayers,
+        currentPlayerId: nextPlayer.id,
         currentAction: 'none',
+        trainCardDiscard: newDiscard,
+        turnNumber: gameState.turnNumber + 1,
+        turnsRemainingInLastRound,
         tunnelReveal: undefined,
         logs: [
           ...gameState.logs,
           createLog(localPlayerId, 'Отменил туннель', routeName),
+          createLog(nextPlayer.id, 'Начинает ход'),
         ],
       },
     });
