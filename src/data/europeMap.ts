@@ -110,7 +110,7 @@ export const EUROPE_ROUTES: Route[] = [
   
   // London connections
   { id: 'london-amsterdam', cities: ['london', 'amsterdam'], length: 2, color: 'gray', ferryLocomotives: 2 },
-  { id: 'london-dieppe-1', cities: ['london', 'dieppe'], length: 2, color: 'gray', ferryLocomotives: 1 },
+  { id: 'london-dieppe-1', cities: ['london', 'dieppe'], length: 2, color: 'gray', ferryLocomotives: 1, parallelRouteId: 'london-dieppe-2' },
   { id: 'london-dieppe-2', cities: ['london', 'dieppe'], length: 2, color: 'gray', ferryLocomotives: 1, parallelRouteId: 'london-dieppe-1' },
   
   // Amsterdam connections
@@ -120,7 +120,7 @@ export const EUROPE_ROUTES: Route[] = [
   
   // Bruxelles connections
   { id: 'bruxelles-dieppe', cities: ['bruxelles', 'dieppe'], length: 2, color: 'green' },
-  { id: 'bruxelles-paris-1', cities: ['bruxelles', 'paris'], length: 2, color: 'yellow' },
+  { id: 'bruxelles-paris-1', cities: ['bruxelles', 'paris'], length: 2, color: 'yellow', parallelRouteId: 'bruxelles-paris-2' },
   { id: 'bruxelles-paris-2', cities: ['bruxelles', 'paris'], length: 2, color: 'red', parallelRouteId: 'bruxelles-paris-1' },
   { id: 'bruxelles-frankfurt', cities: ['bruxelles', 'frankfurt'], length: 2, color: 'blue' },
   
@@ -133,15 +133,15 @@ export const EUROPE_ROUTES: Route[] = [
   { id: 'brest-pamplona', cities: ['brest', 'pamplona'], length: 4, color: 'pink' },
   
   // Paris connections
-  { id: 'paris-pamplona-1', cities: ['paris', 'pamplona'], length: 4, color: 'blue' },
+  { id: 'paris-pamplona-1', cities: ['paris', 'pamplona'], length: 4, color: 'blue', parallelRouteId: 'paris-pamplona-2' },
   { id: 'paris-pamplona-2', cities: ['paris', 'pamplona'], length: 4, color: 'green', parallelRouteId: 'paris-pamplona-1' },
   { id: 'paris-zurich', cities: ['paris', 'zurich'], length: 3, color: 'gray', isTunnel: true },
   { id: 'paris-marseille', cities: ['paris', 'marseille'], length: 4, color: 'gray' },
-  { id: 'paris-frankfurt-1', cities: ['paris', 'frankfurt'], length: 3, color: 'white' },
+  { id: 'paris-frankfurt-1', cities: ['paris', 'frankfurt'], length: 3, color: 'white', parallelRouteId: 'paris-frankfurt-2' },
   { id: 'paris-frankfurt-2', cities: ['paris', 'frankfurt'], length: 3, color: 'orange', parallelRouteId: 'paris-frankfurt-1' },
   
   // Pamplona connections
-  { id: 'pamplona-madrid-1', cities: ['pamplona', 'madrid'], length: 3, color: 'black', isTunnel: true },
+  { id: 'pamplona-madrid-1', cities: ['pamplona', 'madrid'], length: 3, color: 'black', isTunnel: true, parallelRouteId: 'pamplona-madrid-2' },
   { id: 'pamplona-madrid-2', cities: ['pamplona', 'madrid'], length: 3, color: 'white', isTunnel: true, parallelRouteId: 'pamplona-madrid-1' },
   { id: 'pamplona-barcelona', cities: ['pamplona', 'barcelona'], length: 2, color: 'gray', isTunnel: true },
   { id: 'pamplona-marseille', cities: ['pamplona', 'marseille'], length: 4, color: 'red' },
@@ -168,22 +168,22 @@ export const EUROPE_ROUTES: Route[] = [
   // Frankfurt connections
   { id: 'frankfurt-essen', cities: ['frankfurt', 'essen'], length: 2, color: 'green' },
   { id: 'frankfurt-munchen', cities: ['frankfurt', 'munchen'], length: 2, color: 'pink' },
-  { id: 'frankfurt-berlin-1', cities: ['frankfurt', 'berlin'], length: 3, color: 'black' },
+  { id: 'frankfurt-berlin-1', cities: ['frankfurt', 'berlin'], length: 3, color: 'black', parallelRouteId: 'frankfurt-berlin-2' },
   { id: 'frankfurt-berlin-2', cities: ['frankfurt', 'berlin'], length: 3, color: 'red', parallelRouteId: 'frankfurt-berlin-1' },
   
 // Essen connections
   { id: 'essen-berlin-1', cities: ['essen', 'berlin'], length: 2, color: 'blue' },
-  { id: 'essen-kobenhavn-1', cities: ['essen', 'kobenhavn'], length: 3, color: 'gray', ferryLocomotives: 1 },
+  { id: 'essen-kobenhavn-1', cities: ['essen', 'kobenhavn'], length: 3, color: 'gray', ferryLocomotives: 1, parallelRouteId: 'essen-kobenhavn-2' },
   { id: 'essen-kobenhavn-2', cities: ['essen', 'kobenhavn'], length: 3, color: 'gray', ferryLocomotives: 1, parallelRouteId: 'essen-kobenhavn-1' },
   
   // Berlin connections
   { id: 'berlin-danzig', cities: ['berlin', 'danzig'], length: 4, color: 'gray' },
-  { id: 'berlin-warszawa-1', cities: ['berlin', 'warszawa'], length: 4, color: 'yellow' },
+  { id: 'berlin-warszawa-1', cities: ['berlin', 'warszawa'], length: 4, color: 'yellow', parallelRouteId: 'berlin-warszawa-2' },
   { id: 'berlin-warszawa-2', cities: ['berlin', 'warszawa'], length: 4, color: 'pink', parallelRouteId: 'berlin-warszawa-1' },
   { id: 'berlin-wien', cities: ['berlin', 'wien'], length: 3, color: 'green' },
   
   // København connections
-  { id: 'kobenhavn-stockholm-1', cities: ['kobenhavn', 'stockholm'], length: 3, color: 'yellow' },
+  { id: 'kobenhavn-stockholm-1', cities: ['kobenhavn', 'stockholm'], length: 3, color: 'yellow', parallelRouteId: 'kobenhavn-stockholm-2' },
   { id: 'kobenhavn-stockholm-2', cities: ['kobenhavn', 'stockholm'], length: 3, color: 'white', parallelRouteId: 'kobenhavn-stockholm-1' },
   
   // Stockholm connections
@@ -243,7 +243,7 @@ export const EUROPE_ROUTES: Route[] = [
   
   // Angora connections
   { id: 'angora-smyrna', cities: ['angora', 'smyrna'], length: 3, color: 'orange', isTunnel: true },
-  { id: 'angora-constantinople-1', cities: ['angora', 'constantinople'], length: 2, color: 'gray', isTunnel: true },
+  { id: 'angora-constantinople-1', cities: ['angora', 'constantinople'], length: 2, color: 'gray', isTunnel: true, parallelRouteId: 'angora-constantinople-2' },
   { id: 'angora-constantinople-2', cities: ['angora', 'constantinople'], length: 2, color: 'gray', isTunnel: true, parallelRouteId: 'angora-constantinople-1' },
   
   // Smyrna connections
@@ -266,7 +266,7 @@ export const EUROPE_ROUTES: Route[] = [
   { id: 'bucuresti-budapest', cities: ['bucuresti', 'budapest'], length: 4, color: 'gray', isTunnel: true },
   
   // Budapest connections
-  { id: 'budapest-wien-1', cities: ['budapest', 'wien'], length: 1, color: 'white' },
+  { id: 'budapest-wien-1', cities: ['budapest', 'wien'], length: 1, color: 'white', parallelRouteId: 'budapest-wien-2' },
   { id: 'budapest-wien-2', cities: ['budapest', 'wien'], length: 1, color: 'red', parallelRouteId: 'budapest-wien-1' },
   { id: 'budapest-sarajevo', cities: ['budapest', 'sarajevo'], length: 3, color: 'pink' },
   { id: 'budapest-zagreb', cities: ['budapest', 'zagreb'], length: 2, color: 'orange' },
