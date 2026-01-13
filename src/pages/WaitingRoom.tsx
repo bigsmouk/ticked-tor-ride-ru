@@ -6,7 +6,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { useMatchHistory } from '@/hooks/useMatchHistory';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe, UserX, History, Loader2, Palette } from 'lucide-react';
+import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe, UserX, History, Loader2, Palette, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -21,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 const WaitingRoom = () => {
   const navigate = useNavigate();
   const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
-  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb, kickPlayer, changePlayerColor } = useMultiplayer();
+  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb, kickPlayer, changePlayerColor, deleteRoom } = useMultiplayer();
   const { isRecovering } = useSessionRecovery();
   const { matches, loading: historyLoading, fetchMatchHistory } = useMatchHistory();
   const [copied, setCopied] = useState(false);
@@ -152,6 +152,15 @@ const WaitingRoom = () => {
     await leaveRoomFromDb(currentRoom.id);
     leaveRoom();
     navigate('/');
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!isHost) return;
+    const confirmed = window.confirm('Удалить комнату? Все игроки будут отключены.');
+    if (confirmed) {
+      await deleteRoom(currentRoom.id);
+      navigate('/');
+    }
   };
 
   const handleKickPlayer = async (targetPlayerId: string, playerName: string) => {
@@ -446,13 +455,22 @@ const WaitingRoom = () => {
             {/* Action buttons */}
             <div className="space-y-3">
               {isHost ? (
-                <button
-                  className="btn-gold w-full rounded-lg py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleStartGame}
-                  disabled={!canStart || isStarting}
-                >
-                  {isStarting ? '⏳ Запуск...' : canStart ? '🎮 Начать игру' : `Ожидание игроков (минимум 2)`}
-                </button>
+                <>
+                  <button
+                    className="btn-gold w-full rounded-lg py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleStartGame}
+                    disabled={!canStart || isStarting}
+                  >
+                    {isStarting ? '⏳ Запуск...' : canStart ? '🎮 Начать игру' : `Ожидание игроков (минимум 2)`}
+                  </button>
+                  <button
+                    className="w-full rounded-lg py-2 text-sm flex items-center justify-center gap-2 bg-red-100 text-red-700 hover:bg-red-200 transition-colors border border-red-300"
+                    onClick={handleDeleteRoom}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Удалить комнату
+                  </button>
+                </>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-lg text-muted-foreground">

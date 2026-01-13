@@ -655,6 +655,47 @@ export const useMultiplayer = () => {
     }
   }, [playerId, user, setCurrentRoom]);
 
+  // Удалить комнату (только для хоста)
+  const deleteRoom = useCallback(async (roomId: string) => {
+    if (!playerId || !user) {
+      toast.error('Требуется авторизация');
+      return false;
+    }
+    
+    try {
+      // Сначала удаляем всех игроков (чтобы они получили уведомление)
+      const { error: playersError } = await supabase
+        .from('room_players')
+        .delete()
+        .eq('room_id', roomId);
+
+      if (playersError) {
+        console.error('Error deleting players:', playersError);
+      }
+
+      // Затем удаляем саму комнату
+      const { error: roomError } = await supabase
+        .from('rooms')
+        .delete()
+        .eq('id', roomId)
+        .eq('host_id', playerId); // Только хост может удалить
+
+      if (roomError) throw roomError;
+
+      // Очищаем сессию
+      clearSession();
+      setCurrentRoom(null);
+      setView('lobby');
+
+      toast.success('Комната удалена');
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting room:', err);
+      toast.error(`Ошибка удаления комнаты: ${err.message}`);
+      return false;
+    }
+  }, [playerId, user, setCurrentRoom, setView]);
+
   return {
     playerId,
     isLoading,
@@ -669,6 +710,7 @@ export const useMultiplayer = () => {
     kickPlayer,
     startSoloGame,
     changePlayerColor,
+    deleteRoom,
   };
 };
 
