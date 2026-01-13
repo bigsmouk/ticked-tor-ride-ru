@@ -122,6 +122,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [showCityNames, setShowCityNames] = useState(false);
+  const [showStations, setShowStations] = useState(true);
   const [hoveredRoute, setHoveredRoute] = useState<Route | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -259,24 +260,33 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         >
           🏙️
         </button>
+        <button 
+          onClick={() => setShowStations(prev => !prev)}
+          className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showStations ? 'bg-primary text-primary-foreground' : ''}`}
+          title={showStations ? 'Скрыть станции' : 'Показать станции'}
+        >
+          🏛️
+        </button>
       </div>
       
       {/* Route tooltip */}
       {hoveredRoute && !isDragging && (
         <div 
-          className="absolute z-50 pointer-events-none bg-background/95 border border-border rounded-lg px-3 py-2 shadow-lg text-sm"
+          className="absolute z-50 pointer-events-none bg-background/95 border border-border rounded-lg px-3 py-2 shadow-lg text-sm max-w-xs"
           style={{
-            left: tooltipPosition.x,
-            top: tooltipPosition.y - 60,
+            left: Math.min(Math.max(tooltipPosition.x, 100), containerRef.current?.clientWidth ? containerRef.current.clientWidth - 100 : 500),
+            top: tooltipPosition.y - 70,
             transform: 'translateX(-50%)',
           }}
         >
-          <div className="font-bold text-foreground flex items-center gap-2">
-            {cities.find(c => c.id === hoveredRoute.cities[0])?.name} — {cities.find(c => c.id === hoveredRoute.cities[1])?.name}
+          <div className="font-bold text-foreground flex items-center gap-2 flex-wrap">
+            <span className="whitespace-nowrap">{cities.find(c => c.id === hoveredRoute.cities[0])?.name}</span>
+            <span>—</span>
+            <span className="whitespace-nowrap">{cities.find(c => c.id === hoveredRoute.cities[1])?.name}</span>
             {hoveredRoute.isTunnel && <span>🚇</span>}
             {hoveredRoute.ferryLocomotives && <span>⛵</span>}
           </div>
-          <div className="text-muted-foreground text-xs flex gap-2 mt-1">
+          <div className="text-muted-foreground text-xs flex gap-2 mt-1 flex-wrap">
             <span>Длина: {hoveredRoute.length}</span>
             <span>•</span>
             <span className="capitalize">{hoveredRoute.color === 'gray' ? 'Любой' : hoveredRoute.color}</span>
@@ -417,24 +427,26 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           ))}
         </g>
         
-        {/* Stations - displayed on top of cities */}
-        <g className="stations">
-          {gameState?.placedStations.map((station) => {
-            const city = cities.find(c => c.id === station.cityId);
-            const player = gameState.players.find(p => p.id === station.playerId);
-            if (!city || !player) return null;
-            
-            return (
-              <StationMarker
-                key={`station-${station.cityId}`}
-                x={city.x + 15}
-                y={city.y - 10}
-                playerColor={player.color}
-                playerName={player.name}
-              />
-            );
-          })}
-        </g>
+        {/* Stations - displayed on top of cities (toggleable) */}
+        {showStations && (
+          <g className="stations">
+            {gameState?.placedStations.map((station) => {
+              const city = cities.find(c => c.id === station.cityId);
+              const player = gameState.players.find(p => p.id === station.playerId);
+              if (!city || !player) return null;
+              
+              return (
+                <StationMarker
+                  key={`station-${station.cityId}`}
+                  x={city.x + 15}
+                  y={city.y - 10}
+                  playerColor={player.color}
+                  playerName={player.name}
+                />
+              );
+            })}
+          </g>
+        )}
         
         {/* Score legend */}
         <g transform="translate(20, 60)">
