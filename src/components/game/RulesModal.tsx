@@ -226,7 +226,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                 {/* Таблица очков */}
                 <div>
                   <h4 className="font-display font-semibold text-foreground mb-3">Очки за построенные маршруты:</h4>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
+                  <div className="grid grid-cols-4 md:grid-cols-7 gap-2 text-center">
                     <div className="p-3 rounded-lg bg-gradient-to-b from-muted to-muted/50 border-2 border-border">
                       <div className="text-2xl mb-1">🚃</div>
                       <div className="text-xs text-muted-foreground">1 вагон</div>
@@ -257,6 +257,11 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                       <div className="text-xs text-muted-foreground">6 вагонов</div>
                       <div className="font-bold text-gold text-lg">15</div>
                     </div>
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-2 border-amber-500/50">
+                      <div className="text-2xl mb-1">⛰️×8</div>
+                      <div className="text-xs text-muted-foreground">8 вагонов</div>
+                      <div className="font-bold text-amber-500 text-lg">21</div>
+                    </div>
                   </div>
                 </div>
 
@@ -283,7 +288,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                     </p>
                     <div className="mt-2 text-center">
                       <span className="inline-block px-4 py-2 rounded-full bg-gold text-primary-foreground font-display font-bold text-xl">
-                        +21 очко
+                        +10 очков
                       </span>
                     </div>
                   </div>
