@@ -6,7 +6,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { useMatchHistory } from '@/hooks/useMatchHistory';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe, UserX, History, Loader2 } from 'lucide-react';
+import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe, UserX, History, Loader2, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -21,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 const WaitingRoom = () => {
   const navigate = useNavigate();
   const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
-  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb, kickPlayer } = useMultiplayer();
+  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb, kickPlayer, changePlayerColor } = useMultiplayer();
   const { isRecovering } = useSessionRecovery();
   const { matches, loading: historyLoading, fetchMatchHistory } = useMatchHistory();
   const [copied, setCopied] = useState(false);
@@ -201,6 +201,21 @@ const WaitingRoom = () => {
     blue: 'bg-player-blue',
     green: 'bg-player-green',
     yellow: 'bg-player-yellow',
+    black: 'bg-gray-800',
+  };
+
+  const allPlayerColors = ['red', 'blue', 'green', 'yellow', 'black'] as const;
+  
+  // Получаем занятые цвета другими игроками
+  const getUsedColors = () => {
+    return currentRoom.players
+      .filter(p => p.id !== localPlayerId)
+      .map(p => p.color);
+  };
+  
+  const handleChangeColor = async (newColor: typeof allPlayerColors[number]) => {
+    if (!currentRoom) return;
+    await changePlayerColor(currentRoom.id, newColor);
   };
 
   return (
@@ -296,7 +311,8 @@ const WaitingRoom = () => {
                           player.color === 'red' ? 'ring-player-red' :
                           player.color === 'blue' ? 'ring-player-blue' :
                           player.color === 'green' ? 'ring-player-green' :
-                          'ring-player-yellow'
+                          player.color === 'yellow' ? 'ring-player-yellow' :
+                          'ring-gray-700'
                         }`}
                       />
                     ) : (
@@ -324,12 +340,52 @@ const WaitingRoom = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-sm text-muted-foreground capitalize">
-                        {player.color === 'red' && '🔴 Красный'}
-                        {player.color === 'blue' && '🔵 Синий'}
-                        {player.color === 'green' && '🟢 Зелёный'}
-                        {player.color === 'yellow' && '🟡 Жёлтый'}
-                      </span>
+                      
+                      {/* Color display or color picker for self */}
+                      {player.id === localPlayerId ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-muted-foreground">Ваш цвет:</span>
+                          <div className="flex gap-1">
+                            {allPlayerColors.map((color) => {
+                              const isUsed = getUsedColors().includes(color);
+                              const isSelected = player.color === color;
+                              
+                              return (
+                                <button
+                                  key={color}
+                                  onClick={() => !isUsed && handleChangeColor(color)}
+                                  disabled={isUsed}
+                                  className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                    playerColors[color]
+                                  } ${
+                                    isSelected 
+                                      ? 'border-white ring-2 ring-primary scale-110' 
+                                      : isUsed
+                                        ? 'opacity-30 cursor-not-allowed border-transparent'
+                                        : 'border-transparent hover:scale-110 hover:border-white/50'
+                                  }`}
+                                  title={
+                                    isUsed 
+                                      ? 'Цвет занят' 
+                                      : color === 'red' ? 'Красный' :
+                                        color === 'blue' ? 'Синий' :
+                                        color === 'green' ? 'Зелёный' :
+                                        color === 'yellow' ? 'Жёлтый' : 'Чёрный'
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {player.color === 'red' && '🔴 Красный'}
+                          {player.color === 'blue' && '🔵 Синий'}
+                          {player.color === 'green' && '🟢 Зелёный'}
+                          {player.color === 'yellow' && '🟡 Жёлтый'}
+                          {player.color === 'black' && '⚫ Чёрный'}
+                        </span>
+                      )}
                     </div>
 
                     {/* Actions: History and Kick buttons */}
