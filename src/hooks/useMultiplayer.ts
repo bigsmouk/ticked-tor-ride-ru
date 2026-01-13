@@ -554,6 +554,52 @@ export const useMultiplayer = () => {
     }
   }, [playerId, user]);
 
+  // Начать соло-игру (без создания комнаты в БД)
+  const startSoloGame = useCallback(async (playerName: string) => {
+    if (!playerId) {
+      toast.error('Подождите, идёт подключение...');
+      return null;
+    }
+
+    const playerNameResult = playerNameSchema.safeParse(playerName);
+    if (!playerNameResult.success) {
+      toast.error(playerNameResult.error.errors[0].message);
+      return null;
+    }
+
+    const validatedPlayerName = playerNameResult.data;
+    const soloRoomId = `solo-${crypto.randomUUID()}`;
+
+    setCurrentRoom({
+      id: soloRoomId,
+      code: 'SOLO',
+      name: 'Соло-игра',
+      hostId: playerId,
+      players: [{
+        id: playerId,
+        name: validatedPlayerName,
+        avatarUrl: profile?.avatar_url || undefined,
+        color: PLAYER_COLORS[0],
+        trainCards: [],
+        destinationTickets: [],
+        trainsRemaining: 45,
+        stations: 3,
+        score: 0,
+        isActive: false,
+        isConnected: true,
+      }],
+      maxPlayers: 1,
+      status: 'waiting',
+      isPrivate: true,
+      isSoloMode: true,
+      createdAt: new Date(),
+    });
+    setView('waiting');
+
+    toast.success('Соло-игра создана!');
+    return soloRoomId;
+  }, [playerId, profile, setCurrentRoom, setView]);
+
   return {
     playerId,
     isLoading,
@@ -566,6 +612,7 @@ export const useMultiplayer = () => {
     leaveRoom,
     startGame,
     kickPlayer,
+    startSoloGame,
   };
 };
 

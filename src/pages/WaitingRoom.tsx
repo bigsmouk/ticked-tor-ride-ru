@@ -89,13 +89,20 @@ const WaitingRoom = () => {
     };
   }, [currentRoom?.id, navigate, leaveRoom]);
 
-  // Редирект если игра началась
+  // Редирект если игра началась ИЛИ это соло-режим
   useEffect(() => {
+    // Для соло-режима сразу начинаем игру
+    if (currentRoom?.isSoloMode) {
+      initializeGame();
+      navigate('/game');
+      return;
+    }
+    
     if (currentRoom?.status === 'playing') {
       initializeGame();
       navigate('/game');
     }
-  }, [currentRoom?.status, navigate, initializeGame]);
+  }, [currentRoom?.status, currentRoom?.isSoloMode, navigate, initializeGame]);
 
   // Redirect if no room (но не во время восстановления)
   useEffect(() => {

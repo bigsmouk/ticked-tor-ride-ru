@@ -35,7 +35,14 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
   };
 
   // Сохраняем историю через серверную функцию (надёжнее — работает даже если браузер закрылся)
+  // НЕ сохраняем для соло-игр (они не учитываются в статистике)
   const saveMatchHistoryViaServer = async () => {
+    // Пропускаем для соло-режима
+    if (currentRoom?.isSoloMode) {
+      console.log('[LeaveGame] Solo mode, skipping server save');
+      return;
+    }
+    
     console.log('[LeaveGame] Starting server save...', { 
       hasGameState: !!gameState, 
       hasRoom: !!currentRoom, 
@@ -136,10 +143,14 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent className="bg-sidebar border-ornament">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Покинуть игру?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">
+              {currentRoom?.isSoloMode ? 'Завершить тренировку?' : 'Покинуть игру?'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Вы уверены, что хотите выйти из игры? Игра продолжится без вас, 
-              и ваши ходы будут пропускаться.
+              {currentRoom?.isSoloMode 
+                ? 'Вы уверены, что хотите завершить соло-игру?'
+                : 'Вы уверены, что хотите выйти из игры? Игра продолжится без вас, и ваши ходы будут пропускаться.'
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

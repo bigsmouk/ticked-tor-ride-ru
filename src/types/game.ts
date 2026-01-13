@@ -88,6 +88,7 @@ export interface GameRoom {
   maxPlayers: number;
   status: 'waiting' | 'playing' | 'finished';
   isPrivate?: boolean;
+  isSoloMode?: boolean; // Solo mode - single player practice
   createdAt: Date;
 }
 

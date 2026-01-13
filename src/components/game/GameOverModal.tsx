@@ -9,10 +9,11 @@ export const GameOverModal: React.FC = () => {
   const navigate = useNavigate();
   const savedRef = useRef(false);
   const isHost = currentRoom?.hostId === localPlayerId;
+  const isSoloMode = currentRoom?.isSoloMode;
   
-  // Сохраняем результаты матча через серверную функцию (только один раз, только хост)
+  // Сохраняем результаты матча через серверную функцию (только один раз, только хост, НЕ для соло)
   useEffect(() => {
-    if (!isHost) return;
+    if (!isHost || isSoloMode) return; // Не сохраняем соло-игры в статистику
     if (!gameState || gameState.phase !== 'finished' || savedRef.current) return;
     if (!currentRoom) return;
 
@@ -59,7 +60,7 @@ export const GameOverModal: React.FC = () => {
     };
 
     saveMatchResults();
-  }, [isHost, gameState, currentRoom]);
+  }, [isHost, isSoloMode, gameState, currentRoom]);
   
   if (!gameState || gameState.phase !== 'finished') return null;
   
@@ -75,10 +76,16 @@ export const GameOverModal: React.FC = () => {
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="parchment rounded-xl border-4 border-ornament p-6 shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-3xl font-display font-bold text-center mb-2">
-          🏆 Игра окончена! 🏆
+          {isSoloMode ? '🎯 Тренировка окончена!' : '🏆 Игра окончена! 🏆'}
         </h2>
         
-        {winner && (
+        {isSoloMode && (
+          <p className="text-sm text-center text-muted-foreground mb-2">
+            Соло-игры не учитываются в статистике
+          </p>
+        )}
+        
+        {winner && !isSoloMode && (
           <p className="text-xl text-center mb-4 text-primary font-semibold">
             Победитель: {winner.name}
           </p>
