@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { 
+import { toast } from '@/hooks/use-toast';
+import {
   GameState, 
   GameRoom, 
   Player, 
@@ -1629,7 +1630,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // Check if city already has a station
     if (gameState.placedStations.some(s => s.cityId === cityId)) {
-      console.warn(`Station already exists in city: ${cityId}`);
+      const city = gameState.cities.find(c => c.id === cityId);
+      toast({
+        title: "🏛️ Станция уже построена",
+        description: `В городе ${city?.name || cityId} уже есть станция другого игрока`,
+        variant: "destructive",
+      });
       return;
     }
     
