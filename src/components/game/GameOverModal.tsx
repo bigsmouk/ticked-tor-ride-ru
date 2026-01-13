@@ -6,16 +6,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export const GameOverModal: React.FC = () => {
-  const { gameState, currentRoom, leaveRoom } = useGameStore();
+  const { gameState, currentRoom, leaveRoom, localPlayerId } = useGameStore();
   const { profile } = useAuth();
   const navigate = useNavigate();
   const savedRef = useRef(false);
+  const isHost = currentRoom?.hostId === localPlayerId;
   
-  // Сохраняем результаты матча в БД (только один раз)
+  // Сохраняем результаты матча в БД (только один раз, только хост)
   useEffect(() => {
+    if (!isHost) return;
     if (!gameState || gameState.phase !== 'finished' || savedRef.current) return;
     if (!currentRoom) return;
-    
+
     const saveMatchResults = async () => {
       savedRef.current = true;
       
@@ -46,28 +48,61 @@ export const GameOverModal: React.FC = () => {
           return;
         }
 
+        // Строим маппинг player_id -> profile_id по данным комнаты, чтобы каждый игрок видел матч в своей истории
+        const { data: roomPlayers, error: roomPlayersError } = await supabase
+          .from('room_players')
+          .select('player_id, owner_auth_id')
+          .eq('room_id', currentRoom.id);
+
+        if (roomPlayersError) {
+          console.warn('[GameOver] Could not load room_players mapping:', roomPlayersError);
+        }
+
+        const ownerAuthIds = (roomPlayers || [])
+          .map(rp => rp.owner_auth_id)
+          .filter((v): v is string => !!v);
+
+        const { data: profilesData, error: profilesError } = ownerAuthIds.length
+          ? await supabase
+              .from('profiles')
+              .select('id, user_id')
+              .in('user_id', ownerAuthIds)
+          : { data: [], error: null };
+
+        if (profilesError) {
+          console.warn('[GameOver] Could not load profiles for mapping:', profilesError);
+        }
+
+        const userIdToProfileId = new Map<string, string>();
+        for (const p of profilesData || []) {
+          userIdToProfileId.set((p as any).user_id, (p as any).id);
+        }
+
+        const playerIdToProfileId = new Map<string, string>();
+        for (const rp of roomPlayers || []) {
+          if (!rp.owner_auth_id) continue;
+          const pid = userIdToProfileId.get(rp.owner_auth_id);
+          if (pid) playerIdToProfileId.set(rp.player_id, pid);
+        }
+
         // Создаём записи для каждого игрока
         const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
-        
+
         const playerRecords = sortedPlayers.map((player, index) => {
           const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
           const routePoints = player.score 
             - ((finalScore as any)?.ticketBonus || 0) 
             + ((finalScore as any)?.ticketPenalty || 0) 
             - ((finalScore as any)?.longestPathBonus || 0);
-          
-          // Пытаемся найти профиль авторизованного игрока
-          const isCurrentUser = profile && player.name === profile.display_name;
-          
-          // Если игрок остался последним из-за выхода противника - он победитель
-          // Но если игра не засчитана (player_left), помечаем placement = -1
-          const isWinner = isPlayerLeft 
-            ? false  // Если кто-то вышел - победителей нет, игра не засчитана
-            : player.id === gameState.winnerId;
-          
+
+          const resolvedProfileId = playerIdToProfileId.get(player.id) || (profile?.id && player.name === profile.display_name ? profile.id : null);
+
+          // Если кто-то вышел - победителей нет, игра не засчитана
+          const isWinner = isPlayerLeft ? false : player.id === gameState.winnerId;
+
           return {
             match_id: matchData.id,
-            profile_id: isCurrentUser ? profile.id : null,
+            profile_id: resolvedProfileId,
             player_name: player.name,
             player_color: player.color,
             final_score: player.score,

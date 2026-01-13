@@ -28,7 +28,7 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
   const { currentRoom, leaveRoom, addLog, localPlayerId, gameState } = useGameStore();
   const { leaveRoom: leaveRoomFromDb } = useMultiplayer();
   const { sendActionToHost, isHost } = useGameSyncContext();
-  const { profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const handleLeaveClick = () => {
     setShowConfirm(true);
@@ -87,13 +87,20 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
 
       console.log('[LeaveGame] Match created:', matchData.id);
 
+      // Гарантируем profile_id (без него матч не попадёт в историю/статистику)
+      let profileId: string | null = profile?.id ?? null;
+      if (!profileId && user) {
+        console.log('[LeaveGame] profile not loaded yet, refreshing...');
+        const refreshed = await refreshProfile();
+        profileId = refreshed?.id ?? null;
+      }
+
       // Сохраняем запись для текущего игрока
-      // Используем profile.id если есть, иначе null
       const { error: playerError } = await supabase
         .from('match_players')
         .insert({
           match_id: matchData.id,
-          profile_id: profile?.id || null,
+          profile_id: profileId,
           player_name: localPlayer.name,
           player_color: localPlayer.color,
           final_score: localPlayer.score,
