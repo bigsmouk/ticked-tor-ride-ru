@@ -20,17 +20,22 @@ export const GameOverModal: React.FC = () => {
       savedRef.current = true;
       
       try {
+        // Определяем причину завершения игры
+        const lastLog = gameState.logs[gameState.logs.length - 1];
+        const isPlayerLeft = lastLog?.action === 'Игра завершена' && lastLog?.details === 'Недостаточно игроков';
+        
         // Создаём запись матча
         const { data: matchData, error: matchError } = await supabase
           .from('match_history')
           .insert({
             room_id: currentRoom.id,
             room_name: currentRoom.name,
-            player_count: gameState.players.length,
+            player_count: gameState.players.length + (isPlayerLeft ? 1 : 0), // Учитываем вышедшего игрока
             game_data: {
               winnerId: gameState.winnerId,
               turnNumber: gameState.turnNumber,
               finishedAt: new Date().toISOString(),
+              endReason: isPlayerLeft ? 'player_left' : 'normal',
             },
           })
           .select()
@@ -52,8 +57,12 @@ export const GameOverModal: React.FC = () => {
             - ((finalScore as any)?.longestPathBonus || 0);
           
           // Пытаемся найти профиль авторизованного игрока
-          // Это работает только для текущего пользователя
           const isCurrentUser = profile && player.name === profile.display_name;
+          
+          // Если игрок остался последним из-за выхода противника - он победитель
+          const isWinner = isPlayerLeft 
+            ? (gameState.players.length === 1 || index === 0)
+            : player.id === gameState.winnerId;
           
           return {
             match_id: matchData.id,
@@ -61,12 +70,12 @@ export const GameOverModal: React.FC = () => {
             player_name: player.name,
             player_color: player.color,
             final_score: player.score,
-            route_points: routePoints,
+            route_points: finalScore ? routePoints : player.score,
             ticket_points: ((finalScore as any)?.ticketBonus || 0) - ((finalScore as any)?.ticketPenalty || 0),
             longest_path_bonus: (finalScore as any)?.longestPathBonus || 0,
             tickets_completed: (finalScore as any)?.completedTickets || 0,
             tickets_failed: (finalScore as any)?.failedTickets || 0,
-            is_winner: player.id === gameState.winnerId,
+            is_winner: isWinner,
             placement: index + 1,
           };
         });
@@ -78,7 +87,7 @@ export const GameOverModal: React.FC = () => {
         if (playersError) {
           console.error('Error saving match players:', playersError);
         } else {
-          console.log('[GameOver] Match results saved successfully');
+          console.log('[GameOver] Match results saved successfully', { isPlayerLeft });
         }
       } catch (error) {
         console.error('Error saving match results:', error);

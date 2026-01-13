@@ -4,17 +4,30 @@ import { useGameStore } from '@/stores/gameStore';
 import { useMultiplayer, useRoomSubscription } from '@/hooks/useMultiplayer';
 import { usePresence } from '@/hooks/usePresence';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
+import { useMatchHistory } from '@/hooks/useMatchHistory';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe } from 'lucide-react';
+import { Copy, Users, Crown, Check, Wifi, WifiOff, Lock, Globe, UserX, History, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 
 const WaitingRoom = () => {
   const navigate = useNavigate();
   const { currentRoom, localPlayerId, leaveRoom, initializeGame } = useGameStore();
-  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb } = useMultiplayer();
+  const { startGame: startGameInDb, leaveRoom: leaveRoomFromDb, kickPlayer } = useMultiplayer();
   const { isRecovering } = useSessionRecovery();
+  const { matches, loading: historyLoading, fetchMatchHistory } = useMatchHistory();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [selectedPlayerForHistory, setSelectedPlayerForHistory] = useState<{ id: string; name: string } | null>(null);
+  const [playerProfileId, setPlayerProfileId] = useState<string | null>(null);
 
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
@@ -78,6 +91,48 @@ const WaitingRoom = () => {
     await leaveRoomFromDb(currentRoom.id);
     leaveRoom();
     navigate('/');
+  };
+
+  const handleKickPlayer = async (targetPlayerId: string, playerName: string) => {
+    if (!isHost) return;
+    const success = await kickPlayer(currentRoom.id, targetPlayerId);
+    if (success) {
+      toast.success(`${playerName} исключён из комнаты`);
+    }
+  };
+
+  const handleViewHistory = async (playerId: string, playerName: string) => {
+    // Ищем profile_id для игрока через room_players
+    try {
+      const { data } = await supabase
+        .from('room_players')
+        .select('owner_auth_id')
+        .eq('room_id', currentRoom.id)
+        .eq('player_id', playerId)
+        .single();
+
+      if (data?.owner_auth_id) {
+        // Получаем profile по user_id
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', data.owner_auth_id)
+          .single();
+
+        if (profileData) {
+          setPlayerProfileId(profileData.id);
+          setSelectedPlayerForHistory({ id: playerId, name: playerName });
+          fetchMatchHistory(profileData.id);
+        } else {
+          toast.error('Профиль игрока не найден');
+        }
+      } else {
+        toast.error('Игрок не авторизован');
+      }
+    } catch (err) {
+      console.error('Error fetching player profile:', err);
+      toast.error('Не удалось загрузить историю');
+    }
   };
 
   const playerColors: Record<string, string> = {
@@ -216,6 +271,29 @@ const WaitingRoom = () => {
                       </span>
                     </div>
 
+                    {/* Actions: History and Kick buttons */}
+                    <div className="flex items-center gap-2">
+                      {/* History button */}
+                      <button
+                        onClick={() => handleViewHistory(player.id, player.name)}
+                        className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        title="Посмотреть историю матчей"
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Kick button (only for host, not for self) */}
+                      {isHost && player.id !== localPlayerId && (
+                        <button
+                          onClick={() => handleKickPlayer(player.id, player.name)}
+                          className="p-1.5 rounded hover:bg-red-100 transition-colors text-red-500 hover:text-red-700"
+                          title="Исключить игрока"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
                     {/* Online status */}
                     <div className="flex items-center gap-2">
                       {isPlayerOnline(player.id) ? (
@@ -276,6 +354,65 @@ const WaitingRoom = () => {
           </div>
         </div>
       </main>
+
+      {/* Player History Modal */}
+      <Dialog open={!!selectedPlayerForHistory} onOpenChange={() => setSelectedPlayerForHistory(null)}>
+        <DialogContent className="sm:max-w-md bg-amber-50 border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-amber-900">
+              📜 История матчей: {selectedPlayerForHistory?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh]">
+            {historyLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+              </div>
+            ) : matches.length > 0 ? (
+              <div className="space-y-3 p-1">
+                {matches.slice(0, 10).map((match) => {
+                  const playerResult = match.match_players.find(p => p.profile_id === playerProfileId);
+                  return (
+                    <div
+                      key={match.id}
+                      className={`p-3 rounded-lg border ${
+                        playerResult?.is_winner
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-amber-50 border-amber-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium text-amber-900">
+                            {playerResult?.is_winner ? '🏆' : `#${playerResult?.placement}`} {match.room_name}
+                          </div>
+                          <div className="text-xs text-amber-600">
+                            {match.player_count} игроков
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-amber-900">
+                            {playerResult?.final_score} очков
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-amber-600">
+                У этого игрока пока нет истории матчей
+              </div>
+            )}
+          </ScrollArea>
+          
+          <Button onClick={() => setSelectedPlayerForHistory(null)} className="w-full">
+            Закрыть
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
