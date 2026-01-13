@@ -58,6 +58,8 @@ export const TrainCard: React.FC<TrainCardProps> = ({
         style={{
           width: dimensions.width,
           height: dimensions.height,
+          // Background color prevents white flash while image loads
+          backgroundColor: 'hsl(30 30% 25%)',
           boxShadow: '0 4px 10px hsl(0 0% 0% / 0.3)',
         }}
         onClick={onClick}
@@ -68,6 +70,7 @@ export const TrainCard: React.FC<TrainCardProps> = ({
           className="w-full h-full object-cover"
           draggable={false}
           loading="eager"
+          decoding="sync"
         />
         
         {/* Card count badge */}
@@ -100,6 +103,8 @@ export const TrainCard: React.FC<TrainCardProps> = ({
       style={{
         width: dimensions.width,
         height: dimensions.height,
+        // Background color prevents white flash while image loads
+        backgroundColor: 'hsl(30 30% 25%)',
         boxShadow: isSelected 
           ? '0 8px 25px hsl(43 80% 50% / 0.5)' 
           : '0 4px 10px hsl(0 0% 0% / 0.3)',
@@ -112,6 +117,8 @@ export const TrainCard: React.FC<TrainCardProps> = ({
         className="w-full h-full object-cover"
         draggable={false}
         loading="eager"
+        // Ensures image is rendered immediately without layout shift
+        decoding="sync"
       />
       
       {/* Selection glow overlay */}
