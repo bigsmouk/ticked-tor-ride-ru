@@ -40,9 +40,47 @@ const WaitingRoom = () => {
   const localPlayerIdRef = React.useRef(localPlayerId);
   localPlayerIdRef.current = localPlayerId;
   
+  // Подписка на удаление комнаты
   useEffect(() => {
-    if (!currentRoom?.id) {
-      console.log('[KickListener] No room id yet, waiting...');
+    if (!currentRoom?.id || currentRoom.isSoloMode) return;
+
+    console.log('[RoomDeleteListener] Setting up for room:', currentRoom.id);
+
+    const channel = supabase
+      .channel(`room-delete-${currentRoom.id}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${currentRoom.id}`,
+        },
+        () => {
+          console.log('[RoomDeleteListener] Room was deleted!');
+          toast.error('Комната была удалена хостом', {
+            duration: 5000,
+            icon: '🏠',
+          });
+          leaveRoom();
+          navigate('/');
+        }
+      )
+      .subscribe((status) => {
+        console.log('[RoomDeleteListener] Subscription status:', status);
+      });
+
+    return () => {
+      console.log('[RoomDeleteListener] Cleaning up channel');
+      supabase.removeChannel(channel);
+    };
+  }, [currentRoom?.id, currentRoom?.isSoloMode, navigate, leaveRoom]);
+
+  // Подписка на кик игрока - слушаем DELETE из room_players
+  // Используем ref чтобы callback имел актуальный localPlayerId
+  useEffect(() => {
+    if (!currentRoom?.id || currentRoom.isSoloMode) {
+      console.log('[KickListener] No room id yet or solo mode, skipping...');
       return;
     }
 
@@ -60,7 +98,6 @@ const WaitingRoom = () => {
         },
         (payload) => {
           console.log('[KickListener] DELETE received:', payload);
-          console.log('[KickListener] payload.old:', JSON.stringify(payload.old));
           
           // Проверяем, что удалили именно нас
           const deletedPlayerId = (payload.old as { player_id?: string })?.player_id;
@@ -68,13 +105,13 @@ const WaitingRoom = () => {
           console.log('[KickListener] Deleted player_id:', deletedPlayerId, 'local:', currentLocalId);
           
           if (deletedPlayerId && deletedPlayerId === currentLocalId) {
-            // Нас кикнули!
+            // Нас кикнули (но не из-за удаления комнаты - это обработает RoomDeleteListener)
             console.log('[KickListener] WE WERE KICKED!');
             toast.error('Вы были исключены из комнаты хостом', {
               duration: 5000,
               icon: '🚫',
             });
-            leaveRoom(); // Очищаем локальное состояние
+            leaveRoom();
             navigate('/');
           }
         }
@@ -87,7 +124,7 @@ const WaitingRoom = () => {
       console.log('[KickListener] Cleaning up channel');
       supabase.removeChannel(channel);
     };
-  }, [currentRoom?.id, navigate, leaveRoom]);
+  }, [currentRoom?.id, currentRoom?.isSoloMode, navigate, leaveRoom]);
 
   // Редирект если игра началась ИЛИ это соло-режим
   useEffect(() => {
