@@ -23,12 +23,19 @@ export const StationBuilderModal: React.FC<StationBuilderModalProps> = ({
   
   const player = gameState?.players.find(p => p.id === localPlayerId);
   
-  // Get available cities (no station yet)
+  // Get available cities (no station yet) - recalculates when placedStations changes
   const availableCities = useMemo(() => {
     if (!gameState) return [];
     const stationCityIds = new Set(gameState.placedStations.map(s => s.cityId));
     return cities.filter(city => !stationCityIds.has(city.id));
-  }, [cities, gameState]);
+  }, [cities, gameState?.placedStations]);
+  
+  // Reset selected city if it becomes unavailable
+  React.useEffect(() => {
+    if (selectedCityId && gameState?.placedStations.some(s => s.cityId === selectedCityId)) {
+      setSelectedCityId(null);
+    }
+  }, [gameState?.placedStations, selectedCityId]);
   
   // Group player cards by type
   const cardGroups = useMemo(() => {

@@ -1628,7 +1628,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (player.stationsRemaining <= 0) return;
     
     // Check if city already has a station
-    if (gameState.placedStations.some(s => s.cityId === cityId)) return;
+    if (gameState.placedStations.some(s => s.cityId === cityId)) {
+      console.warn(`Station already exists in city: ${cityId}`);
+      return;
+    }
     
     // Calculate cost based on how many stations player has already built
     const stationsBuilt = 3 - player.stationsRemaining; // 0, 1, or 2
