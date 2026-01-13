@@ -354,10 +354,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                               Побед: <span className="font-bold">{stats?.wins || 0}</span>
                             </div>
                             {nextRank && (
-                              <div className="mt-2">
-                                <div className="flex justify-between text-[10px] text-amber-700 mb-1">
-                                  <span>→ {nextRank.icon} {nextRank.name}</span>
-                                  <span>{winsToNext} побед</span>
+                              <div className="mt-3 pt-2 border-t border-amber-400/30">
+                                <div className="flex justify-between items-center text-[11px] text-amber-700 mb-1.5">
+                                  <span className="flex items-center gap-1">
+                                    <span>Следующий:</span>
+                                    <span className="font-bold">{nextRank.icon} {nextRank.name}</span>
+                                  </span>
+                                  <span className="bg-amber-200 px-1.5 py-0.5 rounded text-amber-800 font-medium">
+                                    ещё {winsToNext} {winsToNext === 1 ? 'победа' : winsToNext < 5 ? 'победы' : 'побед'}
+                                  </span>
                                 </div>
                                 <div className="h-2.5 bg-amber-300/50 rounded-full overflow-hidden border border-amber-400/50">
                                   <div 
