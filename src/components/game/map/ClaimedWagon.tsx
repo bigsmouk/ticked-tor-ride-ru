@@ -1,4 +1,30 @@
 import React, { memo } from 'react';
+import { PlayerColor } from '@/types/game';
+
+// Import vintage wagon images
+import wagonRed from '@/assets/wagons/wagon-red.png';
+import wagonBlue from '@/assets/wagons/wagon-blue.png';
+import wagonGreen from '@/assets/wagons/wagon-green.png';
+import wagonYellow from '@/assets/wagons/wagon-yellow.png';
+import wagonBlack from '@/assets/wagons/wagon-black.png';
+
+// Map player colors to wagon images
+const WAGON_IMAGES: Record<PlayerColor, string> = {
+  red: wagonRed,
+  blue: wagonBlue,
+  green: wagonGreen,
+  yellow: wagonYellow,
+  black: wagonBlack,
+};
+
+// Fallback color mapping for glow effects
+const PLAYER_GLOW_MAP: Record<PlayerColor, string> = {
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  yellow: '#facc15',
+  black: '#6b7280',
+};
 
 interface ClaimedWagonProps {
   x: number;
@@ -7,88 +33,70 @@ interface ClaimedWagonProps {
   playerColor: string;
 }
 
-// Memoized wagon component - only re-renders when props change
-export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor }) => (
-  <g 
-    transform={`translate(${x}, ${y}) rotate(${angle})`}
-    className="claimed-wagon"
-  >
-    {/* Outer glow for visibility */}
-    <rect
-      x={-16}
-      y={-10}
-      width={32}
-      height={20}
-      rx={5}
-      fill={playerColor}
-      opacity={0.35}
-      filter="url(#claimed-glow)"
-    />
-    
-    {/* Wagon body shadow - darker and larger */}
-    <rect
-      x={-14}
-      y={-3}
-      width={28}
-      height={14}
-      rx={3}
-      fill="hsl(0 0% 0% / 0.6)"
-    />
-    
-    {/* Wagon body - larger and more prominent */}
-    <rect
-      x={-13}
-      y={-7}
-      width={26}
-      height={14}
-      rx={3}
-      fill={playerColor}
-      stroke="hsl(0 0% 100%)"
-      strokeWidth={2.5}
-    />
-    
-    {/* Inner color band for depth */}
-    <rect
-      x={-11}
-      y={-5}
-      width={22}
-      height={10}
-      rx={2}
-      fill={playerColor}
-      stroke="hsl(0 0% 0% / 0.3)"
-      strokeWidth={0.5}
-    />
-    
-    {/* Wagon window stripe - brighter */}
-    <rect
-      x={-9}
-      y={-3}
-      width={18}
-      height={3}
-      rx={1}
-      fill="hsl(0 0% 100% / 0.6)"
-    />
-    
-    {/* Roof highlight */}
-    <rect
-      x={-10}
-      y={-6}
-      width={20}
-      height={2}
-      rx={1}
-      fill="hsl(0 0% 100% / 0.25)"
-    />
-    
-    {/* Wheels - larger and more detailed */}
-    <circle cx={-7} cy={6} r={3} fill="hsl(0 0% 15%)" stroke="hsl(0 0% 50%)" strokeWidth={1} />
-    <circle cx={-7} cy={6} r={1.5} fill="hsl(0 0% 30%)" />
-    <circle cx={7} cy={6} r={3} fill="hsl(0 0% 15%)" stroke="hsl(0 0% 50%)" strokeWidth={1} />
-    <circle cx={7} cy={6} r={1.5} fill="hsl(0 0% 30%)" />
-    
-    {/* Coupling hooks */}
-    <rect x={-15} y={-1} width={3} height={2} rx={0.5} fill="hsl(0 0% 40%)" />
-    <rect x={12} y={-1} width={3} height={2} rx={0.5} fill="hsl(0 0% 40%)" />
-  </g>
-));
+// Memoized wagon component - uses vintage wagon images
+export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor }) => {
+  const color = playerColor as PlayerColor;
+  const wagonImage = WAGON_IMAGES[color] || wagonRed;
+  const glowColor = PLAYER_GLOW_MAP[color] || '#6b7280';
+  const filterId = `wagon-glow-${color}-${x}-${y}`;
+  
+  // Wagon dimensions on the map
+  const width = 36;
+  const height = 22;
+  
+  return (
+    <g 
+      transform={`translate(${x}, ${y}) rotate(${angle})`}
+      className="claimed-wagon"
+    >
+      {/* SVG filter for glow effect */}
+      <defs>
+        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={glowColor} floodOpacity="0.7" />
+          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="rgba(0,0,0,0.5)" />
+        </filter>
+      </defs>
+      
+      {/* Background glow for visibility */}
+      <rect
+        x={-width / 2 - 2}
+        y={-height / 2 - 2}
+        width={width + 4}
+        height={height + 4}
+        rx={4}
+        fill="hsl(40 30% 95%)"
+        opacity={0.85}
+        stroke="hsl(40 40% 80%)"
+        strokeWidth={1}
+      />
+      
+      {/* Vintage wagon image */}
+      <image
+        href={wagonImage}
+        x={-width / 2}
+        y={-height / 2}
+        width={width}
+        height={height}
+        style={{
+          filter: `url(#${filterId})`,
+        }}
+        preserveAspectRatio="xMidYMid meet"
+      />
+      
+      {/* Border for extra visibility */}
+      <rect
+        x={-width / 2 - 1}
+        y={-height / 2 - 1}
+        width={width + 2}
+        height={height + 2}
+        rx={3}
+        fill="none"
+        stroke={glowColor}
+        strokeWidth={1.5}
+        opacity={0.6}
+      />
+    </g>
+  );
+});
 
 ClaimedWagon.displayName = 'ClaimedWagon';
