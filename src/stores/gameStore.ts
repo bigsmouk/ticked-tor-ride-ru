@@ -27,6 +27,26 @@ import {
 
 const KICK_VOTE_DURATION_MS = 30000; // 30 seconds
 
+// Локальный идентификатор игрока — обязателен для переподключения после refresh/offline.
+// Должен быть доступен ДО того, как смонтируются страницы /waiting и /game.
+const PLAYER_ID_STORAGE_KEY = 'ttr_player_id';
+const getOrCreateStoredPlayerId = (): string => {
+  // В среде без window/localStorage (например, при тестах) — создаём временный id
+  if (typeof window === 'undefined') return crypto.randomUUID();
+
+  try {
+    const stored = window.localStorage.getItem(PLAYER_ID_STORAGE_KEY);
+    if (stored) return stored;
+    const newId = crypto.randomUUID();
+    window.localStorage.setItem(PLAYER_ID_STORAGE_KEY, newId);
+    return newId;
+  } catch {
+    return crypto.randomUUID();
+  }
+};
+
+const initialLocalPlayerId = getOrCreateStoredPlayerId();
+
 // Helper to create log entry
 const createLog = (playerId: string | undefined, action: string, details?: string): GameLogEntry => ({
   id: crypto.randomUUID(),
@@ -88,7 +108,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentRoom: null,
   availableRooms: [],
   gameState: null,
-  localPlayerId: null,
+  localPlayerId: initialLocalPlayerId,
   
   setView: (view) => set({ currentView: view }),
   

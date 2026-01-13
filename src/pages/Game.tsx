@@ -8,13 +8,18 @@ import { GameSyncProvider, useGameSyncContext } from '@/contexts/gameSyncContext
 import { AssetPreloader } from '@/components/game/AssetPreloader';
 
 // Внутренний компонент с доступом к контексту синхронизации
-const GameInner: React.FC<{ isRecovering: boolean }> = ({ isRecovering }) => {
+const GameInner: React.FC<{
+  isRecovering: boolean;
+  hasSession: boolean;
+  onRetryRecovery: () => Promise<boolean>;
+}> = ({ isRecovering, hasSession, onRetryRecovery }) => {
   const navigate = useNavigate();
   const { currentRoom, gameState, leaveRoom, localPlayerId } = useGameStore();
   const { leaveRoom: leaveRoomFromDb } = useMultiplayer();
   const isExitingRef = useRef(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const hasTriedDbRecoveryRef = useRef(false);
 
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
@@ -55,23 +60,41 @@ const GameInner: React.FC<{ isRecovering: boolean }> = ({ isRecovering }) => {
     }
   }, [isHost, gameState, roomId, isRecovering, handleRestoreFromDb]);
 
+  // Следим за online/offline чтобы UI мог предложить переподключение без refresh
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
   // Редирект при отсутствии комнаты
   useEffect(() => {
     if (isRecovering) return;
+
     if (!currentRoom) {
+      // Если есть сохранённая сессия — остаёмся на /game и даём кнопку переподключения
+      if (hasSession) return;
       if (isExitingRef.current) return;
       navigate('/');
       return;
     }
+
     if (currentRoom.status === 'waiting') {
       navigate('/waiting');
       return;
     }
-  }, [currentRoom, navigate, isRecovering]);
+  }, [currentRoom, navigate, isRecovering, hasSession]);
 
   // Определяем состояния для оверлеев
   const showRecoveringOverlay = isRecovering || isLoadingFromDb;
-  const showWaitingForStateOverlay = !showRecoveringOverlay && !gameState;
+  const showSessionReconnectOverlay = !showRecoveringOverlay && !currentRoom && hasSession;
+  const showWaitingForStateOverlay = !showRecoveringOverlay && !!currentRoom && !gameState;
   const showGameBoard = !showRecoveringOverlay && !!gameState;
 
   return (
@@ -92,6 +115,36 @@ const GameInner: React.FC<{ isRecovering: boolean }> = ({ isRecovering }) => {
             <p className="text-sm text-muted-foreground mt-2">
               Подключаемся к игре...
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Оверлей переподключения (когда есть сохранённая сессия, но комнаты ещё нет в store) */}
+      {showSessionReconnectOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/90 z-50">
+          <div className="text-center max-w-md">
+            <div className="text-4xl mb-4">🚂</div>
+            <p className="font-display text-lg text-foreground">Возвращаемся в игру…</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {isOnline
+                ? 'Нажмите кнопку, чтобы переподключиться к последней комнате.'
+                : 'Нет интернета. Как появится связь — нажмите «Повторить подключение».'}
+            </p>
+
+            <div className="flex flex-col gap-3 mt-6">
+              <button
+                className="btn-vintage rounded-lg px-6 py-3 disabled:opacity-50"
+                disabled={!isOnline}
+                onClick={() => {
+                  void onRetryRecovery();
+                }}
+              >
+                🔄 Повторить подключение
+              </button>
+              <button className="btn-vintage rounded-lg px-6 py-3" onClick={handleExitToHome}>
+                ← На главную
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -139,14 +192,12 @@ const GameInner: React.FC<{ isRecovering: boolean }> = ({ isRecovering }) => {
 const GameWithRecovery = () => {
   const { currentRoom } = useGameStore();
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
-  
-  // useSessionRecovery вызывается здесь — ВНЕ GameSyncProvider
-  // Это критично для стабильности порядка хуков
-  const { isRecovering } = useSessionRecovery();
+
+  const { isRecovering, attemptRecovery, hasSession } = useSessionRecovery();
 
   return (
     <GameSyncProvider roomId={roomId}>
-      <GameInner isRecovering={isRecovering} />
+      <GameInner isRecovering={isRecovering} hasSession={hasSession} onRetryRecovery={attemptRecovery} />
     </GameSyncProvider>
   );
 };
