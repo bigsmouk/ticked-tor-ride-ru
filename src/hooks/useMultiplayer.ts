@@ -512,6 +512,29 @@ export const useMultiplayer = () => {
     }
   }, [playerId, user, profile, setCurrentRoom, setView]);
 
+  // Кикнуть игрока (только для хоста в комнате ожидания)
+  const kickPlayer = useCallback(async (roomId: string, targetPlayerId: string) => {
+    if (!playerId || !user) return false;
+    
+    try {
+      // Удаляем игрока из комнаты
+      const { error } = await supabase
+        .from('room_players')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('player_id', targetPlayerId);
+
+      if (error) throw error;
+
+      toast.success('Игрок исключён из комнаты');
+      return true;
+    } catch (err: any) {
+      console.error('Error kicking player:', err);
+      toast.error('Ошибка при исключении игрока');
+      return false;
+    }
+  }, [playerId, user]);
+
   return {
     playerId,
     isLoading,
@@ -523,6 +546,7 @@ export const useMultiplayer = () => {
     fetchPublicRooms,
     leaveRoom,
     startGame,
+    kickPlayer,
   };
 };
 
