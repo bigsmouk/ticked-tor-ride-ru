@@ -60,8 +60,9 @@ export const GameOverModal: React.FC = () => {
           const isCurrentUser = profile && player.name === profile.display_name;
           
           // Если игрок остался последним из-за выхода противника - он победитель
+          // Но если игра не засчитана (player_left), помечаем placement = -1
           const isWinner = isPlayerLeft 
-            ? (gameState.players.length === 1 || index === 0)
+            ? false  // Если кто-то вышел - победителей нет, игра не засчитана
             : player.id === gameState.winnerId;
           
           return {
@@ -76,7 +77,7 @@ export const GameOverModal: React.FC = () => {
             tickets_completed: (finalScore as any)?.completedTickets || 0,
             tickets_failed: (finalScore as any)?.failedTickets || 0,
             is_winner: isWinner,
-            placement: index + 1,
+            placement: isPlayerLeft ? -1 : index + 1, // -1 = игра не засчитана (кто-то вышел)
           };
         });
 

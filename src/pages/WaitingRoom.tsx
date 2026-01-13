@@ -408,26 +408,48 @@ const WaitingRoom = () => {
               <div className="space-y-3 p-1">
                 {matches.slice(0, 10).map((match) => {
                   const playerResult = match.match_players.find(p => p.profile_id === playerProfileId);
+                  const placement = playerResult?.placement || 1;
+                  const isNotCounted = placement <= 0;
+                  
+                  const getPlacementDisplay = () => {
+                    if (placement === 0) return { emoji: '🚪', text: 'Покинул' };
+                    if (placement === -1) return { emoji: '⚠️', text: 'Не засчитано' };
+                    if (playerResult?.is_winner) return { emoji: '🏆', text: null };
+                    return { emoji: `#${placement}`, text: null };
+                  };
+                  
+                  const display = getPlacementDisplay();
+                  
                   return (
                     <div
                       key={match.id}
                       className={`p-3 rounded-lg border ${
-                        playerResult?.is_winner
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-amber-50 border-amber-200'
+                        isNotCounted
+                          ? 'bg-gray-50 border-gray-300'
+                          : playerResult?.is_winner
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-amber-50 border-amber-200'
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="font-medium text-amber-900">
-                            {playerResult?.is_winner ? '🏆' : `#${playerResult?.placement}`} {match.room_name}
+                          <div className="font-medium text-amber-900 flex items-center gap-1">
+                            {display.emoji}
+                            {display.text && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                placement === 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {display.text}
+                              </span>
+                            )}
+                            <span className="ml-1">{match.room_name}</span>
                           </div>
                           <div className="text-xs text-amber-600">
                             {match.player_count} игроков
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-amber-900">
+                          <div className={`text-lg font-bold ${isNotCounted ? 'text-gray-500' : 'text-amber-900'}`}>
                             {playerResult?.final_score} очков
                           </div>
                         </div>
