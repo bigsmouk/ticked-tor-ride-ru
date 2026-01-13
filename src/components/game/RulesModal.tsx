@@ -101,7 +101,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                     <span className="text-2xl">🎫</span>
                     <div>
                       <strong className="text-foreground">3 карты назначений</strong>
-                      <p className="text-xs text-muted-foreground">Оставьте минимум 2 карты</p>
+                      <p className="text-xs text-muted-foreground">Оставьте минимум 1 карту</p>
                     </div>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-start gap-3">
