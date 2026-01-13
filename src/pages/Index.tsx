@@ -442,11 +442,11 @@ const Index = () => {
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-6 text-center border-t-4 border-gold/30 bg-primary/5 relative z-10 space-y-2">
-        <p className="text-foreground font-display">
-          Создатель: <strong className="text-gold">Симинеев Тимур</strong>
+      <footer className="py-6 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 space-y-2">
+        <p className="text-primary-foreground font-display text-lg">
+          Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-primary-foreground/80">
           Вдохновлено настольной игрой <span className="italic">Ticket to Ride: Europe</span>
         </p>
       </footer>
