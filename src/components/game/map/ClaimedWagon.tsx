@@ -1,22 +1,22 @@
 import React, { memo } from 'react';
 import { PlayerColor } from '@/types/game';
 
-// Player color to wagon fill color (matching original board style)
+// Bright, saturated wagon colors for maximum visibility
 const WAGON_FILL_MAP: Record<PlayerColor, string> = {
-  red: '#c92a2a',
-  blue: '#1971c2',
-  green: '#2b8a3e',
-  yellow: '#f59f00',
-  black: '#343a40',
+  red: '#e03131',
+  blue: '#228be6',
+  green: '#40c057',
+  yellow: '#fab005',
+  black: '#495057',
 };
 
-// Lighter stroke for contrast
+// Darker stroke for depth
 const WAGON_STROKE_MAP: Record<PlayerColor, string> = {
-  red: '#862e2e',
-  blue: '#1864ab',
-  green: '#1e7832',
-  yellow: '#c27803',
-  black: '#212529',
+  red: '#c92a2a',
+  blue: '#1971c2',
+  green: '#2f9e44',
+  yellow: '#f59f00',
+  black: '#343a40',
 };
 
 interface ClaimedWagonProps {
@@ -26,39 +26,81 @@ interface ClaimedWagonProps {
   playerColor: string;
 }
 
-// Simple wagon rectangle like the original board game
+// Highly visible wagon with white outline and shadow
 export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor }) => {
   const color = playerColor as PlayerColor;
   const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
   const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
   
-  // Wagon dimensions - fills the slot
-  const width = 28;
-  const height = 10;
+  // Wagon dimensions
+  const width = 30;
+  const height = 12;
   
   return (
     <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
-      {/* Main wagon body - simple rounded rectangle */}
+      {/* Drop shadow for depth */}
+      <rect
+        x={-width / 2 + 1}
+        y={-height / 2 + 1.5}
+        width={width}
+        height={height}
+        rx={2.5}
+        ry={2.5}
+        fill="rgba(0,0,0,0.4)"
+      />
+      
+      {/* White outline border for contrast against any background */}
+      <rect
+        x={-width / 2 - 1.5}
+        y={-height / 2 - 1.5}
+        width={width + 3}
+        height={height + 3}
+        rx={3.5}
+        ry={3.5}
+        fill="white"
+        stroke="rgba(0,0,0,0.3)"
+        strokeWidth={0.5}
+      />
+      
+      {/* Main wagon body */}
       <rect
         x={-width / 2}
         y={-height / 2}
         width={width}
         height={height}
-        rx={2}
-        ry={2}
+        rx={2.5}
+        ry={2.5}
         fill={fillColor}
         stroke={strokeColor}
         strokeWidth={1.5}
       />
       
-      {/* Simple highlight line at top for 3D effect */}
+      {/* Top highlight for 3D effect */}
       <rect
-        x={-width / 2 + 2}
-        y={-height / 2 + 1}
-        width={width - 4}
-        height={2}
-        rx={1}
-        fill="rgba(255,255,255,0.3)"
+        x={-width / 2 + 3}
+        y={-height / 2 + 2}
+        width={width - 6}
+        height={3}
+        rx={1.5}
+        fill="rgba(255,255,255,0.4)"
+      />
+      
+      {/* Small wheel indicators at ends */}
+      <circle
+        cx={-width / 2 + 5}
+        cy={height / 2 - 1}
+        r={2}
+        fill={strokeColor}
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth={0.5}
+      />
+      <circle
+        cx={width / 2 - 5}
+        cy={height / 2 - 1}
+        r={2}
+        fill={strokeColor}
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth={0.5}
       />
     </g>
   );
