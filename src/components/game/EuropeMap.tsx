@@ -312,52 +312,57 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 onClick={() => !isClaimed && onRouteClick?.(route.id)}
               >
                 {isClaimed && playerColor ? (
-                  // Claimed route - show as dashed line in player color
+                  // Claimed route - show player wagons on each segment
                   <>
-                    {/* Outer glow/shadow for visibility */}
+                    {/* Dark outline for contrast */}
                     <path
                       d={path}
-                      stroke="hsl(0 0% 0% / 0.4)"
-                      strokeWidth={12}
+                      stroke="hsl(0 0% 0% / 0.5)"
+                      strokeWidth={14}
                       fill="none"
                       strokeLinecap="round"
                     />
-                    {/* White outline for contrast */}
-                    <path
-                      d={path}
-                      stroke="hsl(0 0% 100% / 0.8)"
-                      strokeWidth={10}
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    {/* Player colored dashed line */}
-                    <path
-                      d={path}
-                      stroke={playerColor}
-                      strokeWidth={6}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray="12 6"
-                      filter="url(#claimed-glow)"
-                      className="claimed-route-line"
-                    />
-                    {/* Start and end markers */}
-                    <circle
-                      cx={startPos.x}
-                      cy={startPos.y}
-                      r={5}
-                      fill={playerColor}
-                      stroke="white"
-                      strokeWidth={2}
-                    />
-                    <circle
-                      cx={endPos.x}
-                      cy={endPos.y}
-                      r={5}
-                      fill={playerColor}
-                      stroke="white"
-                      strokeWidth={2}
-                    />
+                    {/* Individual claimed wagon cars */}
+                    {segments.map((seg, i) => (
+                      <g 
+                        key={i} 
+                        transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
+                        className="claimed-wagon"
+                      >
+                        {/* Wagon body shadow */}
+                        <rect
+                          x={-13}
+                          y={-4}
+                          width={26}
+                          height={12}
+                          rx={3}
+                          fill="hsl(0 0% 0% / 0.4)"
+                        />
+                        {/* Wagon body */}
+                        <rect
+                          x={-12}
+                          y={-6}
+                          width={24}
+                          height={12}
+                          rx={3}
+                          fill={playerColor}
+                          stroke="hsl(0 0% 100% / 0.9)"
+                          strokeWidth={1.5}
+                        />
+                        {/* Wagon window/detail stripe */}
+                        <rect
+                          x={-10}
+                          y={-3}
+                          width={20}
+                          height={3}
+                          rx={1}
+                          fill="hsl(0 0% 100% / 0.4)"
+                        />
+                        {/* Wheels */}
+                        <circle cx={-6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
+                        <circle cx={6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
+                      </g>
+                    ))}
                   </>
                 ) : (
                   // Unclaimed route - show wagon slots
