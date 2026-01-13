@@ -62,7 +62,8 @@ export const RouteSegment = memo<RouteSegmentProps>(({
   const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
   const isClaimed = !!route.claimedBy;
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isClaimed && onClick) {
       onClick();
     }
