@@ -36,14 +36,33 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
 
   // Сохраняем историю для игрока который выходит
   const saveMatchHistoryForLeavingPlayer = async () => {
-    if (!gameState || !currentRoom || !profile) return;
+    console.log('[LeaveGame] Starting save...', { 
+      hasGameState: !!gameState, 
+      hasRoom: !!currentRoom, 
+      hasProfile: !!profile,
+      turnNumber: gameState?.turnNumber,
+      phase: gameState?.phase
+    });
     
-    // Если игра ещё не началась (нет ходов) - не сохраняем
-    if (gameState.turnNumber < 1) return;
+    if (!gameState || !currentRoom) {
+      console.log('[LeaveGame] No gameState or currentRoom, skipping');
+      return;
+    }
+    
+    // Сохраняем только если игра началась (фаза playing или finished)
+    if (gameState.phase !== 'playing' && gameState.phase !== 'finished') {
+      console.log('[LeaveGame] Game not in playing/finished phase, skipping');
+      return;
+    }
     
     try {
       const localPlayer = gameState.players.find(p => p.id === localPlayerId);
-      if (!localPlayer) return;
+      if (!localPlayer) {
+        console.log('[LeaveGame] Local player not found');
+        return;
+      }
+
+      console.log('[LeaveGame] Saving match for player:', localPlayer.name);
 
       // Создаём запись матча для вышедшего игрока
       const { data: matchData, error: matchError } = await supabase
@@ -66,12 +85,15 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
         return;
       }
 
-      // Сохраняем только запись для текущего игрока
+      console.log('[LeaveGame] Match created:', matchData.id);
+
+      // Сохраняем запись для текущего игрока
+      // Используем profile.id если есть, иначе null
       const { error: playerError } = await supabase
         .from('match_players')
         .insert({
           match_id: matchData.id,
-          profile_id: profile.id,
+          profile_id: profile?.id || null,
           player_name: localPlayer.name,
           player_color: localPlayer.color,
           final_score: localPlayer.score,
@@ -87,7 +109,7 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
       if (playerError) {
         console.error('[LeaveGame] Error saving player record:', playerError);
       } else {
-        console.log('[LeaveGame] Match history saved for leaving player');
+        console.log('[LeaveGame] Match history saved successfully for:', localPlayer.name);
       }
     } catch (error) {
       console.error('[LeaveGame] Error:', error);
