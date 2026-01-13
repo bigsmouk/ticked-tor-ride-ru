@@ -1,65 +1,67 @@
 import React, { memo } from 'react';
 import { PlayerColor } from '@/types/game';
 
-// Bright, saturated wagon colors for maximum visibility
+// Vibrant wagon fill colors - bright and saturated
 const WAGON_FILL_MAP: Record<PlayerColor, string> = {
-  red: '#e03131',
-  blue: '#228be6',
-  green: '#40c057',
-  yellow: '#fab005',
-  black: '#495057',
+  red: '#FF2D2D',
+  blue: '#2196F3',
+  green: '#4CAF50',
+  yellow: '#FFEB3B',
+  black: '#424242',
 };
 
-// Darker stroke for depth
+// Gradient top colors for 3D effect
+const WAGON_TOP_MAP: Record<PlayerColor, string> = {
+  red: '#FF6B6B',
+  blue: '#64B5F6',
+  green: '#81C784',
+  yellow: '#FFF176',
+  black: '#757575',
+};
+
+// Dark stroke colors for depth
 const WAGON_STROKE_MAP: Record<PlayerColor, string> = {
-  red: '#c92a2a',
-  blue: '#1971c2',
-  green: '#2f9e44',
-  yellow: '#f59f00',
-  black: '#343a40',
+  red: '#B71C1C',
+  blue: '#1565C0',
+  green: '#2E7D32',
+  yellow: '#F9A825',
+  black: '#212121',
 };
 
-// Text color for contrast
+// Text/icon color for contrast
 const TEXT_COLOR_MAP: Record<PlayerColor, string> = {
-  red: '#fff',
-  blue: '#fff',
-  green: '#fff',
-  yellow: '#1a1a1a',
-  black: '#fff',
-};
-
-// Short label for each color
-const LABEL_MAP: Record<PlayerColor, string> = {
-  red: 'К',
-  blue: 'С',
-  green: 'З',
-  yellow: 'Ж',
-  black: 'Ч',
+  red: '#FFFFFF',
+  blue: '#FFFFFF',
+  green: '#FFFFFF',
+  yellow: '#1A1A1A',
+  black: '#FFFFFF',
 };
 
 interface ClaimedWagonProps {
   x: number;
   y: number;
   angle: number;
-  playerColor: string;
+  playerColor: PlayerColor;
   playerName?: string;
   animationIndex?: number;
 }
 
-// Compact wagon with contrasting text label
+// Vibrant 3D wagon with gradient and highlights
 export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, playerName, animationIndex = 0 }) => {
-  const color = playerColor as PlayerColor;
-  const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
-  const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
-  const textColor = TEXT_COLOR_MAP[color] || '#fff';
-  const label = LABEL_MAP[color] || '?';
+  const fillColor = WAGON_FILL_MAP[playerColor] || '#6b7280';
+  const topColor = WAGON_TOP_MAP[playerColor] || '#9ca3af';
+  const strokeColor = WAGON_STROKE_MAP[playerColor] || '#4b5563';
+  const textColor = TEXT_COLOR_MAP[playerColor] || '#fff';
   
-  // Smaller wagon dimensions
-  const width = 26;
+  // Wagon dimensions
+  const width = 28;
   const height = 12;
   
   // Animation class with staggered delay
   const animationClass = `wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`;
+  
+  // Generate unique gradient ID
+  const gradientId = `wagon-grad-${playerColor}-${x}-${y}`;
   
   return (
     <g 
@@ -67,31 +69,38 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
       className={animationClass}
       style={{ opacity: 0 }}
     >
+      {/* Gradient definition */}
+      <defs>
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={topColor} />
+          <stop offset="50%" stopColor={fillColor} />
+          <stop offset="100%" stopColor={strokeColor} />
+        </linearGradient>
+      </defs>
+      
       {/* Drop shadow */}
       <rect
-        x={-width / 2 + 1}
-        y={-height / 2 + 1}
+        x={-width / 2 + 1.5}
+        y={-height / 2 + 1.5}
         width={width}
         height={height}
         rx={2}
         ry={2}
-        fill="rgba(0,0,0,0.35)"
+        fill="rgba(0,0,0,0.5)"
       />
       
       {/* White outline for contrast */}
       <rect
-        x={-width / 2 - 1}
-        y={-height / 2 - 1}
-        width={width + 2}
-        height={height + 2}
+        x={-width / 2 - 1.5}
+        y={-height / 2 - 1.5}
+        width={width + 3}
+        height={height + 3}
         rx={3}
         ry={3}
         fill="white"
-        stroke="rgba(0,0,0,0.2)"
-        strokeWidth={0.5}
       />
       
-      {/* Main wagon body */}
+      {/* Main wagon body with gradient */}
       <rect
         x={-width / 2}
         y={-height / 2}
@@ -99,28 +108,33 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
         height={height}
         rx={2}
         ry={2}
-        fill={fillColor}
+        fill={`url(#${gradientId})`}
         stroke={strokeColor}
-        strokeWidth={1.2}
+        strokeWidth={1.5}
       />
       
-      {/* Contrasting text label */}
-      <text
-        x={0}
-        y={0.5}
-        textAnchor="middle"
-        dominantBaseline="middle"
+      {/* Top shine effect */}
+      <rect
+        x={-width / 2 + 2}
+        y={-height / 2 + 1}
+        width={width - 4}
+        height={3}
+        rx={1}
+        fill="rgba(255,255,255,0.5)"
+      />
+      
+      {/* Center icon/symbol */}
+      <circle
+        cx={0}
+        cy={0}
+        r={3}
         fill={textColor}
-        fontSize={8}
-        fontWeight="bold"
-        fontFamily="Arial, sans-serif"
-        style={{ 
-          textShadow: color === 'yellow' ? 'none' : '0 1px 1px rgba(0,0,0,0.4)',
-          pointerEvents: 'none'
-        }}
-      >
-        {label}
-      </text>
+        opacity={0.9}
+      />
+      
+      {/* Wheel indicators */}
+      <circle cx={-width / 2 + 4} cy={height / 2 - 1} r={2} fill={strokeColor} />
+      <circle cx={width / 2 - 4} cy={height / 2 - 1} r={2} fill={strokeColor} />
       
       {/* Tooltip on hover */}
       {playerName && <title>🚃 {playerName}</title>}
