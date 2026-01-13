@@ -33,9 +33,9 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
   const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
   const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
   
-  // Wagon dimensions
-  const width = 30;
-  const height = 12;
+  // Wagon dimensions - larger for better visibility
+  const width = 34;
+  const height = 14;
   
   // Animation class with staggered delay
   const animationClass = `wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`;
