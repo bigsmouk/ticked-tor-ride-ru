@@ -35,6 +35,41 @@ const WaitingRoom = () => {
   // Подписка на realtime обновления комнаты
   useRoomSubscription(currentRoom?.id || null);
 
+  // Подписка на кик игрока - слушаем DELETE из room_players
+  useEffect(() => {
+    if (!currentRoom?.id || !localPlayerId) return;
+
+    const channel = supabase
+      .channel(`kick-listener-${currentRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'room_players',
+          filter: `room_id=eq.${currentRoom.id}`,
+        },
+        (payload) => {
+          // Проверяем, что удалили именно нас
+          const deletedPlayerId = (payload.old as { player_id?: string })?.player_id;
+          if (deletedPlayerId === localPlayerId) {
+            // Нас кикнули!
+            toast.error('Вы были исключены из комнаты хостом', {
+              duration: 5000,
+              icon: '🚫',
+            });
+            leaveRoom(); // Очищаем локальное состояние
+            navigate('/');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentRoom?.id, localPlayerId, navigate, leaveRoom]);
+
   // Редирект если игра началась
   useEffect(() => {
     if (currentRoom?.status === 'playing') {
