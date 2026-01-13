@@ -7,11 +7,11 @@ import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { GameSyncProvider, useGameSyncContext } from '@/contexts/gameSyncContext';
 import { AssetPreloader } from '@/components/game/AssetPreloader';
 
-const GameInner = () => {
+// Внутренний компонент с доступом к контексту синхронизации
+const GameInner: React.FC<{ isRecovering: boolean }> = ({ isRecovering }) => {
   const navigate = useNavigate();
   const { currentRoom, gameState, leaveRoom, localPlayerId } = useGameStore();
   const { leaveRoom: leaveRoomFromDb } = useMultiplayer();
-  const { isRecovering } = useSessionRecovery();
   const isExitingRef = useRef(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
@@ -19,30 +19,24 @@ const GameInner = () => {
 
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
 
-  // Доступ к одному общему каналу синхронизации (включая экран загрузки)
+  // Доступ к контексту синхронизации
   const { requestSync, isHost, restoreFromDb } = useGameSyncContext();
 
   const handleExitToHome = useCallback(async () => {
     isExitingRef.current = true;
-
-    // Уходим на главную с флагом, чтобы авто-восстановление не зацикливало пользователя
     navigate('/?noRecover=1');
-
-    // Чистим локальное состояние/сессию и (по возможности) выходим из комнаты в базе
     if (roomId) {
       void leaveRoomFromDb(roomId);
     }
     leaveRoom();
   }, [navigate, roomId, leaveRoomFromDb, leaveRoom]);
 
-  // Ручной запрос состояния (без создания временных каналов)
   const handleRequestSync = useCallback(() => {
     if (!roomId || isHost) return;
     setRetryCount(prev => prev + 1);
     requestSync();
   }, [roomId, isHost, requestSync]);
 
-  // Попытка восстановить из БД (для хоста)
   const handleRestoreFromDb = useCallback(async () => {
     if (!roomId) return;
     setIsLoadingFromDb(true);
@@ -61,11 +55,9 @@ const GameInner = () => {
     }
   }, [isHost, gameState, roomId, isRecovering, handleRestoreFromDb]);
 
+  // Редирект при отсутствии комнаты
   useEffect(() => {
-    // Если идёт восстановление — ждём
     if (isRecovering) return;
-
-    // Redirect if no room or game not started
     if (!currentRoom) {
       if (isExitingRef.current) return;
       navigate('/');
@@ -143,15 +135,26 @@ const GameInner = () => {
   );
 };
 
-const Game = () => {
+// Обёртка для recovery — вызывается ДО провайдера для стабильности хуков
+const GameWithRecovery = () => {
   const { currentRoom } = useGameStore();
   const roomId = useMemo(() => currentRoom?.id || null, [currentRoom?.id]);
+  
+  // useSessionRecovery вызывается здесь — ВНЕ GameSyncProvider
+  // Это критично для стабильности порядка хуков
+  const { isRecovering } = useSessionRecovery();
 
   return (
+    <GameSyncProvider roomId={roomId}>
+      <GameInner isRecovering={isRecovering} />
+    </GameSyncProvider>
+  );
+};
+
+const Game = () => {
+  return (
     <AssetPreloader>
-      <GameSyncProvider roomId={roomId}>
-        <GameInner />
-      </GameSyncProvider>
+      <GameWithRecovery />
     </AssetPreloader>
   );
 };
