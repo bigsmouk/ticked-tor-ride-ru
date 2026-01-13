@@ -5,6 +5,7 @@ import { PlayerHand } from '@/components/game/PlayerHand';
 import { CardDeckArea } from '@/components/game/CardDeckArea';
 import { ActionPanel } from '@/components/game/ActionPanel';
 import { DestinationPickerModal } from '@/components/game/DestinationPickerModal';
+import { StationBuilderModal } from '@/components/game/StationBuilderModal';
 import { GameOverModal } from '@/components/game/GameOverModal';
 import { GameLog } from '@/components/game/GameLog';
 import { ConnectionIndicator } from '@/components/game/ConnectionIndicator';
@@ -26,7 +27,8 @@ export const GameBoard: React.FC = () => {
     claimRoute, attemptClaimTunnel, confirmTunnelClaim, cancelTunnelClaim, canPayTunnelExtra,
     canClaimRoute, drawDestinations, keepDestinations, 
     getRouteCardRequirement, cancelDestinationDraw, addLog, getClaimRouteError, 
-    initiateKickVote, castKickVote, resolveKickVote, cancelKickVote 
+    initiateKickVote, castKickVote, resolveKickVote, cancelKickVote,
+    startBuildStation, buildStation, cancelBuildStation, getStationCost
   } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
@@ -34,6 +36,7 @@ export const GameBoard: React.FC = () => {
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showStationBuilder, setShowStationBuilder] = useState(false);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
   // Получаем функцию синхронизации и статус подключения (из провайдера, один канал на страницу)
@@ -319,9 +322,38 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  // Station building handlers
+  const handleStartBuildStation = () => {
+    setShowStationBuilder(true);
+    if (isHost) {
+      startBuildStation();
+    } else {
+      sendActionToHost({ type: 'startBuildStation' });
+    }
+  };
+
+  const handleBuildStation = (cityId: string, cardsUsed: TrainCardType[]) => {
+    if (isHost) {
+      buildStation(cityId, cardsUsed);
+    } else {
+      sendActionToHost({ type: 'buildStation', cityId, cardsUsed });
+    }
+    setShowStationBuilder(false);
+  };
+
+  const handleCancelBuildStation = () => {
+    if (isHost) {
+      cancelBuildStation();
+    } else {
+      sendActionToHost({ type: 'cancelBuildStation' });
+    }
+    setShowStationBuilder(false);
+  };
+
   // Получаем требования выбранного маршрута
   const routeRequirement = selectedRoute ? getRouteCardRequirement(selectedRoute) : null;
   const claimError = selectedRoute ? getClaimRouteError(selectedRoute) : null;
+  const stationCost = getStationCost();
 
   const isSoloMode = currentRoom?.isSoloMode;
 
@@ -412,11 +444,13 @@ export const GameBoard: React.FC = () => {
               onDrawCards={handleStartDrawingCards}
               onDrawDestinations={handleDrawDestinations}
               onClaimRoute={handleClaimRoute}
-              onCancelAction={handleCancelDrawingCards}
+              onCancelAction={gameState.currentAction === 'buildStation' ? handleCancelBuildStation : handleCancelDrawingCards}
+              onBuildStation={handleStartBuildStation}
               trainsRemaining={localPlayer?.trainsRemaining || 0}
               stationsRemaining={localPlayer?.stationsRemaining || 0}
               routeRequirement={routeRequirement}
               claimError={claimError}
+              stationCost={stationCost}
             />
           </div>
         </main>
@@ -458,6 +492,16 @@ export const GameBoard: React.FC = () => {
           minKeep={1}
           onConfirm={handleKeepDestinations}
           onCancel={handleCancelDestinations}
+        />
+      )}
+      
+      {/* Station builder modal */}
+      {showStationBuilder && gameState.currentAction === 'buildStation' && (
+        <StationBuilderModal
+          cities={gameState.cities}
+          cost={stationCost}
+          onConfirm={handleBuildStation}
+          onCancel={handleCancelBuildStation}
         />
       )}
       
