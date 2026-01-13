@@ -36,13 +36,20 @@ const WaitingRoom = () => {
   useRoomSubscription(currentRoom?.id || null);
 
   // Подписка на кик игрока - слушаем DELETE из room_players
+  // Используем ref чтобы callback имел актуальный localPlayerId
+  const localPlayerIdRef = React.useRef(localPlayerId);
+  localPlayerIdRef.current = localPlayerId;
+  
   useEffect(() => {
-    if (!currentRoom?.id || !localPlayerId) return;
+    if (!currentRoom?.id) {
+      console.log('[KickListener] No room id yet, waiting...');
+      return;
+    }
 
     console.log('[KickListener] Setting up for room:', currentRoom.id, 'player:', localPlayerId);
 
     const channel = supabase
-      .channel(`kick-listener-${currentRoom.id}`)
+      .channel(`kick-listener-${currentRoom.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -53,11 +60,14 @@ const WaitingRoom = () => {
         },
         (payload) => {
           console.log('[KickListener] DELETE received:', payload);
+          console.log('[KickListener] payload.old:', JSON.stringify(payload.old));
+          
           // Проверяем, что удалили именно нас
           const deletedPlayerId = (payload.old as { player_id?: string })?.player_id;
-          console.log('[KickListener] Deleted player_id:', deletedPlayerId, 'local:', localPlayerId);
+          const currentLocalId = localPlayerIdRef.current;
+          console.log('[KickListener] Deleted player_id:', deletedPlayerId, 'local:', currentLocalId);
           
-          if (deletedPlayerId === localPlayerId) {
+          if (deletedPlayerId && deletedPlayerId === currentLocalId) {
             // Нас кикнули!
             console.log('[KickListener] WE WERE KICKED!');
             toast.error('Вы были исключены из комнаты хостом', {
@@ -74,9 +84,10 @@ const WaitingRoom = () => {
       });
 
     return () => {
+      console.log('[KickListener] Cleaning up channel');
       supabase.removeChannel(channel);
     };
-  }, [currentRoom?.id, localPlayerId, navigate, leaveRoom]);
+  }, [currentRoom?.id, navigate, leaveRoom]);
 
   // Редирект если игра началась
   useEffect(() => {
