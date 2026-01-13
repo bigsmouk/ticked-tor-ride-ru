@@ -92,12 +92,13 @@ export const GameOverModal: React.FC = () => {
         )}
         
         <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-7 gap-1 text-xs font-semibold text-muted-foreground border-b pb-2">
+          <div className="grid grid-cols-8 gap-1 text-xs font-semibold text-muted-foreground border-b pb-2">
             <span>Место</span>
             <span>Игрок</span>
             <span className="text-right">Маршруты</span>
             <span className="text-right text-green-600">+Билеты</span>
             <span className="text-right text-red-600">−Штраф</span>
+            <span className="text-right text-purple-600">🏛️</span>
             <span className="text-right text-blue-600">Путь</span>
             <span className="text-right font-bold">Итого</span>
           </div>
@@ -105,11 +106,17 @@ export const GameOverModal: React.FC = () => {
           {sortedPlayers.map((player, index) => {
             const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
             const isWinner = player.id === gameState.winnerId;
+            const routePoints = (finalScore as any)?.routePoints ?? player.score;
+            const ticketBonus = (finalScore as any)?.ticketBonus ?? 0;
+            const ticketPenalty = (finalScore as any)?.ticketPenalty ?? 0;
+            const longestPathBonus = (finalScore as any)?.longestPathBonus ?? 0;
+            const unusedStationsBonus = (finalScore as any)?.unusedStationsBonus ?? 0;
+            const longestPath = (finalScore as any)?.longestPath ?? 0;
             
             return (
               <div 
                 key={player.id}
-                className={`grid grid-cols-7 gap-1 items-center p-2 rounded text-sm ${
+                className={`grid grid-cols-8 gap-1 items-center p-2 rounded text-sm ${
                   isWinner ? 'bg-gold/20 border border-gold' : 'bg-muted/30'
                 }`}
               >
@@ -117,20 +124,15 @@ export const GameOverModal: React.FC = () => {
                   {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
                 </span>
                 <span className="font-medium truncate">{player.name}</span>
-                <span className="text-right">
-                  {(finalScore as any)?.ticketBonus !== undefined 
-                    ? player.score - ((finalScore as any)?.ticketBonus || 0) + ((finalScore as any)?.ticketPenalty || 0) - ((finalScore as any)?.longestPathBonus || 0)
-                    : '—'}
-                </span>
-                <span className="text-right text-green-600">
-                  +{(finalScore as any)?.ticketBonus || 0}
-                </span>
-                <span className="text-right text-red-600">
-                  −{(finalScore as any)?.ticketPenalty || 0}
+                <span className="text-right">{routePoints}</span>
+                <span className="text-right text-green-600">+{ticketBonus}</span>
+                <span className="text-right text-red-600">−{ticketPenalty}</span>
+                <span className="text-right text-purple-600">
+                  {unusedStationsBonus > 0 ? `+${unusedStationsBonus}` : '0'}
                 </span>
                 <span className="text-right text-blue-600">
-                  {(finalScore as any)?.longestPathBonus > 0 ? `+${(finalScore as any)?.longestPathBonus}` : '0'}
-                  <span className="text-muted-foreground text-xs ml-1">({finalScore?.longestPath || 0})</span>
+                  {longestPathBonus > 0 ? `+${longestPathBonus}` : '0'}
+                  <span className="text-muted-foreground text-xs ml-1">({longestPath})</span>
                 </span>
                 <span className="text-right font-bold text-lg">{player.score}</span>
               </div>
@@ -138,17 +140,30 @@ export const GameOverModal: React.FC = () => {
           })}
         </div>
         
-        {/* Destination tickets breakdown */}
+        {/* Destination tickets and stations breakdown */}
         <div className="mb-4 space-y-2">
-          <h3 className="font-semibold text-sm">Детали маршрутных билетов:</h3>
+          <h3 className="font-semibold text-sm">Детали маршрутных билетов и станций:</h3>
           {sortedPlayers.map(player => {
             const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
+            const playerStations = gameState.placedStations?.filter(s => s.playerId === player.id) || [];
+            const stationsUsed = 3 - player.stationsRemaining;
+            
             return (
               <div key={player.id} className="text-xs bg-muted/20 p-2 rounded">
                 <span className="font-medium">{player.name}:</span>
                 <span className="ml-2">
-                  Выполнено: {(finalScore as any)?.completedTickets || 0}, 
-                  Не выполнено: {(finalScore as any)?.failedTickets || 0}
+                  Билеты — ✓{(finalScore as any)?.completedTickets || 0}, ✗{(finalScore as any)?.failedTickets || 0}
+                </span>
+                <span className="ml-3 text-purple-600">
+                  🏛️ Станции: {stationsUsed}/3 построено
+                  {playerStations.length > 0 && (
+                    <span className="text-muted-foreground ml-1">
+                      ({playerStations.map(s => {
+                        const city = gameState.cities?.find(c => c.id === s.cityId);
+                        return city?.name || s.cityId;
+                      }).join(', ')})
+                    </span>
+                  )}
                 </span>
               </div>
             );
@@ -160,6 +175,7 @@ export const GameOverModal: React.FC = () => {
           <p>• Очки за построенные маршруты (1-8 вагонов)</p>
           <p>• Выполненные маршрутные билеты: +очки</p>
           <p>• Невыполненные маршрутные билеты: −очки</p>
+          <p>• Неиспользованные станции (🏛️): +4 за каждую</p>
           <p>• Бонус за самый длинный непрерывный путь: +10 очков</p>
           <p className="text-muted-foreground/70 italic">При равенстве очков побеждает игрок с большим числом выполненных билетов, затем — с самым длинным путём</p>
         </div>
