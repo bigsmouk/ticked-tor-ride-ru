@@ -67,7 +67,6 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
     <g 
       transform={`translate(${x}, ${y}) rotate(${angle})`}
       className={animationClass}
-      style={{ opacity: 0 }}
     >
       {/* Gradient definition */}
       <defs>
