@@ -66,7 +66,18 @@ export type TurnAction =
   | 'selectingFirstCard' // Choosing where to draw first card from
   | 'drawTrainCards' // Already drew first card, drawing second
   | 'claimRoute' // Claiming a route
-  | 'drawDestinations'; // Drawing destination tickets
+  | 'drawDestinations' // Drawing destination tickets
+  | 'tunnelReveal'; // Revealing cards for tunnel check
+
+// Tunnel reveal state
+export interface TunnelRevealState {
+  routeId: string;
+  routeName: string;
+  cardsUsed: TrainCardType[];
+  colorUsed: TrainCardType; // The color player is using (not 'gray')
+  revealedCards: TrainCardType[];
+  extraCardsNeeded: number;
+}
 
 // Game room
 export interface GameRoom {
@@ -121,6 +132,9 @@ export interface GameState {
   
   // Kick voting
   activeKickVote?: KickVote;
+  
+  // Tunnel reveal state
+  tunnelReveal?: TunnelRevealState;
 }
 
 // Chat message

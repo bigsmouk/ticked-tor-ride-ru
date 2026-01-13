@@ -9,6 +9,9 @@ export type GameAction =
   | { type: 'drawTrainCard'; fromFaceUp: boolean; cardIndex?: number }
   | { type: 'cancelDrawingCards' }
   | { type: 'claimRoute'; routeId: string; cardsUsed: TrainCardType[] }
+  | { type: 'attemptClaimTunnel'; routeId: string; cardsUsed: TrainCardType[] }
+  | { type: 'confirmTunnelClaim'; extraCards: TrainCardType[] }
+  | { type: 'cancelTunnelClaim' }
   | { type: 'drawDestinations' }
   | { type: 'keepDestinations'; ticketIds: string[] }
   | { type: 'cancelDestinationDraw' }
@@ -447,6 +450,15 @@ export const useGameSync = (roomId: string | null) => {
             break;
           case 'claimRoute':
             executeClaimRoute(action.routeId, action.cardsUsed);
+            break;
+          case 'attemptClaimTunnel':
+            useGameStore.getState().attemptClaimTunnel(action.routeId, action.cardsUsed);
+            break;
+          case 'confirmTunnelClaim':
+            useGameStore.getState().confirmTunnelClaim(action.extraCards);
+            break;
+          case 'cancelTunnelClaim':
+            useGameStore.getState().cancelTunnelClaim();
             break;
           case 'drawDestinations':
             executeDrawDestinations();
