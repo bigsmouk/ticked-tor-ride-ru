@@ -387,6 +387,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 isSelected={isSelected}
                 isClaimable={isClaimable}
                 claimingPlayerColor={claimingPlayer?.color || null}
+                claimingPlayerName={claimingPlayer?.name || null}
                 onClick={() => onRouteClick?.(route.id)}
                 onMouseEnter={(e) => {
                   if (containerRef.current) {
