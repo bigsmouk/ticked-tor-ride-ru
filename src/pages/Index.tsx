@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, Users, Lock, Globe } from 'lucide-react';
+import { Loader2, RefreshCw, Users, Lock, Globe, Train } from 'lucide-react';
+import AnimatedTrainBackground from '@/components/home/AnimatedTrainBackground';
+import ActiveGamesCounter from '@/components/home/ActiveGamesCounter';
 
 interface PublicRoom {
   id: string;
@@ -204,25 +206,44 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen parchment flex flex-col">
-      {/* Header */}
-      <header className="py-6 text-center border-b-4 border-ornament bg-primary relative">
+    <div className="min-h-screen parchment flex flex-col relative overflow-hidden">
+      {/* Animated background */}
+      <AnimatedTrainBackground />
+      
+      {/* Header - Retro poster style */}
+      <header className="retro-header py-8 text-center relative z-10">
         {/* Auth controls */}
         <AuthControls className="absolute right-4 top-1/2 -translate-y-1/2" />
+        
+        {/* Decorative train icon */}
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block">
+          <Train className="h-12 w-12 text-gold opacity-80" />
+        </div>
 
-        <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
-          🚂 Железнодорожное Приключение
+        <h1 className="vintage-title text-3xl md:text-5xl font-bold text-primary-foreground">
+          Железнодорожное Приключение
         </h1>
-        <p className="font-display text-xl text-gold mt-2">ЕВРОПА</p>
+        <p className="vintage-subtitle text-xl md:text-2xl mt-3 font-bold">
+          ЕВРОПА
+        </p>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-8">
+      <main className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+        {/* Active games counter */}
+        <div className="mb-6 animate-fade-in">
+          <ActiveGamesCounter />
+        </div>
+        
         <div className="max-w-lg w-full">
-          <div className="ornate-frame bg-card rounded-lg p-8">
-            <h2 className="font-display text-2xl font-bold text-center mb-6 text-foreground">
-              Добро пожаловать!
-            </h2>
+          <div className="vintage-card rounded-xl p-8">
+            {/* Welcome text */}
+            <div className="text-center mb-6">
+              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+                Добро пожаловать!
+              </h2>
+              <div className="ornate-divider my-4"></div>
+            </div>
 
             {/* Player name input */}
             <div className="mb-6">
@@ -398,10 +419,19 @@ const Index = () => {
 
           {/* Game info and rules */}
           <div className="mt-8 text-center space-y-4">
-            <div className="inline-flex gap-6 text-sm text-muted-foreground">
-              <span>👥 2-4 игрока</span>
-              <span>⏱️ 30-60 мин</span>
-              <span>🎯 46 городов</span>
+            <div className="inline-flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+                <span className="text-gold">👥</span>
+                <span className="text-foreground font-medium">2-4 игрока</span>
+              </span>
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+                <span className="text-gold">⏱️</span>
+                <span className="text-foreground font-medium">30-60 мин</span>
+              </span>
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-gold/30">
+                <span className="text-gold">🏙️</span>
+                <span className="text-foreground font-medium">46 городов</span>
+              </span>
             </div>
             
             <div>
@@ -411,10 +441,14 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-ornament space-y-1">
-        <p>Создатель: <strong>Симинеев Тимур</strong></p>
-        <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
+      {/* Footer - Vintage style */}
+      <footer className="py-6 text-center border-t-4 border-gold/30 bg-primary/5 relative z-10 space-y-2">
+        <p className="text-foreground font-display">
+          Создатель: <strong className="text-gold">Симинеев Тимур</strong>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Вдохновлено настольной игрой <span className="italic">Ticket to Ride: Europe</span>
+        </p>
       </footer>
 
       {/* Modals are handled inside <AuthControls /> */}
