@@ -149,6 +149,13 @@ Deno.serve(async (req) => {
     // Создаём записи игроков
     const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
     
+    // Проверяем, есть ли выходящий игрок в списке
+    const leavingPlayerInGameState = isPlayerLeaving && leavingPlayerId 
+      ? sortedPlayers.some(p => p.id === leavingPlayerId)
+      : false;
+    
+    console.log('[finalize-match] leavingPlayerId:', leavingPlayerId, 'found in gameState:', leavingPlayerInGameState);
+    
     const playerRecords = sortedPlayers.map((player, index) => {
       const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
       const routePoints = finalScore
@@ -159,10 +166,14 @@ Deno.serve(async (req) => {
       
       // Определяем placement
       let placement: number;
-      if (isPlayerLeaving && player.id === leavingPlayerId) {
+      const isLeavingPlayer = isPlayerLeaving && player.id === leavingPlayerId;
+      
+      if (isLeavingPlayer) {
         placement = 0; // Покинул игру
+        console.log('[finalize-match] Player', player.name, 'marked as LEFT (placement=0)');
       } else if (isPlayerLeaving || isPlayerLeft) {
-        placement = -1; // Не засчитано
+        placement = -1; // Не засчитано для остальных
+        console.log('[finalize-match] Player', player.name, 'marked as NOT_COUNTED (placement=-1)');
       } else {
         placement = index + 1; // Нормальное место
       }
@@ -174,48 +185,47 @@ Deno.serve(async (req) => {
         profile_id: profileId,
         player_name: player.name,
         player_color: player.color,
-        final_score: player.score,
-        route_points: finalScore ? routePoints : player.score,
-        ticket_points: finalScore ? (finalScore.ticketBonus - finalScore.ticketPenalty) : 0,
-        longest_path_bonus: finalScore?.longestPathBonus || 0,
-        tickets_completed: finalScore?.completedTickets || 0,
-        tickets_failed: finalScore?.failedTickets || 0,
+        final_score: isLeavingPlayer ? 0 : player.score, // Ливнувший получает 0
+        route_points: isLeavingPlayer ? 0 : (finalScore ? routePoints : player.score),
+        ticket_points: isLeavingPlayer ? 0 : (finalScore ? (finalScore.ticketBonus - finalScore.ticketPenalty) : 0),
+        longest_path_bonus: isLeavingPlayer ? 0 : (finalScore?.longestPathBonus || 0),
+        tickets_completed: isLeavingPlayer ? 0 : (finalScore?.completedTickets || 0),
+        tickets_failed: isLeavingPlayer ? 0 : (finalScore?.failedTickets || 0),
         is_winner: isWinner,
         placement,
       };
     });
 
-    // Если кто-то выходит, добавляем его запись отдельно (он уже удалён из gameState.players)
-    if (isPlayerLeaving && leavingPlayerId) {
-      const leavingPlayerInList = playerRecords.find(p => p.player_name && playerIdToProfileId.has(leavingPlayerId));
-      if (!leavingPlayerInList) {
-        // Ищем данные вышедшего игрока в room_players
-        const { data: leavingRoomPlayer } = await supabase
-          .from('room_players')
-          .select('player_id, player_name, color, owner_auth_id')
-          .eq('player_id', leavingPlayerId)
-          .maybeSingle();
+    // Если выходящий игрок НЕ был в gameState.players, добавляем его отдельно
+    if (isPlayerLeaving && leavingPlayerId && !leavingPlayerInGameState) {
+      console.log('[finalize-match] Leaving player not in gameState, fetching from room_players...');
+      
+      const { data: leavingRoomPlayer } = await supabase
+        .from('room_players')
+        .select('player_id, player_name, color, owner_auth_id')
+        .eq('player_id', leavingPlayerId)
+        .maybeSingle();
 
-        if (leavingRoomPlayer) {
-          const leavingProfileId = leavingRoomPlayer.owner_auth_id 
-            ? userIdToProfileId.get(leavingRoomPlayer.owner_auth_id) || null
-            : null;
+      if (leavingRoomPlayer) {
+        const leavingProfileId = leavingRoomPlayer.owner_auth_id 
+          ? userIdToProfileId.get(leavingRoomPlayer.owner_auth_id) || null
+          : null;
 
-          playerRecords.push({
-            match_id: matchData.id,
-            profile_id: leavingProfileId,
-            player_name: leavingRoomPlayer.player_name,
-            player_color: leavingRoomPlayer.color,
-            final_score: 0,
-            route_points: 0,
-            ticket_points: 0,
-            longest_path_bonus: 0,
-            tickets_completed: 0,
-            tickets_failed: 0,
-            is_winner: false,
-            placement: 0, // Покинул игру
-          });
-        }
+        playerRecords.push({
+          match_id: matchData.id,
+          profile_id: leavingProfileId,
+          player_name: leavingRoomPlayer.player_name,
+          player_color: leavingRoomPlayer.color,
+          final_score: 0,
+          route_points: 0,
+          ticket_points: 0,
+          longest_path_bonus: 0,
+          tickets_completed: 0,
+          tickets_failed: 0,
+          is_winner: false,
+          placement: 0, // Покинул игру
+        });
+        console.log('[finalize-match] Added leaving player from room_players:', leavingRoomPlayer.player_name);
       }
     }
 
