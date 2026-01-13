@@ -3,16 +3,14 @@ import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 export const GameOverModal: React.FC = () => {
   const { gameState, currentRoom, leaveRoom, localPlayerId } = useGameStore();
-  const { profile } = useAuth();
   const navigate = useNavigate();
   const savedRef = useRef(false);
   const isHost = currentRoom?.hostId === localPlayerId;
   
-  // Сохраняем результаты матча в БД (только один раз, только хост)
+  // Сохраняем результаты матча через серверную функцию (только один раз, только хост)
   useEffect(() => {
     if (!isHost) return;
     if (!gameState || gameState.phase !== 'finished' || savedRef.current) return;
@@ -26,112 +24,42 @@ export const GameOverModal: React.FC = () => {
         const lastLog = gameState.logs[gameState.logs.length - 1];
         const isPlayerLeft = lastLog?.action === 'Игра завершена' && lastLog?.details === 'Недостаточно игроков';
         
-        // Создаём запись матча
-        const { data: matchData, error: matchError } = await supabase
-          .from('match_history')
-          .insert({
-            room_id: currentRoom.id,
-            room_name: currentRoom.name,
-            player_count: gameState.players.length + (isPlayerLeft ? 1 : 0), // Учитываем вышедшего игрока
-            game_data: {
-              winnerId: gameState.winnerId,
+        console.log('[GameOver] Calling finalize-match edge function...', { isPlayerLeft });
+
+        const { data, error } = await supabase.functions.invoke('finalize-match', {
+          body: {
+            roomId: currentRoom.id,
+            roomName: currentRoom.name,
+            leavingPlayerId: null, // Никто не выходит, игра завершилась
+            gameState: {
+              roomId: gameState.roomId,
+              phase: gameState.phase,
               turnNumber: gameState.turnNumber,
-              finishedAt: new Date().toISOString(),
-              endReason: isPlayerLeft ? 'player_left' : 'normal',
+              players: gameState.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                color: p.color,
+                score: p.score,
+              })),
+              logs: gameState.logs.slice(-5),
+              winnerId: gameState.winnerId,
+              finalScores: gameState.finalScores,
             },
-          })
-          .select()
-          .single();
-
-        if (matchError) {
-          console.error('Error saving match:', matchError);
-          return;
-        }
-
-        // Строим маппинг player_id -> profile_id по данным комнаты, чтобы каждый игрок видел матч в своей истории
-        const { data: roomPlayers, error: roomPlayersError } = await supabase
-          .from('room_players')
-          .select('player_id, owner_auth_id')
-          .eq('room_id', currentRoom.id);
-
-        if (roomPlayersError) {
-          console.warn('[GameOver] Could not load room_players mapping:', roomPlayersError);
-        }
-
-        const ownerAuthIds = (roomPlayers || [])
-          .map(rp => rp.owner_auth_id)
-          .filter((v): v is string => !!v);
-
-        const { data: profilesData, error: profilesError } = ownerAuthIds.length
-          ? await supabase
-              .from('profiles')
-              .select('id, user_id')
-              .in('user_id', ownerAuthIds)
-          : { data: [], error: null };
-
-        if (profilesError) {
-          console.warn('[GameOver] Could not load profiles for mapping:', profilesError);
-        }
-
-        const userIdToProfileId = new Map<string, string>();
-        for (const p of profilesData || []) {
-          userIdToProfileId.set((p as any).user_id, (p as any).id);
-        }
-
-        const playerIdToProfileId = new Map<string, string>();
-        for (const rp of roomPlayers || []) {
-          if (!rp.owner_auth_id) continue;
-          const pid = userIdToProfileId.get(rp.owner_auth_id);
-          if (pid) playerIdToProfileId.set(rp.player_id, pid);
-        }
-
-        // Создаём записи для каждого игрока
-        const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
-
-        const playerRecords = sortedPlayers.map((player, index) => {
-          const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
-          const routePoints = player.score 
-            - ((finalScore as any)?.ticketBonus || 0) 
-            + ((finalScore as any)?.ticketPenalty || 0) 
-            - ((finalScore as any)?.longestPathBonus || 0);
-
-          const resolvedProfileId = playerIdToProfileId.get(player.id) || (profile?.id && player.name === profile.display_name ? profile.id : null);
-
-          // Если кто-то вышел - победителей нет, игра не засчитана
-          const isWinner = isPlayerLeft ? false : player.id === gameState.winnerId;
-
-          return {
-            match_id: matchData.id,
-            profile_id: resolvedProfileId,
-            player_name: player.name,
-            player_color: player.color,
-            final_score: player.score,
-            route_points: finalScore ? routePoints : player.score,
-            ticket_points: ((finalScore as any)?.ticketBonus || 0) - ((finalScore as any)?.ticketPenalty || 0),
-            longest_path_bonus: (finalScore as any)?.longestPathBonus || 0,
-            tickets_completed: (finalScore as any)?.completedTickets || 0,
-            tickets_failed: (finalScore as any)?.failedTickets || 0,
-            is_winner: isWinner,
-            placement: isPlayerLeft ? -1 : index + 1, // -1 = игра не засчитана (кто-то вышел)
-          };
+          },
         });
 
-        const { error: playersError } = await supabase
-          .from('match_players')
-          .insert(playerRecords);
-
-        if (playersError) {
-          console.error('Error saving match players:', playersError);
+        if (error) {
+          console.error('[GameOver] Edge function error:', error);
         } else {
-          console.log('[GameOver] Match results saved successfully', { isPlayerLeft });
+          console.log('[GameOver] Server saved match:', data);
         }
       } catch (error) {
-        console.error('Error saving match results:', error);
+        console.error('[GameOver] Error calling edge function:', error);
       }
     };
 
     saveMatchResults();
-  }, [gameState, currentRoom, profile]);
+  }, [isHost, gameState, currentRoom]);
   
   if (!gameState || gameState.phase !== 'finished') return null;
   

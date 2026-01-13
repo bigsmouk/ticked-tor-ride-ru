@@ -34,12 +34,11 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
     setShowConfirm(true);
   };
 
-  // Сохраняем историю для игрока который выходит
-  const saveMatchHistoryForLeavingPlayer = async () => {
-    console.log('[LeaveGame] Starting save...', { 
+  // Сохраняем историю через серверную функцию (надёжнее — работает даже если браузер закрылся)
+  const saveMatchHistoryViaServer = async () => {
+    console.log('[LeaveGame] Starting server save...', { 
       hasGameState: !!gameState, 
       hasRoom: !!currentRoom, 
-      hasProfile: !!profile,
       turnNumber: gameState?.turnNumber,
       phase: gameState?.phase
     });
@@ -56,70 +55,37 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
     }
     
     try {
-      const localPlayer = gameState.players.find(p => p.id === localPlayerId);
-      if (!localPlayer) {
-        console.log('[LeaveGame] Local player not found');
-        return;
-      }
-
-      console.log('[LeaveGame] Saving match for player:', localPlayer.name);
-
-      // Создаём запись матча для вышедшего игрока
-      const { data: matchData, error: matchError } = await supabase
-        .from('match_history')
-        .insert({
-          room_id: null, // Не привязываем к комнате, чтобы обойти RLS 
-          room_name: currentRoom.name,
-          player_count: gameState.players.length,
-          game_data: {
+      console.log('[LeaveGame] Calling finalize-match edge function...');
+      
+      const { data, error } = await supabase.functions.invoke('finalize-match', {
+        body: {
+          roomId: currentRoom.id,
+          roomName: currentRoom.name,
+          leavingPlayerId: localPlayerId,
+          gameState: {
+            roomId: gameState.roomId,
+            phase: gameState.phase,
             turnNumber: gameState.turnNumber,
-            finishedAt: new Date().toISOString(),
-            endReason: 'left_game',
+            players: gameState.players.map(p => ({
+              id: p.id,
+              name: p.name,
+              color: p.color,
+              score: p.score,
+            })),
+            logs: gameState.logs.slice(-5), // Только последние 5 записей
+            winnerId: gameState.winnerId,
+            finalScores: gameState.finalScores,
           },
-        })
-        .select()
-        .single();
+        },
+      });
 
-      if (matchError) {
-        console.error('[LeaveGame] Error saving match:', matchError);
-        return;
-      }
-
-      console.log('[LeaveGame] Match created:', matchData.id);
-
-      // Гарантируем profile_id (без него матч не попадёт в историю/статистику)
-      let profileId: string | null = profile?.id ?? null;
-      if (!profileId && user) {
-        console.log('[LeaveGame] profile not loaded yet, refreshing...');
-        const refreshed = await refreshProfile();
-        profileId = refreshed?.id ?? null;
-      }
-
-      // Сохраняем запись для текущего игрока
-      const { error: playerError } = await supabase
-        .from('match_players')
-        .insert({
-          match_id: matchData.id,
-          profile_id: profileId,
-          player_name: localPlayer.name,
-          player_color: localPlayer.color,
-          final_score: localPlayer.score,
-          route_points: localPlayer.score,
-          ticket_points: 0,
-          longest_path_bonus: 0,
-          tickets_completed: 0,
-          tickets_failed: 0,
-          is_winner: false,
-          placement: 0, // 0 = покинул игру
-        });
-
-      if (playerError) {
-        console.error('[LeaveGame] Error saving player record:', playerError);
+      if (error) {
+        console.error('[LeaveGame] Edge function error:', error);
       } else {
-        console.log('[LeaveGame] Match history saved successfully for:', localPlayer.name);
+        console.log('[LeaveGame] Server saved match:', data);
       }
     } catch (error) {
-      console.error('[LeaveGame] Error:', error);
+      console.error('[LeaveGame] Error calling edge function:', error);
     }
   };
 
@@ -127,8 +93,8 @@ export const LeaveGameButton: React.FC<LeaveGameButtonProps> = ({ onLeave }) => 
     const localPlayer = gameState?.players.find(p => p.id === localPlayerId);
     const playerName = localPlayer?.name || 'Игрок';
 
-    // Сохраняем историю матча для вышедшего игрока
-    await saveMatchHistoryForLeavingPlayer();
+    // Сохраняем историю матча через серверную функцию
+    await saveMatchHistoryViaServer();
 
     // Добавляем запись в лог через синхронизацию
     if (isHost) {
