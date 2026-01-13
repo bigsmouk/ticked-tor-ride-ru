@@ -130,12 +130,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   };
 
   const getPlacementEmoji = (placement: number) => {
+    if (placement === 0) return '🚪'; // Покинул игру
+    if (placement === -1) return '⚠️'; // Игра не засчитана (кто-то вышел)
     switch (placement) {
       case 1: return '🥇';
       case 2: return '🥈';
       case 3: return '🥉';
       default: return `${placement}`;
     }
+  };
+
+  const getPlacementText = (placement: number) => {
+    if (placement === 0) return 'Покинул';
+    if (placement === -1) return 'Не засчитано';
+    return null;
   };
 
   if (!user) return null;
@@ -355,26 +363,40 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <>
                   {matches.map((match) => {
                     const myResult = match.match_players.find(p => p.profile_id === profile.id);
+                    const placement = myResult?.placement || 1;
+                    const placementText = getPlacementText(placement);
+                    const isNotCounted = placement <= 0;
+                    
                     return (
                       <div
                         key={match.id}
                         className={`p-3 rounded-lg border ${
-                          myResult?.is_winner
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-amber-50 border-amber-200'
+                          isNotCounted
+                            ? 'bg-gray-50 border-gray-300'
+                            : myResult?.is_winner
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-amber-50 border-amber-200'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <div className="font-medium text-amber-900">
-                              {getPlacementEmoji(myResult?.placement || 1)} {match.room_name}
+                            <div className="font-medium text-amber-900 flex items-center gap-1">
+                              {getPlacementEmoji(placement)} 
+                              {placementText && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                  placement === 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {placementText}
+                                </span>
+                              )}
+                              <span className="ml-1">{match.room_name}</span>
                             </div>
                             <div className="text-xs text-amber-600">
                               {format(new Date(match.played_at), 'd MMM yyyy, HH:mm', { locale: ru })}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-amber-900">
+                            <div className={`text-lg font-bold ${isNotCounted ? 'text-gray-500' : 'text-amber-900'}`}>
                               {myResult?.final_score} очков
                             </div>
                             <div className="text-xs text-amber-600">
@@ -382,7 +404,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                             </div>
                           </div>
                         </div>
-                        {myResult && (
+                        {myResult && !isNotCounted && (
                           <div className="flex gap-2 text-xs text-amber-700">
                             <span>🛤️ {myResult.route_points}</span>
                             <span>🎫 {myResult.ticket_points}</span>
