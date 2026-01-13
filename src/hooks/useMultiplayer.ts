@@ -514,23 +514,42 @@ export const useMultiplayer = () => {
 
   // Кикнуть игрока (только для хоста в комнате ожидания)
   const kickPlayer = useCallback(async (roomId: string, targetPlayerId: string) => {
-    if (!playerId || !user) return false;
+    if (!playerId || !user) {
+      toast.error('Требуется авторизация');
+      return false;
+    }
     
     try {
+      // Сначала проверяем, что мы хост этой комнаты
+      const { data: room } = await supabase
+        .from('rooms')
+        .select('owner_auth_id')
+        .eq('id', roomId)
+        .single();
+
+      if (!room || room.owner_auth_id !== user.id) {
+        toast.error('Только хост может исключать игроков');
+        return false;
+      }
+
       // Удаляем игрока из комнаты
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('room_players')
         .delete()
         .eq('room_id', roomId)
-        .eq('player_id', targetPlayerId);
+        .eq('player_id', targetPlayerId)
+        .select();
 
       if (error) throw error;
-
+      
+      // Supabase не выбрасывает ошибку если ничего не удалено
+      console.log('[Kick] Deleted player:', targetPlayerId, 'count:', count);
+      
       toast.success('Игрок исключён из комнаты');
       return true;
     } catch (err: any) {
       console.error('Error kicking player:', err);
-      toast.error('Ошибка при исключении игрока');
+      toast.error(`Ошибка при исключении: ${err.message}`);
       return false;
     }
   }, [playerId, user]);
