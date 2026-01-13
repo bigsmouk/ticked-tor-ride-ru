@@ -1,29 +1,22 @@
 import React, { memo } from 'react';
 import { PlayerColor } from '@/types/game';
 
-// Import vintage wagon images
-import wagonRed from '@/assets/wagons/wagon-red.png';
-import wagonBlue from '@/assets/wagons/wagon-blue.png';
-import wagonGreen from '@/assets/wagons/wagon-green.png';
-import wagonYellow from '@/assets/wagons/wagon-yellow.png';
-import wagonBlack from '@/assets/wagons/wagon-black.png';
-
-// Map player colors to wagon images
-const WAGON_IMAGES: Record<PlayerColor, string> = {
-  red: wagonRed,
-  blue: wagonBlue,
-  green: wagonGreen,
-  yellow: wagonYellow,
-  black: wagonBlack,
+// Player color to wagon fill color (matching original board style)
+const WAGON_FILL_MAP: Record<PlayerColor, string> = {
+  red: '#c92a2a',
+  blue: '#1971c2',
+  green: '#2b8a3e',
+  yellow: '#f59f00',
+  black: '#343a40',
 };
 
-// Fallback color mapping for glow effects
-const PLAYER_GLOW_MAP: Record<PlayerColor, string> = {
-  red: '#ef4444',
-  blue: '#3b82f6',
-  green: '#22c55e',
-  yellow: '#facc15',
-  black: '#6b7280',
+// Lighter stroke for contrast
+const WAGON_STROKE_MAP: Record<PlayerColor, string> = {
+  red: '#862e2e',
+  blue: '#1864ab',
+  green: '#1e7832',
+  yellow: '#c27803',
+  black: '#212529',
 };
 
 interface ClaimedWagonProps {
@@ -33,67 +26,39 @@ interface ClaimedWagonProps {
   playerColor: string;
 }
 
-// Memoized wagon component - uses vintage wagon images
+// Simple wagon rectangle like the original board game
 export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor }) => {
   const color = playerColor as PlayerColor;
-  const wagonImage = WAGON_IMAGES[color] || wagonRed;
-  const glowColor = PLAYER_GLOW_MAP[color] || '#6b7280';
-  const filterId = `wagon-glow-${color}-${x}-${y}`;
+  const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
+  const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
   
-  // Wagon dimensions on the map
-  const width = 36;
-  const height = 22;
+  // Wagon dimensions - fills the slot
+  const width = 28;
+  const height = 10;
   
   return (
-    <g 
-      transform={`translate(${x}, ${y}) rotate(${angle})`}
-      className="claimed-wagon"
-    >
-      {/* SVG filter for glow effect */}
-      <defs>
-        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={glowColor} floodOpacity="0.7" />
-          <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="rgba(0,0,0,0.5)" />
-        </filter>
-      </defs>
-      
-      {/* Background glow for visibility */}
+    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
+      {/* Main wagon body - simple rounded rectangle */}
       <rect
-        x={-width / 2 - 2}
-        y={-height / 2 - 2}
-        width={width + 4}
-        height={height + 4}
-        rx={4}
-        fill="hsl(40 30% 95%)"
-        opacity={0.85}
-        stroke="hsl(40 40% 80%)"
-        strokeWidth={1}
-      />
-      
-      {/* Vintage wagon image */}
-      <image
-        href={wagonImage}
         x={-width / 2}
         y={-height / 2}
         width={width}
         height={height}
-        style={{
-          filter: `url(#${filterId})`,
-        }}
-        preserveAspectRatio="xMidYMid meet"
+        rx={2}
+        ry={2}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={1.5}
       />
       
-      {/* Border for extra visibility */}
+      {/* Simple highlight line at top for 3D effect */}
       <rect
-        x={-width / 2 - 1}
-        y={-height / 2 - 1}
-        width={width + 2}
-        height={height + 2}
-        rx={3}
-        fill="none"
-        stroke={glowColor}
-        strokeWidth={1.5}
-        opacity={0.6}
+        x={-width / 2 + 2}
+        y={-height / 2 + 1}
+        width={width - 4}
+        height={2}
+        rx={1}
+        fill="rgba(255,255,255,0.3)"
       />
     </g>
   );
