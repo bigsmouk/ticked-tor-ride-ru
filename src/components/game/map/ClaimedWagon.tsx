@@ -19,6 +19,24 @@ const WAGON_STROKE_MAP: Record<PlayerColor, string> = {
   black: '#343a40',
 };
 
+// Text color for contrast
+const TEXT_COLOR_MAP: Record<PlayerColor, string> = {
+  red: '#fff',
+  blue: '#fff',
+  green: '#fff',
+  yellow: '#1a1a1a',
+  black: '#fff',
+};
+
+// Short label for each color
+const LABEL_MAP: Record<PlayerColor, string> = {
+  red: 'К',
+  blue: 'С',
+  green: 'З',
+  yellow: 'Ж',
+  black: 'Ч',
+};
+
 interface ClaimedWagonProps {
   x: number;
   y: number;
@@ -27,15 +45,17 @@ interface ClaimedWagonProps {
   animationIndex?: number;
 }
 
-// Highly visible wagon with white outline, shadow, and appear animation
+// Compact wagon with contrasting text label
 export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, animationIndex = 0 }) => {
   const color = playerColor as PlayerColor;
   const fillColor = WAGON_FILL_MAP[color] || '#6b7280';
   const strokeColor = WAGON_STROKE_MAP[color] || '#4b5563';
+  const textColor = TEXT_COLOR_MAP[color] || '#fff';
+  const label = LABEL_MAP[color] || '?';
   
-  // Wagon dimensions - larger for better visibility
-  const width = 34;
-  const height = 14;
+  // Smaller wagon dimensions
+  const width = 26;
+  const height = 12;
   
   // Animation class with staggered delay
   const animationClass = `wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`;
@@ -46,27 +66,27 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
       className={animationClass}
       style={{ opacity: 0 }}
     >
-      {/* Drop shadow for depth */}
+      {/* Drop shadow */}
       <rect
         x={-width / 2 + 1}
-        y={-height / 2 + 1.5}
+        y={-height / 2 + 1}
         width={width}
         height={height}
-        rx={2.5}
-        ry={2.5}
-        fill="rgba(0,0,0,0.4)"
+        rx={2}
+        ry={2}
+        fill="rgba(0,0,0,0.35)"
       />
       
-      {/* White outline border for contrast against any background */}
+      {/* White outline for contrast */}
       <rect
-        x={-width / 2 - 1.5}
-        y={-height / 2 - 1.5}
-        width={width + 3}
-        height={height + 3}
-        rx={3.5}
-        ry={3.5}
+        x={-width / 2 - 1}
+        y={-height / 2 - 1}
+        width={width + 2}
+        height={height + 2}
+        rx={3}
+        ry={3}
         fill="white"
-        stroke="rgba(0,0,0,0.3)"
+        stroke="rgba(0,0,0,0.2)"
         strokeWidth={0.5}
       />
       
@@ -76,40 +96,30 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
         y={-height / 2}
         width={width}
         height={height}
-        rx={2.5}
-        ry={2.5}
+        rx={2}
+        ry={2}
         fill={fillColor}
         stroke={strokeColor}
-        strokeWidth={1.5}
+        strokeWidth={1.2}
       />
       
-      {/* Top highlight for 3D effect */}
-      <rect
-        x={-width / 2 + 3}
-        y={-height / 2 + 2}
-        width={width - 6}
-        height={3}
-        rx={1.5}
-        fill="rgba(255,255,255,0.4)"
-      />
-      
-      {/* Small wheel indicators at ends */}
-      <circle
-        cx={-width / 2 + 5}
-        cy={height / 2 - 1}
-        r={2}
-        fill={strokeColor}
-        stroke="rgba(255,255,255,0.3)"
-        strokeWidth={0.5}
-      />
-      <circle
-        cx={width / 2 - 5}
-        cy={height / 2 - 1}
-        r={2}
-        fill={strokeColor}
-        stroke="rgba(255,255,255,0.3)"
-        strokeWidth={0.5}
-      />
+      {/* Contrasting text label */}
+      <text
+        x={0}
+        y={0.5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={textColor}
+        fontSize={8}
+        fontWeight="bold"
+        fontFamily="Arial, sans-serif"
+        style={{ 
+          textShadow: color === 'yellow' ? 'none' : '0 1px 1px rgba(0,0,0,0.4)',
+          pointerEvents: 'none'
+        }}
+      >
+        {label}
+      </text>
     </g>
   );
 });
