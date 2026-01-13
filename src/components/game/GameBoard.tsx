@@ -172,6 +172,11 @@ export const GameBoard: React.FC = () => {
 
   // Начать режим выбора карт
   const handleStartDrawingCards = () => {
+    // Сбрасываем выбранный маршрут при начале взятия карт
+    setSelectedRoute(null);
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+    
     if (isHost) {
       startDrawingCards();
     } else {
@@ -198,6 +203,11 @@ export const GameBoard: React.FC = () => {
   };
 
   const handleDrawDestinations = () => {
+    // Сбрасываем выбранный маршрут при начале взятия билетов
+    setSelectedRoute(null);
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+    
     // Берём 3 карты маршрутов из колоды
     const destinations = gameState.destinationDeck.slice(0, 3);
     if (destinations.length === 0) return;
@@ -324,6 +334,11 @@ export const GameBoard: React.FC = () => {
 
   // Station building handlers
   const handleStartBuildStation = () => {
+    // Сбрасываем выбранный маршрут при начале постройки станции
+    setSelectedRoute(null);
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+    
     setShowStationBuilder(true);
     if (isHost) {
       startBuildStation();

@@ -103,6 +103,16 @@ export const RouteSegment = memo<RouteSegmentProps>(({
       ) : (
         // Unclaimed route - show wagon slots
         <>
+          {/* Invisible clickable area - wide stroke for easy clicking */}
+          <path
+            d={path}
+            stroke="transparent"
+            strokeWidth={24}
+            fill="none"
+            strokeLinecap="round"
+            style={{ cursor: isClaimable ? 'pointer' : 'default' }}
+          />
+          
           {/* Route background line - dimmed for unclaimed */}
           <path
             d={path}
@@ -111,6 +121,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
             fill="none"
             strokeLinecap="round"
             opacity={isSelected ? 1 : isClaimable ? 0.5 : 0.3}
+            pointerEvents="none"
           />
           
           {/* Individual train car slots */}
@@ -136,6 +147,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               strokeLinecap="round"
               opacity={0}
               className="transition-opacity hover:opacity-30"
+              pointerEvents="none"
             />
           )}
         </>
