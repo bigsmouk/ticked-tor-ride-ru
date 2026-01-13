@@ -137,7 +137,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   initializeGame: () => {
     const { currentRoom } = get();
-    if (!currentRoom || currentRoom.players.length < 2) return;
+    // Для соло-режима достаточно 1 игрока, для мультиплеера — минимум 2
+    const minPlayers = currentRoom?.isSoloMode ? 1 : 2;
+    if (!currentRoom || currentRoom.players.length < minPlayers) return;
     
     // Initialize deck
     let trainDeck = shuffleArray(createTrainCardDeck());
@@ -879,16 +881,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   
   endTurn: () => {
-    const { gameState, localPlayerId } = get();
+    const { gameState, localPlayerId, currentRoom } = get();
     if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
     
     const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
     if (playerIndex === -1) return;
     
-    const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
+    // В соло-режиме ход остаётся у того же игрока
+    const isSolo = currentRoom?.isSoloMode;
+    const nextPlayerIndex = isSolo ? playerIndex : (playerIndex + 1) % gameState.players.length;
     
     const updatedPlayers = [...gameState.players];
-    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], isActive: false };
+    if (!isSolo) {
+      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], isActive: false };
+    }
     updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
     
     set({
@@ -926,8 +932,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const wasActive = gameState.currentPlayerId === playerId;
     const updatedPlayers = gameState.players.filter(p => p.id !== playerId);
     
-    // Если осталось меньше 2 игроков - завершаем игру
-    if (updatedPlayers.length < 2) {
+    // В соло-режиме или если осталось меньше 2 игроков - завершаем игру
+    const isSolo = currentRoom?.isSoloMode;
+    const minPlayers = isSolo ? 1 : 2;
+    
+    if (updatedPlayers.length < minPlayers) {
       set({
         gameState: {
           ...gameState,
@@ -936,7 +945,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           logs: [
             ...gameState.logs,
             createLog(playerId, 'Покинул игру', playerName),
-            createLog(undefined, 'Игра завершена', 'Недостаточно игроков'),
+            createLog(undefined, 'Игра завершена', isSolo ? 'Соло-игра прервана' : 'Недостаточно игроков'),
           ],
         },
       });

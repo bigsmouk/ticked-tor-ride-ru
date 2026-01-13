@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, RefreshCw, Users, Lock, Globe, Train, Send } from 'lucide-react';
 import AnimatedTrainBackground from '@/components/home/AnimatedTrainBackground';
 import ActiveGamesCounter from '@/components/home/ActiveGamesCounter';
+import { toast } from 'sonner';
 
 interface PublicRoom {
   id: string;
@@ -25,7 +26,7 @@ interface PublicRoom {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, isLoading, isReady } = useMultiplayer();
+  const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, startSoloGame, isLoading, isReady } = useMultiplayer();
   const { profile, user } = useAuth();
   const {
     isRecovering,
@@ -272,6 +273,35 @@ const Index = () => {
                   onClick={() => setShowJoin(true)}
                 >
                   🔗 Присоединиться по коду
+                </button>
+
+                {/* Соло-режим */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-ornament/50"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-2 text-muted-foreground">или</span>
+                  </div>
+                </div>
+
+                <button
+                  className="w-full rounded-lg py-3 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
+                  onClick={async () => {
+                    if (!playerName.trim()) {
+                      toast.error('Введите ваше имя');
+                      return;
+                    }
+                    const result = await startSoloGame(playerName.trim());
+                    if (result) {
+                      navigate('/game');
+                    }
+                  }}
+                  disabled={isLoading}
+                >
+                  <span>🎯</span>
+                  <span>Играть соло</span>
+                  <span className="text-xs text-muted-foreground">(тренировка)</span>
                 </button>
 
                 {/* Список открытых комнат */}

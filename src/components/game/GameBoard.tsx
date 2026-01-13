@@ -323,19 +323,30 @@ export const GameBoard: React.FC = () => {
   const routeRequirement = selectedRoute ? getRouteCardRequirement(selectedRoute) : null;
   const claimError = selectedRoute ? getClaimRouteError(selectedRoute) : null;
 
+  const isSoloMode = currentRoom?.isSoloMode;
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <header className="h-12 px-4 flex items-center justify-between bg-primary text-primary-foreground border-b-2 border-gold">
-        <h1 className="font-display font-bold text-lg">Ticket to Ride: Европа</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display font-bold text-lg">Ticket to Ride: Европа</h1>
+          {isSoloMode && (
+            <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-200 rounded-full border border-amber-500/30">
+              🎯 Соло
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-4">
-          <ConnectionIndicator 
-            status={connectionStatus} 
-            isHost={isHost} 
-            lastSyncTime={lastSyncTime}
-            reconnectAttempt={reconnectAttempt}
-            onReconnect={attemptReconnect}
-          />
+          {!isSoloMode && (
+            <ConnectionIndicator 
+              status={connectionStatus} 
+              isHost={isHost} 
+              lastSyncTime={lastSyncTime}
+              reconnectAttempt={reconnectAttempt}
+              onReconnect={attemptReconnect}
+            />
+          )}
           <div className="text-sm">Ход: {gameState.turnNumber}</div>
           <LeaveGameButton />
           <AuthControls />
