@@ -1,8 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import { PRELOADED_MAPS } from '@/hooks/useAssetPreloader';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
+import { RouteSegment } from './map/RouteSegment';
+import { CityMarker } from './map/CityMarker';
 
 // Use preloaded map image
 const europeMapImage = PRELOADED_MAPS.europe;
@@ -15,27 +17,6 @@ interface EuropeMapProps {
   selectedRoute?: string | null;
 }
 
-// Color mappings for routes - bright and vibrant
-const ROUTE_COLORS: Record<string, string> = {
-  red: '#ef4444',
-  blue: '#3b82f6',
-  green: '#22c55e',
-  yellow: '#fbbf24',
-  orange: '#f97316',
-  pink: '#ec4899',
-  white: '#fafafa',
-  black: '#404040',
-  gray: '#9ca3af',
-};
-
-// Player color mappings - very bright and saturated
-const PLAYER_COLORS: Record<PlayerColor, string> = {
-  red: '#ff3333',
-  blue: '#4488ff',
-  green: '#33ff66',
-  yellow: '#ffee00',
-  black: '#555555',
-};
 
 // Get city position
 const getCityPosition = (cityId: string, cities: City[]): { x: number; y: number } => {
@@ -316,11 +297,10 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           preserveAspectRatio="xMidYMid slice"
         />
         
-        {/* Routes */}
+        {/* Routes - using memoized components */}
         <g className="routes">
           {routes.map((route) => {
-            const { path, segments, startPos, endPos } = getRoutePath(route, cities, routes);
-            const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
+            const { path, segments } = getRoutePath(route, cities, routes);
             const isSelected = selectedRoute === route.id;
             const isClaimed = !!route.claimedBy;
             const isClaimable = !isClaimed && canClaimRoute(route.id);
@@ -329,14 +309,17 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             const claimingPlayer = isClaimed && gameState
               ? gameState.players.find(p => p.id === route.claimedBy)
               : null;
-            
-            const playerColor = claimingPlayer ? PLAYER_COLORS[claimingPlayer.color] : null;
-            
+
             return (
-              <g 
+              <RouteSegment
                 key={route.id}
-                className={`route-segment ${isClaimable ? 'cursor-pointer route-claimable' : ''} ${!isClaimed ? 'route-hoverable' : ''}`}
-                onClick={() => !isClaimed && onRouteClick?.(route.id)}
+                route={route}
+                path={path}
+                segments={segments}
+                isSelected={isSelected}
+                isClaimable={isClaimable}
+                claimingPlayerColor={claimingPlayer?.color || null}
+                onClick={() => onRouteClick?.(route.id)}
                 onMouseEnter={(e) => {
                   if (containerRef.current) {
                     const rect = containerRef.current.getBoundingClientRect();
@@ -357,213 +340,22 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                   }
                 }}
                 onMouseLeave={() => setHoveredRoute(null)}
-              >
-                {isClaimed && playerColor ? (
-                  // Claimed route - show player wagons on each segment
-                  <>
-                    {/* Dark outline for contrast */}
-                    <path
-                      d={path}
-                      stroke="hsl(0 0% 0% / 0.5)"
-                      strokeWidth={14}
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    {/* Individual claimed wagon cars */}
-                    {segments.map((seg, i) => (
-                      <g 
-                        key={i} 
-                        transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
-                        className="claimed-wagon"
-                      >
-                        {/* Wagon body shadow */}
-                        <rect
-                          x={-13}
-                          y={-4}
-                          width={26}
-                          height={12}
-                          rx={3}
-                          fill="hsl(0 0% 0% / 0.4)"
-                        />
-                        {/* Wagon body */}
-                        <rect
-                          x={-12}
-                          y={-6}
-                          width={24}
-                          height={12}
-                          rx={3}
-                          fill={playerColor}
-                          stroke="hsl(0 0% 100% / 0.9)"
-                          strokeWidth={1.5}
-                        />
-                        {/* Wagon window/detail stripe */}
-                        <rect
-                          x={-10}
-                          y={-3}
-                          width={20}
-                          height={3}
-                          rx={1}
-                          fill="hsl(0 0% 100% / 0.4)"
-                        />
-                        {/* Wheels */}
-                        <circle cx={-6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
-                        <circle cx={6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
-                      </g>
-                    ))}
-                  </>
-                ) : (
-                  // Unclaimed route - show wagon slots
-                  <>
-                    {/* Route background line - dimmed for unclaimed */}
-                    <path
-                      d={path}
-                      stroke={isSelected ? 'hsl(43 80% 50%)' : 'hsl(30 30% 40%)'}
-                      strokeWidth={isSelected ? 14 : 10}
-                      fill="none"
-                      strokeLinecap="round"
-                      opacity={isSelected ? 1 : isClaimable ? 0.5 : 0.3}
-                    />
-                    
-                    {/* Individual train car slots */}
-                    {segments.map((seg, i) => (
-                      <g 
-                        key={i} 
-                        transform={`translate(${seg.x}, ${seg.y}) rotate(${seg.angle})`}
-                        className="wagon-slot"
-                      >
-                        {/* Slot background */}
-                        <rect
-                          x={-12}
-                          y={-5}
-                          width={24}
-                          height={10}
-                          rx={2}
-                          fill={color}
-                          stroke="hsl(30 30% 50%)"
-                          strokeWidth={1.5}
-                          opacity={0.9}
-                          className="wagon-rect"
-                        />
-                        
-                        {/* Tunnel indicator - zigzag border */}
-                        {route.isTunnel && (
-                          <>
-                            {/* Outer zigzag frame */}
-                            <rect
-                              x={-14}
-                              y={-7}
-                              width={28}
-                              height={14}
-                              rx={0}
-                              fill="none"
-                              stroke="hsl(30 50% 20%)"
-                              strokeWidth={2}
-                              strokeDasharray="3 2"
-                            />
-                            {/* Mountain symbol */}
-                            <path
-                              d="M -8 3 L -4 -2 L 0 3 L 4 -2 L 8 3"
-                              stroke="hsl(30 40% 35%)"
-                              strokeWidth={1.5}
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </>
-                        )}
-                        
-                        {/* Ferry locomotive indicator */}
-                        {route.ferryLocomotives && route.ferryLocomotives > 0 && i < route.ferryLocomotives && (
-                          <text
-                            x={0}
-                            y={4}
-                            textAnchor="middle"
-                            fontSize="8"
-                            fill="hsl(30 20% 30%)"
-                            fontWeight="bold"
-                          >
-                            🚂
-                          </text>
-                        )}
-                      </g>
-                    ))}
-                    
-                    {/* Hover highlight */}
-                    {isClaimable && (
-                      <path
-                        d={path}
-                        stroke="hsl(43 80% 50%)"
-                        strokeWidth={16}
-                        fill="none"
-                        strokeLinecap="round"
-                        opacity={0}
-                        className="transition-opacity hover:opacity-30"
-                      />
-                    )}
-                  </>
-                )}
-              </g>
+              />
             );
           })}
         </g>
         
-        {/* Cities */}
+        {/* Cities - using memoized components */}
         <g className="cities">
           {cities.map((city) => (
-            <g 
+            <CityMarker
               key={city.id}
+              x={city.x}
+              y={city.y}
+              name={city.name}
+              showName={showCityNames}
               onClick={() => onCityClick?.(city.id)}
-            >
-              {/* City circle */}
-              <circle
-                cx={city.x}
-                cy={city.y}
-                r={8}
-                fill="hsl(40 35% 92%)"
-                stroke="hsl(30 50% 30%)"
-                strokeWidth={2}
-                style={{ pointerEvents: 'none' }}
-              />
-              
-              {/* Inner circle */}
-              <circle
-                cx={city.x}
-                cy={city.y}
-                r={4}
-                fill="hsl(30 60% 40%)"
-                style={{ pointerEvents: 'none' }}
-              />
-              
-              {/* City name - only shown when toggled */}
-              {showCityNames && (
-                <>
-                  <rect
-                    x={city.x - 30}
-                    y={city.y + 10}
-                    width={60}
-                    height={14}
-                    rx={2}
-                    fill="hsl(30 20% 15% / 0.85)"
-                    style={{ pointerEvents: 'none' }}
-                  />
-                  <text
-                    x={city.x}
-                    y={city.y + 20}
-                    textAnchor="middle"
-                    style={{
-                      fontSize: '10px',
-                      fill: '#ffffff',
-                      fontWeight: 700,
-                      pointerEvents: 'none',
-                      userSelect: 'none',
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    {city.name}
-                  </text>
-                </>
-              )}
-            </g>
+            />
           ))}
         </g>
         
