@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, Users, Lock, Globe, Train } from 'lucide-react';
+import { Loader2, RefreshCw, Users, Lock, Globe, Train, Send } from 'lucide-react';
 import AnimatedTrainBackground from '@/components/home/AnimatedTrainBackground';
 import ActiveGamesCounter from '@/components/home/ActiveGamesCounter';
 
@@ -442,10 +442,21 @@ const Index = () => {
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-6 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 space-y-2">
-        <p className="text-primary-foreground font-display text-lg">
-          Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
-        </p>
+      <footer className="py-6 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 space-y-3">
+        <div className="flex items-center justify-center gap-2">
+          <p className="text-primary-foreground font-display text-lg">
+            Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
+          </p>
+          <a 
+            href="https://t.me/timursimineev" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gold/20 hover:bg-gold/40 transition-colors"
+            title="Telegram"
+          >
+            <Send className="h-4 w-4 text-gold" />
+          </a>
+        </div>
         <p className="text-sm text-primary-foreground/80">
           Вдохновлено настольной игрой <span className="italic">Ticket to Ride: Europe</span>
         </p>
