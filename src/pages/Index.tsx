@@ -206,8 +206,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen parchment flex flex-col relative overflow-hidden">
-      {/* Animated background */}
+    <div className="h-screen parchment flex flex-col relative overflow-hidden">
+      {/* Background */}
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
