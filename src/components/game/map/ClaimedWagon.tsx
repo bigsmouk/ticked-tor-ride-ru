@@ -13,38 +13,81 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor 
     transform={`translate(${x}, ${y}) rotate(${angle})`}
     className="claimed-wagon"
   >
-    {/* Wagon body shadow */}
+    {/* Outer glow for visibility */}
+    <rect
+      x={-16}
+      y={-10}
+      width={32}
+      height={20}
+      rx={5}
+      fill={playerColor}
+      opacity={0.35}
+      filter="url(#claimed-glow)"
+    />
+    
+    {/* Wagon body shadow - darker and larger */}
+    <rect
+      x={-14}
+      y={-3}
+      width={28}
+      height={14}
+      rx={3}
+      fill="hsl(0 0% 0% / 0.6)"
+    />
+    
+    {/* Wagon body - larger and more prominent */}
     <rect
       x={-13}
-      y={-4}
+      y={-7}
       width={26}
-      height={12}
-      rx={3}
-      fill="hsl(0 0% 0% / 0.4)"
-    />
-    {/* Wagon body */}
-    <rect
-      x={-12}
-      y={-6}
-      width={24}
-      height={12}
+      height={14}
       rx={3}
       fill={playerColor}
-      stroke="hsl(0 0% 100% / 0.9)"
-      strokeWidth={1.5}
+      stroke="hsl(0 0% 100%)"
+      strokeWidth={2.5}
     />
-    {/* Wagon window/detail stripe */}
+    
+    {/* Inner color band for depth */}
     <rect
-      x={-10}
+      x={-11}
+      y={-5}
+      width={22}
+      height={10}
+      rx={2}
+      fill={playerColor}
+      stroke="hsl(0 0% 0% / 0.3)"
+      strokeWidth={0.5}
+    />
+    
+    {/* Wagon window stripe - brighter */}
+    <rect
+      x={-9}
       y={-3}
-      width={20}
+      width={18}
       height={3}
       rx={1}
-      fill="hsl(0 0% 100% / 0.4)"
+      fill="hsl(0 0% 100% / 0.6)"
     />
-    {/* Wheels */}
-    <circle cx={-6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
-    <circle cx={6} cy={5} r={2.5} fill="hsl(0 0% 20%)" stroke="hsl(0 0% 40%)" strokeWidth={0.5} />
+    
+    {/* Roof highlight */}
+    <rect
+      x={-10}
+      y={-6}
+      width={20}
+      height={2}
+      rx={1}
+      fill="hsl(0 0% 100% / 0.25)"
+    />
+    
+    {/* Wheels - larger and more detailed */}
+    <circle cx={-7} cy={6} r={3} fill="hsl(0 0% 15%)" stroke="hsl(0 0% 50%)" strokeWidth={1} />
+    <circle cx={-7} cy={6} r={1.5} fill="hsl(0 0% 30%)" />
+    <circle cx={7} cy={6} r={3} fill="hsl(0 0% 15%)" stroke="hsl(0 0% 50%)" strokeWidth={1} />
+    <circle cx={7} cy={6} r={1.5} fill="hsl(0 0% 30%)" />
+    
+    {/* Coupling hooks */}
+    <rect x={-15} y={-1} width={3} height={2} rx={0.5} fill="hsl(0 0% 40%)" />
+    <rect x={12} y={-1} width={3} height={2} rx={0.5} fill="hsl(0 0% 40%)" />
   </g>
 ));
 
