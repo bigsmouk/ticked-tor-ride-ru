@@ -136,6 +136,29 @@ const Index = () => {
     setLoadingRooms(false);
   };
 
+  // Автоматическая очистка пустых комнат каждые 5 минут
+  useEffect(() => {
+    const cleanupRooms = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('cleanup-rooms');
+        if (data?.deleted > 0) {
+          console.log(`[Cleanup] Deleted ${data.deleted} rooms:`, data.details);
+        }
+      } catch (err) {
+        // Тихо игнорируем ошибки cleanup
+        console.error('[Cleanup] Error:', err);
+      }
+    };
+
+    // Запускаем сразу при загрузке страницы
+    cleanupRooms();
+
+    // Затем каждые 5 минут
+    const interval = setInterval(cleanupRooms, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Загружаем открытые комнаты при входе на страницу + realtime подписка
   useEffect(() => {
     if (!user || showCreate || showJoin) return;
