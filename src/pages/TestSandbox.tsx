@@ -4,7 +4,7 @@ import { TestMap, TestRouteState } from '@/components/game/TestMap';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map } from 'lucide-react';
+import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map, Play } from 'lucide-react';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -29,6 +29,7 @@ const SANDBOX_PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 
 const ALL_CARD_TYPES: TrainCardType[] = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black', 'locomotive'];
 
 type MapType = 'europe' | 'test';
+type SandboxMode = 'sandbox' | 'solo';
 
 // Convert test map data to game format
 const convertTestCitiesToGame = (): City[] => {
@@ -64,9 +65,10 @@ const convertTestTicketsToGame = (): DestinationTicket[] => {
 };
 
 const TestSandbox = () => {
-  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores, claimRoute, canClaimRoute } = useGameStore();
+  const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores, claimRoute, canClaimRoute, initializeGame } = useGameStore();
   const [infiniteCards, setInfiniteCards] = useState(false);
   const [mapType, setMapType] = useState<MapType>('test');
+  const [sandboxMode, setSandboxMode] = useState<SandboxMode>('sandbox');
 
   // Get cities/routes based on map type
   const getMapData = useCallback((type: MapType) => {
@@ -175,8 +177,108 @@ const TestSandbox = () => {
   // Switch map type
   const handleMapTypeChange = useCallback((type: MapType) => {
     setMapType(type);
-    initializeSandbox(gameState?.players.length || 2, type);
-  }, [gameState?.players.length, initializeSandbox]);
+    if (sandboxMode === 'sandbox') {
+      initializeSandbox(gameState?.players.length || 2, type);
+    } else {
+      startSoloMode(type);
+    }
+  }, [gameState?.players.length, sandboxMode]);
+
+  // Start solo mode - single player game with full mechanics
+  const startSoloMode = useCallback((useMapType?: MapType) => {
+    const currentMapType = useMapType ?? mapType;
+    const mapData = getMapData(currentMapType);
+    const soloRoomId = `solo-test-${crypto.randomUUID()}`;
+    const soloPlayerId = 'solo-player-1';
+
+    // Create single player with proper hand
+    let trainDeck = shuffleArray(createTrainCardDeck()) as TrainCardType[];
+    let destinationDeck = shuffleArray([...mapData.destinations]);
+
+    const initialCards: TrainCardType[] = [];
+    for (let j = 0; j < INITIAL_TRAIN_CARDS; j++) {
+      const card = trainDeck.pop();
+      if (card) initialCards.push(card as TrainCardType);
+    }
+
+    const initialDestinations: DestinationTicket[] = [];
+    for (let j = 0; j < 3; j++) {
+      const ticket = destinationDeck.pop();
+      if (ticket) initialDestinations.push(ticket);
+    }
+
+    const soloPlayer: Player = {
+      id: soloPlayerId,
+      name: 'Соло-игрок',
+      color: 'red' as PlayerColor,
+      trainCards: initialCards,
+      destinationTickets: initialDestinations,
+      trainsRemaining: INITIAL_TRAINS,
+      stationsRemaining: 3,
+      score: 0,
+      isActive: true,
+      isConnected: true,
+    };
+
+    // Set up 5 face-up cards
+    const faceUpCards: TrainCardType[] = [];
+    for (let i = 0; i < 5; i++) {
+      const card = trainDeck.pop();
+      if (card) faceUpCards.push(card as TrainCardType);
+    }
+
+    const soloState: GameState = {
+      roomId: soloRoomId,
+      phase: 'playing',
+      players: [soloPlayer],
+      currentPlayerId: soloPlayerId,
+      currentAction: 'none',
+      trainCardDeck: trainDeck,
+      trainCardDiscard: [],
+      faceUpCards,
+      destinationDeck,
+      cities: mapData.cities,
+      routes: mapData.routes,
+      placedStations: [],
+      turnNumber: 1,
+      logs: [
+        {
+          id: crypto.randomUUID(),
+          action: '🎮 Соло-игра запущена',
+          details: `${currentMapType === 'test' ? 'Тестовая карта' : 'Европа'}`,
+          timestamp: new Date(),
+        },
+      ],
+    };
+
+    // Set up solo room
+    setCurrentRoom({
+      id: soloRoomId,
+      name: 'Соло-игра (Тест)',
+      code: 'SOLO',
+      hostId: soloPlayerId,
+      status: 'playing',
+      maxPlayers: 1,
+      isPrivate: true,
+      isSoloMode: true,
+      createdAt: new Date(),
+      players: [soloPlayer],
+    });
+
+    setLocalPlayerId(soloPlayerId);
+    setGameState(soloState);
+    setSandboxMode('solo');
+  }, [setCurrentRoom, setLocalPlayerId, setGameState, mapType, getMapData]);
+
+  // Switch between sandbox and solo modes
+  const handleModeChange = useCallback((mode: SandboxMode) => {
+    setSandboxMode(mode);
+    if (mode === 'sandbox') {
+      initializeSandbox(2, mapType);
+    } else {
+      startSoloMode(mapType);
+    }
+  }, [initializeSandbox, startSoloMode, mapType]);
 
   // Switch to control a different player
   const switchToPlayer = useCallback((playerId: string) => {
@@ -467,8 +569,31 @@ const TestSandbox = () => {
       {/* Sandbox Controls Overlay */}
       <div className="fixed top-2 left-2 z-50 bg-background/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg max-w-xs overflow-y-auto max-h-[90vh]">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg">🧪</span>
-          <span className="font-display text-sm font-bold text-primary">Песочница</span>
+          <span className="text-lg">{sandboxMode === 'solo' ? '🎮' : '🧪'}</span>
+          <span className="font-display text-sm font-bold text-primary">
+            {sandboxMode === 'solo' ? 'Соло-игра' : 'Песочница'}
+          </span>
+        </div>
+
+        {/* Mode selector */}
+        <div className="flex gap-1 mb-3">
+          <Button
+            variant={sandboxMode === 'sandbox' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleModeChange('sandbox')}
+            className="text-xs flex-1"
+          >
+            🧪 Песочница
+          </Button>
+          <Button
+            variant={sandboxMode === 'solo' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleModeChange('solo')}
+            className="text-xs flex-1"
+          >
+            <Play className="w-3 h-3 mr-1" />
+            Соло
+          </Button>
         </div>
 
         {/* Map type selector */}
@@ -492,43 +617,47 @@ const TestSandbox = () => {
           </Button>
         </div>
 
-        {/* Player count buttons */}
-        <div className="flex gap-1 mb-3">
-          {[2, 3, 4, 5].map(count => (
-            <Button
-              key={count}
-              variant="outline"
-              size="sm"
-              onClick={() => initializeSandbox(count)}
-              className="text-xs px-2"
-            >
-              <Users className="w-3 h-3 mr-1" />
-              {count}
-            </Button>
-          ))}
-        </div>
-
-        {/* Switch player buttons */}
-        <div className="space-y-1 mb-3">
-          <p className="text-xs text-muted-foreground">Играть за:</p>
-          <div className="flex flex-wrap gap-1">
-            {gameState.players.map((player, index) => (
+        {/* Player count buttons - only show in sandbox mode */}
+        {sandboxMode === 'sandbox' && (
+          <div className="flex gap-1 mb-3">
+            {[2, 3, 4, 5].map(count => (
               <Button
-                key={player.id}
-                variant={localPlayerId === player.id ? 'default' : 'outline'}
+                key={count}
+                variant="outline"
                 size="sm"
-                onClick={() => switchToPlayer(player.id)}
+                onClick={() => initializeSandbox(count)}
                 className="text-xs px-2"
-                style={{
-                  borderColor: localPlayerId === player.id ? undefined : player.color,
-                  backgroundColor: localPlayerId === player.id ? player.color : undefined,
-                }}
               >
-                {index === 0 ? 'Вы' : `Бот ${index}`}
+                <Users className="w-3 h-3 mr-1" />
+                {count}
               </Button>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Switch player buttons - only show in sandbox mode */}
+        {sandboxMode === 'sandbox' && (
+          <div className="space-y-1 mb-3">
+            <p className="text-xs text-muted-foreground">Играть за:</p>
+            <div className="flex flex-wrap gap-1">
+              {gameState.players.map((player, index) => (
+                <Button
+                  key={player.id}
+                  variant={localPlayerId === player.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => switchToPlayer(player.id)}
+                  className="text-xs px-2"
+                  style={{
+                    borderColor: localPlayerId === player.id ? undefined : player.color,
+                    backgroundColor: localPlayerId === player.id ? player.color : undefined,
+                  }}
+                >
+                  {index === 0 ? 'Вы' : `Бот ${index}`}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Cheat section */}
         <div className="border-t border-border pt-3 mt-3">
@@ -612,7 +741,13 @@ const TestSandbox = () => {
         <Button
           variant="destructive"
           size="sm"
-          onClick={() => initializeSandbox(gameState.players.length)}
+          onClick={() => {
+            if (sandboxMode === 'sandbox') {
+              initializeSandbox(gameState.players.length);
+            } else {
+              startSoloMode();
+            }
+          }}
           className="w-full text-xs mt-3"
         >
           <RotateCcw className="w-3 h-3 mr-1" />
