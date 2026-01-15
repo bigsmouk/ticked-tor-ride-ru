@@ -29,11 +29,11 @@ export interface TestDestinationTicket {
   isLongRoute?: boolean;
 }
 
-// Scale factor from 800×550 to 1920×1080
+// Scale factor from 800×550 to 1920×1440 (4:3 aspect ratio to match new map image)
 const SCALE_X = 1920 / 800;
-const SCALE_Y = 1080 / 550;
+const SCALE_Y = 1440 / 550;
 
-// 46 Cities scaled to 1920×1080 coordinate system
+// 46 Cities scaled to 1920×1440 coordinate system
 export const TEST_CITIES: TestCity[] = [
   { id: 'edinburgh', name: 'Эдинбург', x: Math.round(125 * SCALE_X), y: Math.round(45 * SCALE_Y) },
   { id: 'london', name: 'Лондон', x: Math.round(175 * SCALE_X), y: Math.round(166 * SCALE_Y) },

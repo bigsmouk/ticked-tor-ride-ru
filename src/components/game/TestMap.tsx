@@ -244,7 +244,7 @@ export const TestMap: React.FC<TestMapProps> = ({
       {/* Info badge */}
       <div className="absolute top-4 left-4 z-10 bg-background/90 border border-border rounded px-3 py-2">
         <div className="text-xs font-bold text-primary">🧪 Тестовая карта</div>
-        <div className="text-xs text-muted-foreground">1920×1080 • {TEST_CITIES.length} городов</div>
+        <div className="text-xs text-muted-foreground">1920×1440 • {TEST_CITIES.length} городов</div>
       </div>
       
       {/* Tooltip */}
@@ -253,7 +253,7 @@ export const TestMap: React.FC<TestMapProps> = ({
       )}
       
       <svg
-        viewBox="0 0 1920 1080"
+        viewBox="0 0 1920 1440"
         className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
         style={{ 
@@ -304,14 +304,14 @@ export const TestMap: React.FC<TestMapProps> = ({
           </filter>
         </defs>
         
-        {/* Background image */}
+        {/* Background image - fit to viewBox */}
         <image
           href={testMapBg}
           x="0"
           y="0"
           width="1920"
-          height="1080"
-          preserveAspectRatio="xMidYMid slice"
+          height="1440"
+          preserveAspectRatio="xMidYMid meet"
         />
         
         {/* Routes layer */}
