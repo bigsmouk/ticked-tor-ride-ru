@@ -345,16 +345,16 @@ const TestRouteCalibration = () => {
                 <circle
                   cx={city.x}
                   cy={city.y}
-                  r={12}
+                  r={6}
                   fill="#ef4444"
                   stroke="white"
-                  strokeWidth={3}
+                  strokeWidth={2}
                 />
                 <text
                   x={city.x}
-                  y={city.y - 18}
+                  y={city.y - 10}
                   textAnchor="middle"
-                  fontSize="14"
+                  fontSize="10"
                   fill="white"
                   fontWeight="bold"
                   style={{ textShadow: '2px 2px 4px black', pointerEvents: 'none' }}
