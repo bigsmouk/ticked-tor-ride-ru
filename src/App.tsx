@@ -10,6 +10,8 @@ import Game from "./pages/Game";
 import TestSandbox from "./pages/TestSandbox";
 import MapCalibration from "./pages/MapCalibration";
 import RouteCalibration from "./pages/RouteCalibration";
+import TestMapCalibration from "./pages/TestMapCalibration";
+import TestRouteCalibration from "./pages/TestRouteCalibration";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/test" element={<TestSandbox />} />
             <Route path="/calibration" element={<MapCalibration />} />
             <Route path="/routes" element={<RouteCalibration />} />
+            <Route path="/test-calibration" element={<TestMapCalibration />} />
+            <Route path="/test-routes" element={<TestRouteCalibration />} />
             <Route path="/waiting" element={<WaitingRoom />} />
             <Route path="/game" element={<Game />} />
             <Route path="/email-confirmed" element={<EmailConfirmed />} />

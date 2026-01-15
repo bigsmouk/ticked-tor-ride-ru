@@ -491,10 +491,11 @@ export const TestMap: React.FC<TestMapProps> = ({
           {EUROPE_CITIES.map((city) => (
             <g
               key={city.id}
-              className="city-marker cursor-pointer"
+              className="city-marker"
+              style={{ cursor: onCityClick ? 'pointer' : 'default' }}
               onClick={() => onCityClick?.(city.id)}
             >
-              {/* City circle */}
+              {/* City circle - fixed size, no hover change */}
               <circle
                 cx={city.x}
                 cy={city.y}
@@ -503,43 +504,35 @@ export const TestMap: React.FC<TestMapProps> = ({
                 stroke="#78716c"
                 strokeWidth={2}
                 filter="url(#test-city-shadow)"
+                style={{ pointerEvents: 'all' }}
               />
               <circle
                 cx={city.x}
                 cy={city.y}
                 r={6}
                 fill="#f59e0b"
+                style={{ pointerEvents: 'none' }}
               />
               
-              {/* City name label */}
+              {/* City name label - positioned absolutely, no transform on hover */}
               {showCityNames && (
-                <g transform={`translate(${city.x}, ${city.y + 18})`}>
-                  <text
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    fontSize={9}
-                    fontWeight="bold"
-                    fill="#000"
-                    stroke="#fff"
-                    strokeWidth={3}
-                    paintOrder="stroke"
-                    style={{ fontFamily: 'system-ui, sans-serif' }}
-                  >
-                    {city.name}
-                  </text>
-                  <text
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    fontSize={9}
-                    fontWeight="bold"
-                    fill="#1f2937"
-                    style={{ fontFamily: 'system-ui, sans-serif' }}
-                  >
-                    {city.name}
-                  </text>
-                </g>
+                <text
+                  x={city.x}
+                  y={city.y + 18}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fontWeight="bold"
+                  fill="#1f2937"
+                  stroke="#fff"
+                  strokeWidth={3}
+                  paintOrder="stroke"
+                  style={{ 
+                    fontFamily: 'system-ui, sans-serif',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {city.name}
+                </text>
               )}
             </g>
           ))}
