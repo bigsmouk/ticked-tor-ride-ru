@@ -13,7 +13,6 @@ import {
   createTrainCardDeck, 
   shuffleArray 
 } from '@/data/europeMap';
-import { TEST_CITIES, TEST_ROUTES, TEST_DESTINATION_TICKETS } from '@/data/testMap';
 import { 
   GameState, 
   TrainCardType, 
@@ -34,39 +33,6 @@ const SANDBOX_AUTH_KEY = 'ttr_sandbox_auth';
 
 type MapType = 'europe' | 'test';
 type SandboxMode = 'sandbox' | 'solo';
-
-// Convert test map data to game format
-const convertTestCitiesToGame = (): City[] => {
-  return TEST_CITIES.map(c => ({
-    id: c.id,
-    name: c.name,
-    x: c.x,
-    y: c.y,
-  }));
-};
-
-const convertTestRoutesToGame = (): Route[] => {
-  return TEST_ROUTES.map(r => ({
-    id: r.id,
-    cities: [r.from, r.to] as [string, string],
-    length: r.length,
-    color: r.color as Route['color'],
-    isTunnel: r.type === 'tunnel',
-    ferryLocomotives: r.ferryLocomotives,
-    parallelRouteId: r.parallel === 1 ? TEST_ROUTES.find(
-      pr => pr.from === r.from && pr.to === r.to && pr.parallel === 0
-    )?.id : undefined,
-  }));
-};
-
-const convertTestTicketsToGame = (): DestinationTicket[] => {
-  return TEST_DESTINATION_TICKETS.map(t => ({
-    id: t.id,
-    cities: [t.from, t.to] as [string, string],
-    points: t.points,
-    isLongRoute: t.isLongRoute,
-  }));
-};
 
 const TestSandbox = () => {
   const { gameState, setGameState, setCurrentRoom, setLocalPlayerId, localPlayerId, calculateFinalScores, claimRoute, canClaimRoute, initializeGame } = useGameStore();
@@ -95,15 +61,8 @@ const TestSandbox = () => {
     }
   }, [password]);
 
-  // Get cities/routes based on map type
-  const getMapData = useCallback((type: MapType) => {
-    if (type === 'test') {
-      return {
-        cities: convertTestCitiesToGame(),
-        routes: convertTestRoutesToGame(),
-        destinations: convertTestTicketsToGame(),
-      };
-    }
+  // Get cities/routes - both 'test' and 'europe' use same data now
+  const getMapData = useCallback(() => {
     return {
       cities: EUROPE_CITIES,
       routes: EUROPE_ROUTES.map(r => ({ ...r })),
@@ -116,7 +75,7 @@ const TestSandbox = () => {
     const sandboxRoomId = 'sandbox-test-room';
     const sandboxPlayerId = 'sandbox-player-1';
     const currentMapType = useMapType ?? mapType;
-    const mapData = getMapData(currentMapType);
+    const mapData = getMapData();
     
     // Create sandbox players
     const players: Player[] = [];
@@ -212,7 +171,7 @@ const TestSandbox = () => {
   // Start solo mode - single player game with full mechanics
   const startSoloMode = useCallback((useMapType?: MapType) => {
     const currentMapType = useMapType ?? mapType;
-    const mapData = getMapData(currentMapType);
+    const mapData = getMapData();
     const soloRoomId = `solo-test-${crypto.randomUUID()}`;
     const soloPlayerId = 'solo-player-1';
 
