@@ -4,7 +4,8 @@ import { TestMap, TestRouteState } from '@/components/game/TestMap';
 import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map, Play } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { RotateCcw, Users, Zap, Trophy, CreditCard, Train, Map, Play, Lock } from 'lucide-react';
 import { 
   EUROPE_CITIES, 
   EUROPE_ROUTES, 
@@ -27,6 +28,9 @@ import {
 
 const SANDBOX_PLAYER_COLORS: PlayerColor[] = ['red', 'blue', 'green', 'yellow', 'black'];
 const ALL_CARD_TYPES: TrainCardType[] = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black', 'locomotive'];
+
+const SANDBOX_PASSWORD = 'GameTest2026';
+const SANDBOX_AUTH_KEY = 'ttr_sandbox_auth';
 
 type MapType = 'europe' | 'test';
 type SandboxMode = 'sandbox' | 'solo';
@@ -69,6 +73,27 @@ const TestSandbox = () => {
   const [infiniteCards, setInfiniteCards] = useState(false);
   const [mapType, setMapType] = useState<MapType>('test');
   const [sandboxMode, setSandboxMode] = useState<SandboxMode>('sandbox');
+  
+  // Password protection state
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(SANDBOX_AUTH_KEY) === 'true';
+    }
+    return false;
+  });
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+
+  const handlePasswordSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === SANDBOX_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem(SANDBOX_AUTH_KEY, 'true');
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  }, [password]);
 
   // Get cities/routes based on map type
   const getMapData = useCallback((type: MapType) => {
@@ -550,6 +575,57 @@ const TestSandbox = () => {
       claimRoute(routeId, cardsToUse.slice(0, requiredLength));
     }
   }, [gameState, localPlayerId, canClaimRoute, claimRoute]);
+
+  // Password protection screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen parchment flex items-center justify-center">
+        <div className="ornate-frame bg-card rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-4">🔒</div>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-2">
+              Доступ к песочнице
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Введите пароль для входа в режим тестирования
+            </p>
+          </div>
+          
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError(false);
+                }}
+                placeholder="Введите пароль..."
+                className={`w-full bg-background border-ornament text-center text-lg ${
+                  passwordError ? 'border-red-500 ring-red-500' : ''
+                }`}
+                autoFocus
+              />
+              {passwordError && (
+                <p className="text-red-500 text-sm text-center mt-2">
+                  Неверный пароль
+                </p>
+              )}
+            </div>
+            
+            <Button type="submit" className="w-full btn-gold">
+              <Lock className="w-4 h-4 mr-2" />
+              Войти
+            </Button>
+          </form>
+          
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Песочница предназначена для тестирования игровых механик
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!gameState) {
     return (
