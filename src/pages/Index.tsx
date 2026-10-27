@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { useAuth } from '@/hooks/useAuth';
-import { AuthControls } from '@/components/auth/AuthControls';
 import { Input } from '@/components/ui/input';
 import { RulesModal } from '@/components/game/RulesModal';
 import { Switch } from '@/components/ui/switch';
@@ -27,7 +26,7 @@ interface PublicRoom {
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, startSoloGame, isLoading, isReady } = useMultiplayer();
-  const { profile, user } = useAuth();
+  const { user } = useAuth();
   const {
     isRecovering,
     showRecoveryPrompt,
@@ -35,7 +34,7 @@ const Index = () => {
     attemptRecovery,
     dismissRecovery,
   } = useSessionRecovery();
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('ttr_guest_name') || '');
   const [roomName, setRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -44,12 +43,10 @@ const Index = () => {
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
-  // Устанавливаем имя из профиля при авторизации
+  // Сохраняем имя гостя между посещениями.
   useEffect(() => {
-    if (profile && !playerName) {
-      setPlayerName(profile.display_name);
-    }
-  }, [profile, playerName]);
+    if (playerName.trim()) localStorage.setItem('ttr_guest_name', playerName.trim());
+  }, [playerName]);
 
   // Показываем загрузку пока идёт восстановление сессии
   if (isRecovering) {
@@ -236,8 +233,6 @@ const Index = () => {
       
       {/* Header - Retro poster style */}
       <header className="retro-header py-4 md:py-6 text-center relative z-10 flex-shrink-0 animate-fade-in">
-        {/* Auth controls */}
-        <AuthControls className="absolute right-4 top-1/2 -translate-y-1/2" />
         
         {/* Decorative train icon */}
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block animate-scale-in">
@@ -514,7 +509,6 @@ const Index = () => {
         </p>
       </footer>
 
-      {/* Modals are handled inside <AuthControls /> */}
     </div>
   );
 };
