@@ -215,15 +215,18 @@ const Index = () => {
     }
   };
 
-  const handleJoinPublicRoom = async (roomId: string) => {
-    if (!playerName.trim()) {
-      return;
-    }
-    const result = await joinRoomById(roomId, playerName.trim());
-    if (result) {
-      navigate('/waiting');
-    }
-  };
+ const handleJoinPublicRoom = async (roomId: string) => {
+  if (!playerName.trim()) {
+    alert('Введите имя игрока, чтобы присоединиться к комнате.');
+    return;
+  }
+
+  const result = await joinRoomById(roomId, playerName.trim());
+
+  if (result) {
+    navigate('/waiting');
+  }
+};
 
   return (
     <div className="h-screen parchment flex flex-col relative overflow-hidden">
@@ -348,7 +351,7 @@ const Index = () => {
                           <button
                             key={room.id}
                             onClick={() => handleJoinPublicRoom(room.id)}
-                            disabled={isLoading || !playerName.trim()}
+                            disabled={isLoading}
                             className="w-full p-3 bg-muted/50 hover:bg-muted rounded-lg text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <div className="flex items-center justify-between">

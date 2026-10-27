@@ -99,11 +99,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
             </button>
           )}
           
-          {selectedRouteId && !canClaimSelectedRoute && (
-            <div className="flex items-center px-4 py-2 bg-destructive/20 rounded-lg text-sm text-destructive">
-              ⚠️ {claimError || 'Недостаточно карт для этого маршрута'}
-            </div>
-          )}
+
         </div>
       )}
       

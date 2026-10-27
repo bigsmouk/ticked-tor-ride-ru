@@ -87,6 +87,10 @@ const RouteCalibration = () => {
   const [showRoutes, setShowRoutes] = useState(true);
   const [showOnlyUncalibrated, setShowOnlyUncalibrated] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'routes' | 'cities'>('routes');
+  const [cityPositions, setCityPositions] = useState<Record<string, {x:number;y:number}>>({});
+  const [draggingCity, setDraggingCity] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [routeWagons, setRouteWagons] = useState<Record<string, RouteWagons>>({});
   const [dragging, setDragging] = useState<{ routeId: string; wagonIndex: number } | null>(null);
   const [rotatingWagon, setRotatingWagon] = useState<{ routeId: string; wagonIndex: number } | null>(null);
@@ -94,11 +98,10 @@ const RouteCalibration = () => {
 
   const getMouseSVGPos = useCallback((e: React.MouseEvent | MouseEvent): { x: number; y: number } => {
     if (!svgRef.current) return { x: 0, y: 0 };
-    const rect = svgRef.current.getBoundingClientRect();
-    return {
-      x: Math.round(((e.clientX - rect.left) / rect.width) * 800),
-      y: Math.round(((e.clientY - rect.top) / rect.height) * 550),
-    };
+    const matrix = svgRef.current.getScreenCTM();
+    if (!matrix) return { x: 0, y: 0 };
+    const point = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
+    return { x: Math.round(point.x), y: Math.round(point.y) };
   }, []);
 
   const getWagons = (route: typeof EUROPE_ROUTES[0]): WagonPosition[] => {
@@ -115,6 +118,10 @@ const RouteCalibration = () => {
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const pos = getMouseSVGPos(e);
     setMousePos(pos);
+    if (draggingCity) {
+      setCityPositions(prev => ({ ...prev, [draggingCity]: pos }));
+      return;
+    }
 
     if (dragging) {
       const route = EUROPE_ROUTES.find(r => r.id === dragging.routeId);
@@ -161,6 +168,7 @@ const RouteCalibration = () => {
   const handleMouseUp = () => {
     setDragging(null);
     setRotatingWagon(null);
+    setDraggingCity(null);
   };
 
   const copyCoordinates = () => {
@@ -194,6 +202,17 @@ const RouteCalibration = () => {
     });
   };
 
+  const copyCityCoordinates = async () => {
+    const output = EUROPE_CITIES.map(city => ({
+      id: city.id,
+      name: city.name,
+      x: cityPositions[city.id]?.x ?? city.x,
+      y: cityPositions[city.id]?.y ?? city.y,
+    }));
+    await navigator.clipboard.writeText(JSON.stringify(output, null, 2));
+    toast.success('Координаты городов скопированы в JSON');
+  };
+
   const resetAll = () => {
     setRouteWagons({});
     toast.success('Все позиции сброшены');
@@ -202,10 +221,14 @@ const RouteCalibration = () => {
   const modifiedCount = Object.keys(routeWagons).length;
 
   return (
-    <div className="min-h-screen bg-stone-900 p-4" onMouseUp={handleMouseUp}>
-      <div className="max-w-[1600px] mx-auto">
-        <div className="mb-4 flex items-center justify-between text-white flex-wrap gap-2">
-          <h1 className="text-xl font-bold">Калибровка вагонов</h1>
+    <div className="h-dvh overflow-hidden bg-stone-900 p-3 flex flex-col" onMouseUp={handleMouseUp}>
+      <div className="w-full h-full flex flex-col min-h-0">
+        <div className="mb-2 flex items-center justify-between text-white flex-wrap gap-2 shrink-0">
+          <div className="flex gap-2 items-center">
+            <h1 className="text-lg font-bold">Калибровка карты</h1>
+            <Button size="sm" variant={editMode === 'routes' ? 'default' : 'outline'} onClick={() => setEditMode('routes')}>🚂 Вагоны</Button>
+            <Button size="sm" variant={editMode === 'cities' ? 'default' : 'outline'} onClick={() => { setEditMode('cities'); setShowCities(true); }}>📍 Города</Button>
+          </div>
           <div className="flex gap-4 items-center flex-wrap">
             <label className="flex items-center gap-2 text-sm">
               <input 
@@ -243,22 +266,23 @@ const RouteCalibration = () => {
             <Button size="sm" variant="outline" onClick={resetAll}>
               Сбросить всё
             </Button>
+            <Button size="sm" variant="outline" onClick={copyCityCoordinates}>📋 Копировать города</Button>
             <Button size="sm" onClick={copyCoordinates}>
               📋 Копировать все
             </Button>
           </div>
         </div>
 
-        <div className="mb-2 text-stone-400 text-sm">
-          💡 Кликните на маршрут → перетащите вагоны (зелёные) | Shift+клик на вагон для поворота | 
+        <div className="mb-2 text-stone-400 text-xs shrink-0">
+          💡 {editMode === 'cities' ? 'Перетаскивайте красные точки городов. Кнопка «Копировать города» сохраняет координаты в буфер.' : 'Кликните на маршрут → перетащите вагоны (зелёные) | Shift+клик на вагон для поворота |'} 
           <span className="text-green-400 ml-2">Зелёная рамка = откалиброван</span>
         </div>
         
-        <div className="bg-stone-800 rounded-lg overflow-hidden">
+        <div className="bg-stone-800 rounded-lg overflow-hidden flex-1 min-h-0 flex items-center justify-center">
           <svg
             ref={svgRef}
             viewBox="0 0 800 550"
-            className="w-full h-auto"
+            className="w-full h-full" style={{ touchAction: "none" }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
@@ -273,7 +297,7 @@ const RouteCalibration = () => {
             />
             
             {/* Routes */}
-            {showRoutes && filteredRoutes.map((route) => {
+            {showRoutes && editMode === 'routes' && filteredRoutes.map((route) => {
               const wagons = getWagons(route);
               const color = ROUTE_COLORS[route.color] || ROUTE_COLORS.gray;
               const isSelected = selectedRoute === route.id;
@@ -390,16 +414,24 @@ const RouteCalibration = () => {
             {showCities && EUROPE_CITIES.map((city) => (
               <g key={city.id}>
                 <circle
-                  cx={city.x}
-                  cy={city.y}
+                  cx={cityPositions[city.id]?.x ?? city.x}
+                  cy={cityPositions[city.id]?.y ?? city.y}
                   r={6}
-                  fill="#ef4444"
+                  fill={selectedCity === city.id ? '#facc15' : '#ef4444'}
                   stroke="white"
-                  strokeWidth={2}
+                  strokeWidth={selectedCity === city.id ? 3 : 2}
+                  style={{ cursor: editMode === 'cities' ? 'grab' : 'default' }}
+                  onMouseDown={(e) => {
+                    if (editMode !== 'cities') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedCity(city.id);
+                    setDraggingCity(city.id);
+                  }}
                 />
                 <text
-                  x={city.x}
-                  y={city.y - 10}
+                  x={cityPositions[city.id]?.x ?? city.x}
+                  y={(cityPositions[city.id]?.y ?? city.y) - 10}
                   textAnchor="middle"
                   fontSize="8"
                   fill="white"
@@ -413,6 +445,7 @@ const RouteCalibration = () => {
           </svg>
         </div>
         
+        <div className="hidden">
         {/* Selected route info */}
         {selectedRoute && (
           <div className="mt-4 bg-stone-800 rounded-lg p-4 text-white">
@@ -497,6 +530,7 @@ const RouteCalibration = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

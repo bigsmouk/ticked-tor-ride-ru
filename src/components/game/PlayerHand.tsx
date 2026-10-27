@@ -55,10 +55,10 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   };
   
   return (
-    <div className="parchment rounded-lg border-2 border-ornament p-4 shadow-vintage">
-      <div className="flex items-start gap-6">
+    <div className="ttr-hand-panel parchment rounded-lg border-2 border-ornament p-4 shadow-vintage">
+      <div className="ttr-hand-sections flex items-start gap-6">
         {/* Train cards */}
-        <div className="flex-1">
+        <div className="ttr-train-section flex-1">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-display font-semibold text-foreground">
               Карты вагонов
@@ -73,7 +73,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             )}
           </div>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="ttr-train-grid flex flex-wrap gap-2">
             {cardGroups.map(({ type, indices }) => {
               // Count how many of this type are selected
               const selectedOfType = indices.filter(i => selectedCardIndices.includes(i)).length;
@@ -95,7 +95,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
               };
               
               return (
-                <div key={type} className="relative flex flex-col items-center">
+                <div key={type} className="ttr-train-item relative flex flex-col items-center" data-card-color={type}>
                   <TrainCard
                     type={type}
                     count={totalCount}
@@ -150,10 +150,10 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         </div>
         
         {/* Divider */}
-        <div className="w-px min-h-[120px] bg-ornament/30" />
+        <div className="ttr-hand-divider w-px min-h-[120px] bg-ornament/30" />
         
         {/* Destination tickets */}
-        <div className="flex flex-col" style={{ width: '360px', height: '140px' }}>
+        <div className="ttr-tickets-section flex flex-col">
           <div className="flex items-center gap-2 mb-2 shrink-0">
             <span className="text-sm font-display font-semibold text-foreground">
               Маршруты
@@ -163,7 +163,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             </span>
           </div>
           
-          <ScrollArea className="flex-1 h-full">
+          <ScrollArea className="ttr-tickets-scroll flex-1 min-h-0">
             <div className="flex flex-col gap-2 pr-3">
               {destinationTickets.map((ticket) => (
                 <DestinationCard

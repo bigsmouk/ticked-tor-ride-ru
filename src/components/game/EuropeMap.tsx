@@ -118,7 +118,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const { gameState, canClaimRoute } = useGameStore();
   
   // Zoom and pan state
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(1.08);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [showCityNames, setShowCityNames] = useState(false);
@@ -248,7 +248,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           −
         </button>
         <button 
-          onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }); }}
+          onClick={() => { setScale(1.08); setPosition({ x: 0, y: 0 }); }}
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs"
         >
           ⟲

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import './GameBoardLayout.css';
 import { EuropeMap } from '@/components/game/EuropeMap';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { PlayerHand } from '@/components/game/PlayerHand';
@@ -31,6 +32,10 @@ export const GameBoard: React.FC = () => {
     startBuildStation, buildStation, cancelBuildStation, getStationCost
   } = useGameStore();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [showGameLog, setShowGameLog] = useState(false);
+  const [showHand, setShowHand] = useState(false);
+  const [showDeck, setShowDeck] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
@@ -39,6 +44,26 @@ export const GameBoard: React.FC = () => {
   const [showStationBuilder, setShowStationBuilder] = useState(false);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
+  // Keyboard shortcut: toggle hand. Browsers may reserve Ctrl+J for Downloads.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || !['j', 'o'].includes(event.key.toLowerCase())) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      event.preventDefault();
+      if (event.key.toLowerCase() === 'j') setShowHand(open => !open);
+      if (event.key.toLowerCase() === 'o') setShowDeck(open => !open);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   // Получаем функцию синхронизации и статус подключения (из провайдера, один канал на страницу)
   const { sendActionToHost, isHost, connectionStatus, lastSyncTime, reconnectAttempt, attemptReconnect } = useGameSyncContext();
   
@@ -120,7 +145,7 @@ export const GameBoard: React.FC = () => {
   
   // Если нет gameState, показываем пустой контейнер (скрыт через parent visibility)
   if (!gameState) {
-    return <div className="h-screen flex flex-col bg-background overflow-hidden" />;
+    return <div className="ttr-game h-screen flex flex-col bg-background overflow-hidden" />;
   }
 
   const handleRouteClick = (routeId: string) => {
@@ -133,6 +158,8 @@ export const GameBoard: React.FC = () => {
       setSelectedCardIndices([]);
     } else {
       setSelectedRoute(routeId);
+      const warning = getClaimRouteError(routeId);
+      if (warning) setNotice(warning);
       setSelectedCards([]);
       setSelectedCardIndices([]);
     }
@@ -172,6 +199,10 @@ export const GameBoard: React.FC = () => {
 
   // Начать режим выбора карт
   const handleStartDrawingCards = () => {
+    if (gameState.trainCardDeck.length === 0 && gameState.faceUpCards.filter(Boolean).length === 0) {
+      setNotice('Нет доступных карт вагонов.');
+      return;
+    }
     // Сбрасываем выбранный маршрут при начале взятия карт
     setSelectedRoute(null);
     setSelectedCards([]);
@@ -186,6 +217,10 @@ export const GameBoard: React.FC = () => {
 
   // Обёртка для действий - хост выполняет локально, не-хост отправляет хосту
   const handleDrawTrainCard = (fromFaceUp: boolean, cardIndex?: number) => {
+    if (!fromFaceUp && gameState.trainCardDeck.length === 0) {
+      setNotice('Колода вагонов пуста.');
+      return;
+    }
     if (isHost) {
       drawTrainCard(fromFaceUp, cardIndex);
     } else {
@@ -210,7 +245,7 @@ export const GameBoard: React.FC = () => {
     
     // Берём 3 карты маршрутов из колоды
     const destinations = gameState.destinationDeck.slice(0, 3);
-    if (destinations.length === 0) return;
+    if (destinations.length === 0) { setNotice('Колода билетов пуста.'); return; }
     
     setAvailableDestinations(destinations);
     setShowDestinationPicker(true);
@@ -373,18 +408,18 @@ export const GameBoard: React.FC = () => {
   const isSoloMode = currentRoom?.isSoloMode;
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="ttr-game h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="h-12 px-4 flex items-center justify-between bg-primary text-primary-foreground border-b-2 border-gold">
+      <header className="ttr-header h-10 px-3 flex items-center justify-between bg-primary text-primary-foreground border-b border-gold">
         <div className="flex items-center gap-2">
-          <h1 className="font-display font-bold text-lg">Ticket to Ride: Европа</h1>
+          <h1 className="font-display font-bold text-sm sm:text-base">Ticket to Ride: Европа</h1>
           {isSoloMode && (
             <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-200 rounded-full border border-amber-500/30">
               🎯 Соло
             </span>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!isSoloMode && (
             <ConnectionIndicator 
               status={connectionStatus} 
@@ -396,109 +431,97 @@ export const GameBoard: React.FC = () => {
           )}
           <div className="text-sm">Ход: {gameState.turnNumber}</div>
           <LeaveGameButton />
-          <AuthControls />
+          <div className="ttr-profile-control"><AuthControls /></div>
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left players */}
-        <aside className="w-52 p-3 flex flex-col gap-3 bg-sidebar border-r border-ornament/30 overflow-y-auto">
-          {gameState.players.slice(0, 2).map((player, i) => (
-            <PlayerPanel
-              key={player.id}
-              player={player}
-              isCurrentPlayer={player.id === gameState.currentPlayerId}
-              isLocalPlayer={player.id === localPlayerId}
-              isOnline={isPlayerOnline(player.id)}
-              position="left"
-              index={i}
-              onClick={() => handlePlayerClick(player)}
-            />
-          ))}
-        </aside>
-
-        {/* Main game area */}
-        <main className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
-          {/* Map and logs row */}
-          <div className="flex-1 flex gap-4 overflow-hidden">
-            {/* Map */}
-            <div className="flex-1 game-board rounded-lg overflow-hidden">
+      <div className="ttr-stage">
+        {notice && <div className="ttr-toast" role="alert">
+          <span>⚠️ {notice}</span>
+          <button type="button" aria-label="Закрыть уведомление" onClick={() => setNotice(null)}>×</button>
+        </div>}
+        <div className="ttr-map">
               <EuropeMap
                 cities={gameState.cities}
                 routes={gameState.routes}
                 onRouteClick={handleRouteClick}
                 selectedRoute={selectedRoute}
               />
+        </div>
+        <aside className="ttr-players ttr-overlay" aria-label="Игроки">
+          {gameState.players.map((player, i) => (
+            <div className="ttr-player-card" key={player.id}>
+              <PlayerPanel
+                player={player}
+                isCurrentPlayer={player.id === gameState.currentPlayerId}
+                isLocalPlayer={player.id === localPlayerId}
+                isOnline={isPlayerOnline(player.id)}
+                position={i < 2 ? 'left' : 'right'}
+                index={i}
+                onClick={() => handlePlayerClick(player)}
+              />
             </div>
-            
-            {/* Game logs panel */}
-            <div className="w-72 bg-sidebar rounded-lg border border-ornament/30 overflow-hidden flex flex-col">
-              <GameLog 
-                logs={gameState.logs} 
-                players={gameState.players}
+          ))}
+        </aside>
+        <div className="ttr-history-anchor ttr-overlay">
+          <button type="button" className="ttr-log-toggle" onClick={() => setShowGameLog(prev => !prev)} aria-expanded={showGameLog}>
+            📜 {showGameLog ? 'Скрыть историю' : 'История'}
+          </button>
+          {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
+        </div>
+        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''}`}>
+          <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (Ctrl+O)">
+            🃏 Колода <span className="ttr-shortcut">Ctrl+O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
+          </button>
+          <div id="ttr-deck-drawer" className="ttr-controls" aria-hidden={!showDeck}>
+            <div className="ttr-deck">
+              <CardDeckArea
+                faceUpCards={gameState.faceUpCards}
+                deckCount={gameState.trainCardDeck.length}
+                onDrawFromDeck={() => handleDrawTrainCard(false)}
+                onDrawFaceUp={(i) => handleDrawTrainCard(true, i)}
+                canDraw={isMyTurn && (gameState.currentAction === 'selectingFirstCard' || gameState.currentAction === 'drawTrainCards')}
+                currentAction={gameState.currentAction}
+              />
+            </div>
+            <div className="ttr-actions">
+              <ActionPanel
+                isMyTurn={isMyTurn}
+                currentAction={gameState.currentAction}
+                selectedRouteId={selectedRoute}
+                selectedCards={selectedCards}
+                canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && selectedCards.length === (routeRequirement?.count || 0) : false}
+                onDrawCards={handleStartDrawingCards}
+                onDrawDestinations={handleDrawDestinations}
+                onClaimRoute={handleClaimRoute}
+                onCancelAction={gameState.currentAction === 'buildStation' ? handleCancelBuildStation : handleCancelDrawingCards}
+                onBuildStation={handleStartBuildStation}
+                trainsRemaining={localPlayer?.trainsRemaining || 0}
+                stationsRemaining={localPlayer?.stationsRemaining || 0}
+                routeRequirement={routeRequirement}
+                claimError={claimError}
+                stationCost={stationCost}
               />
             </div>
           </div>
-
-          {/* Bottom controls */}
-          <div className="flex gap-4">
-            <CardDeckArea
-              faceUpCards={gameState.faceUpCards}
-              deckCount={gameState.trainCardDeck.length}
-              onDrawFromDeck={() => handleDrawTrainCard(false)}
-              onDrawFaceUp={(i) => handleDrawTrainCard(true, i)}
-              canDraw={isMyTurn && (gameState.currentAction === 'selectingFirstCard' || gameState.currentAction === 'drawTrainCards')}
-              currentAction={gameState.currentAction}
-            />
-            <ActionPanel
-              isMyTurn={isMyTurn}
-              currentAction={gameState.currentAction}
-              selectedRouteId={selectedRoute}
-              selectedCards={selectedCards}
-              canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && selectedCards.length === (routeRequirement?.count || 0) : false}
-              onDrawCards={handleStartDrawingCards}
-              onDrawDestinations={handleDrawDestinations}
-              onClaimRoute={handleClaimRoute}
-              onCancelAction={gameState.currentAction === 'buildStation' ? handleCancelBuildStation : handleCancelDrawingCards}
-              onBuildStation={handleStartBuildStation}
-              trainsRemaining={localPlayer?.trainsRemaining || 0}
-              stationsRemaining={localPlayer?.stationsRemaining || 0}
+        </div>
+        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : ''}`} aria-label="Мои карты и билеты">
+          <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (Ctrl+J)">
+            <span aria-hidden="true">{showHand ? '❯' : '❮'}</span>
+            <span>Карты</span><span>Билеты</span>
+            <small>Ctrl+J</small>
+          </button>
+          <div id="ttr-hand-drawer" className="ttr-hand-content" aria-hidden={!showHand}>
+            <PlayerHand
+              trainCards={localPlayer.trainCards}
+              destinationTickets={localPlayer.destinationTickets}
+              selectedCardIndices={selectedCardIndices}
+              onCardSelect={handleCardSelect}
               routeRequirement={routeRequirement}
-              claimError={claimError}
-              stationCost={stationCost}
             />
           </div>
-        </main>
-
-        {/* Right players */}
-        <aside className="w-52 p-3 flex flex-col gap-3 bg-sidebar border-l border-ornament/30 overflow-y-auto">
-          {gameState.players.slice(2, 4).map((player, i) => (
-            <PlayerPanel
-              key={player.id}
-              player={player}
-              isCurrentPlayer={player.id === gameState.currentPlayerId}
-              isLocalPlayer={player.id === localPlayerId}
-              isOnline={isPlayerOnline(player.id)}
-              position="right"
-              index={i + 2}
-              onClick={() => handlePlayerClick(player)}
-            />
-          ))}
-        </aside>
+        </aside>}
       </div>
-
-      {/* Player hand */}
-      {localPlayer && (
-        <footer className="p-4 bg-sidebar border-t-2 border-ornament">
-          <PlayerHand
-            trainCards={localPlayer.trainCards}
-            destinationTickets={localPlayer.destinationTickets}
-            selectedCardIndices={selectedCardIndices}
-            onCardSelect={handleCardSelect}
-            routeRequirement={routeRequirement}
-          />
-        </footer>
-      )}
 
       {/* Destination picker modal */}
       {showDestinationPicker && (
