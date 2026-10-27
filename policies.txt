@@ -1,0 +1,187 @@
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:34:CREATE POLICY "Anyone can view rooms" ON public.rooms FOR SELECT USING (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:35:CREATE POLICY "Anyone can create rooms" ON public.rooms FOR INSERT WITH CHECK (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:36:CREATE POLICY "Anyone can update rooms" ON public.rooms FOR UPDATE USING (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:37:CREATE POLICY "Anyone can delete rooms" ON public.rooms FOR DELETE USING (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:40:CREATE POLICY "Anyone can view room players" ON public.room_players FOR SELECT USING (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:41:CREATE POLICY "Anyone can join rooms" ON public.room_players FOR INSERT WITH CHECK (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:42:CREATE POLICY "Anyone can update their status" ON public.room_players FOR UPDATE USING (true);
+supabase\migrations\20260108130005_293df882-5c6a-4dca-bb23-a1098b2f3957.sql:43:CREATE POLICY "Anyone can leave rooms" ON public.room_players FOR DELETE USING (true);
+supabase\migrations\20260108130731_5f264da0-e282-417a-abec-9928f629196c.sql:2:DROP POLICY IF EXISTS "Anyone can delete rooms" ON public.rooms;
+supabase\migrations\20260108130731_5f264da0-e282-417a-abec-9928f629196c.sql:5:CREATE POLICY "Host can delete own room" ON public.rooms 
+supabase\migrations\20260108130844_82723dec-ad20-4f6b-9df5-7602bda2209e.sql:2:DROP POLICY IF EXISTS "Anyone can update rooms" ON public.rooms;
+supabase\migrations\20260108130844_82723dec-ad20-4f6b-9df5-7602bda2209e.sql:5:CREATE POLICY "Host can update own room" ON public.rooms 
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:12:DROP POLICY IF EXISTS "Anyone can join rooms" ON public.room_players;
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:13:CREATE POLICY "Players can join rooms" ON public.room_players 
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:17:DROP POLICY IF EXISTS "Anyone can update their status" ON public.room_players;
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:18:CREATE POLICY "Players can update own status" ON public.room_players 
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:22:DROP POLICY IF EXISTS "Anyone can leave rooms" ON public.room_players;
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:23:CREATE POLICY "Players can leave rooms" ON public.room_players 
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:27:DROP POLICY IF EXISTS "Anyone can create rooms" ON public.rooms;
+supabase\migrations\20260108130952_787cdf42-0539-4be7-9843-03ee836b88f5.sql:28:CREATE POLICY "Anyone can create rooms" ON public.rooms 
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:2:DROP POLICY IF EXISTS "Players can join rooms" ON public.room_players;
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:3:DROP POLICY IF EXISTS "Players can update own status" ON public.room_players;
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:4:DROP POLICY IF EXISTS "Players can leave rooms" ON public.room_players;
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:6:-- Create secure policies using auth.uid()
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:7:CREATE POLICY "Authenticated users can join rooms" ON public.room_players 
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:8:FOR INSERT WITH CHECK (player_id = auth.uid()::text);
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:10:CREATE POLICY "Players can update own status" ON public.room_players 
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:11:FOR UPDATE USING (player_id = auth.uid()::text);
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:13:CREATE POLICY "Players can leave rooms" ON public.room_players 
+supabase\migrations\20260108131554_9676bfdc-d7ae-4611-9269-5f1bc235c1fc.sql:14:FOR DELETE USING (player_id = auth.uid()::text);supabase\migrations\20260108131618_69f146a2-e4cc-4625-98f6-164a393a88a0.sql:2:DROP POLICY IF EXISTS "Anyone can create rooms" ON public.rooms;
+supabase\migrations\20260108131618_69f146a2-e4cc-4625-98f6-164a393a88a0.sql:3:CREATE POLICY "Authenticated users can create rooms" ON public.rooms 
+supabase\migrations\20260108131618_69f146a2-e4cc-4625-98f6-164a393a88a0.sql:4:FOR INSERT WITH CHECK (host_id = auth.uid()::text);supabase\migrations\20260108132320_4d3b1154-6351-40b1-8be9-cc569e167ac9.sql:2:DROP POLICY IF EXISTS "Anyone can view room players" ON public.room_players;
+supabase\migrations\20260108132320_4d3b1154-6351-40b1-8be9-cc569e167ac9.sql:5:CREATE POLICY "Players can view room members" ON public.room_players 
+supabase\migrations\20260108132320_4d3b1154-6351-40b1-8be9-cc569e167ac9.sql:10:    AND rp.player_id = auth.uid()::text
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:2:DROP POLICY IF EXISTS "Host can update own room" ON public.rooms;
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:3:DROP POLICY IF EXISTS "Host can delete own room" ON public.rooms;
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:6:CREATE POLICY "Host can update own room" ON public.rooms 
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:7:FOR UPDATE USING (host_id = auth.uid()::text);
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:9:CREATE POLICY "Host can delete own room" ON public.rooms 
+supabase\migrations\20260108132605_17bf75c1-34d5-40c1-ab6f-8bac6dc7ca32.sql:10:FOR DELETE USING (host_id = auth.uid()::text);supabase\migrations\20260108132656_b6b1e78d-8783-4e0b-9a3f-c6638377863f.sql:2:DROP POLICY IF EXISTS "Anyone can view rooms" ON public.rooms;
+supabase\migrations\20260108132656_b6b1e78d-8783-4e0b-9a3f-c6638377863f.sql:5:CREATE POLICY "Authenticated users can view rooms" ON public.rooms 
+supabase\migrations\20260108132656_b6b1e78d-8783-4e0b-9a3f-c6638377863f.sql:6:FOR SELECT USING (auth.uid() IS NOT NULL);supabase\migrations\20260108132752_828d062e-0036-418e-b909-0ea91b891be1.sql:2:DROP POLICY IF EXISTS "Players can view room members" ON public.room_players;
+supabase\migrations\20260108132752_828d062e-0036-418e-b909-0ea91b891be1.sql:5:CREATE POLICY "Players can view room members" ON public.room_players 
+supabase\migrations\20260108132752_828d062e-0036-418e-b909-0ea91b891be1.sql:7:  auth.uid() IS NOT NULL AND
+supabase\migrations\20260108132752_828d062e-0036-418e-b909-0ea91b891be1.sql:11:    AND rp.player_id = auth.uid()::text
+supabase\migrations\20260108133428_efc53031-6d69-4070-a395-13bbc4681242.sql:12:    AND player_id = auth.uid()::text
+supabase\migrations\20260108133428_efc53031-6d69-4070-a395-13bbc4681242.sql:17:DROP POLICY IF EXISTS "Players can view room members" ON public.room_players;
+supabase\migrations\20260108133428_efc53031-6d69-4070-a395-13bbc4681242.sql:20:CREATE POLICY "Players can view room members" ON public.room_players 
+supabase\migrations\20260108133428_efc53031-6d69-4070-a395-13bbc4681242.sql:22:  auth.uid() IS NOT NULL AND public.is_room_member(room_id)
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:2:DROP POLICY IF EXISTS "Authenticated users can view rooms" ON public.rooms;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:3:DROP POLICY IF EXISTS "Authenticated users can create rooms" ON public.rooms;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:4:DROP POLICY IF EXISTS "Host can update own room" ON public.rooms;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:5:DROP POLICY IF EXISTS "Host can delete own room" ON public.rooms;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:7:DROP POLICY IF EXISTS "Players can view room members" ON public.room_players;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:8:DROP POLICY IF EXISTS "Authenticated users can join rooms" ON public.room_players;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:9:DROP POLICY IF EXISTS "Players can update own status" ON public.room_players;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:10:DROP POLICY IF EXISTS "Players can leave rooms" ON public.room_players;
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:13:CREATE POLICY "Anyone can view rooms" ON public.rooms FOR SELECT USING (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:14:CREATE POLICY "Anyone can create rooms" ON public.rooms FOR INSERT WITH CHECK (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:15:CREATE POLICY "Anyone can update rooms" ON public.rooms FOR UPDATE USING (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:16:CREATE POLICY "Anyone can delete rooms" ON public.rooms FOR DELETE USING (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:19:CREATE POLICY "Anyone can view room players" ON public.room_players FOR SELECT USING (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:20:CREATE POLICY "Anyone can join rooms" ON public.room_players FOR INSERT WITH CHECK (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:21:CREATE POLICY "Anyone can update status" ON public.room_players FOR UPDATE USING (true);
+supabase\migrations\20260108133819_127774f0-0ca6-4adb-8c20-4e22a99eb1a3.sql:22:CREATE POLICY "Anyone can leave rooms" ON public.room_players FOR DELETE USING (true);supabase\migrations\20260108191548_6f83b5a1-9a21-499e-9723-5d5965e5e14a.sql:2:DROP POLICY IF EXISTS "Anyone can update rooms" ON public.rooms;
+supabase\migrations\20260108191548_6f83b5a1-9a21-499e-9723-5d5965e5e14a.sql:3:DROP POLICY IF EXISTS "Anyone can delete rooms" ON public.rooms;
+supabase\migrations\20260108191548_6f83b5a1-9a21-499e-9723-5d5965e5e14a.sql:8:CREATE POLICY "Only host can update rooms" 
+supabase\migrations\20260108191548_6f83b5a1-9a21-499e-9723-5d5965e5e14a.sql:14:CREATE POLICY "Only host can delete rooms" 
+supabase\migrations\20260108191548_6f83b5a1-9a21-499e-9723-5d5965e5e14a.sql:19:-- Note: Since the game uses localStorage-based player_id (not auth.uid()),
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:15:CREATE POLICY "Любой может видеть профили" ON public.profiles FOR SELECT USING (true);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:16:CREATE POLICY "Пользователь может обновлять свой профиль" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:17:CREATE POLICY "Пользователь может создать свой профиль" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:55:CREATE POLICY "Любой может видеть историю матчей" ON public.match_history FOR SELECT USING (true);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:57:CREATE POLICY "Система может создавать записи" ON public.match_history FOR INSERT WITH CHECK (true);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:80:CREATE POLICY "Любой может видеть участников" ON public.match_players FOR SELECT USING (true);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:81:CREATE POLICY "Система может создавать записи участников" ON public.match_players FOR INSERT WITH CHECK (true);
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:87:CREATE POLICY "Аватары публичны для просмотра" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:88:CREATE POLICY "Пользователь может загружать свой аватар" ON storage.objects FOR INSERT WITH CHECK (
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:90:  auth.uid()::text = (storage.foldername(name))[1]
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:92:CREATE POLICY "Пользователь может обновлять свой аватар" ON storage.objects FOR UPDATE USING (
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:94:  auth.uid()::text = (storage.foldername(name))[1]
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:96:CREATE POLICY "Пользователь может удалять свой аватар" ON storage.objects FOR DELETE USING (
+supabase\migrations\20260112121317_c03ee383-efd3-4c7e-a76e-ff3ebf73b601.sql:98:  auth.uid()::text = (storage.foldername(name))[1]
+supabase\migrations\20260112121756_74465a9b-fde0-414a-8611-a0216df13ef1.sql:2:CREATE POLICY "Пользователь может удалять свои записи" ON public.match_players 
+supabase\migrations\20260112121756_74465a9b-fde0-414a-8611-a0216df13ef1.sql:5:    SELECT id FROM public.profiles WHERE user_id = auth.uid()
+supabase\migrations\20260112122003_7bfe8815-3617-4c4d-b7d8-ba08958ab6c6.sql:2:DROP POLICY IF EXISTS "Любой может видеть профили" ON public.profiles;
+supabase\migrations\20260112122003_7bfe8815-3617-4c4d-b7d8-ba08958ab6c6.sql:17:CREATE POLICY "Пользователь видит только свой профиль" 
+supabase\migrations\20260112122003_7bfe8815-3617-4c4d-b7d8-ba08958ab6c6.sql:20:USING (auth.uid() = user_id);
+supabase\migrations\20260112122036_6fe08e35-d95d-44fd-a689-69148ec28199.sql:19:CREATE POLICY "Публичное чтение базовых полей профиля" 
+supabase\migrations\20260112122036_6fe08e35-d95d-44fd-a689-69148ec28199.sql:27:DROP POLICY IF EXISTS "Публичное чтение базовых полей профиля" ON public.profiles;supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:5:DROP POLICY IF EXISTS "Only host can update rooms" ON public.rooms;
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:6:DROP POLICY IF EXISTS "Only host can delete rooms" ON public.rooms;
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:9:CREATE POLICY "Только владелец может обновлять комнату" 
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:14:  (owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid())
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:20:  (owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid())
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:26:CREATE POLICY "Только владелец может удалять комнату" 
+supabase\migrations\20260112122245_4a02c0f9-47dc-4ba8-9c2b-560951d2ed22.sql:30:  (owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid())
+supabase\migrations\20260112123155_f4784ebf-e020-4672-b059-ca63c6d67625.sql:30:DROP POLICY IF EXISTS "Players can read all room players" ON public.room_players;
+supabase\migrations\20260112123155_f4784ebf-e020-4672-b059-ca63c6d67625.sql:31:DROP POLICY IF EXISTS "Anyone can view room players" ON public.room_players;
+supabase\migrations\20260112123155_f4784ebf-e020-4672-b059-ca63c6d67625.sql:34:CREATE POLICY "Публичный доступ через view"
+supabase\migrations\20260112123525_1220245a-8004-4ab0-ac2a-99413316b6ab.sql:2:DROP POLICY IF EXISTS "Система может создавать записи" ON public.match_history;
+supabase\migrations\20260112123525_1220245a-8004-4ab0-ac2a-99413316b6ab.sql:5:CREATE POLICY "Только владелец комнаты может создавать записи матчей"
+supabase\migrations\20260112123525_1220245a-8004-4ab0-ac2a-99413316b6ab.sql:13:    AND owner_auth_id = auth.uid()
+supabase\migrations\20260112123525_1220245a-8004-4ab0-ac2a-99413316b6ab.sql:17:  (room_id IS NULL AND auth.uid() IS NOT NULL)
+supabase\migrations\20260112123559_aad417d7-474e-43e8-a46f-12f1b439e394.sql:2:DROP POLICY IF EXISTS "Система может создавать записи" ON public.match_history;supabase\migrations\20260112123751_e3086fa3-e230-4c88-bb69-6f1e9c91fc99.sql:2:DROP POLICY IF EXISTS "Публичный доступ через view" ON public.room_players;
+supabase\migrations\20260112123751_e3086fa3-e230-4c88-bb69-6f1e9c91fc99.sql:3:DROP POLICY IF EXISTS "Players can read all room players" ON public.room_players;
+supabase\migrations\20260112123751_e3086fa3-e230-4c88-bb69-6f1e9c91fc99.sql:4:DROP POLICY IF EXISTS "Anyone can view room players" ON public.room_players;
+supabase\migrations\20260112123751_e3086fa3-e230-4c88-bb69-6f1e9c91fc99.sql:7:CREATE POLICY "Только авторизованные видят участников"
+supabase\migrations\20260112123751_e3086fa3-e230-4c88-bb69-6f1e9c91fc99.sql:10:USING (auth.uid() IS NOT NULL);supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:6:DROP POLICY IF EXISTS "Anyone can join rooms" ON public.room_players;
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:7:DROP POLICY IF EXISTS "Anyone can update status" ON public.room_players;
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:8:DROP POLICY IF EXISTS "Anyone can leave rooms" ON public.room_players;
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:11:CREATE POLICY "Игрок может присоединиться к комнате"
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:15:  auth.uid() IS NOT NULL 
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:16:  AND (owner_auth_id = auth.uid() OR owner_auth_id IS NULL)
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:20:CREATE POLICY "Игрок может обновлять свою запись"
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:24:  owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid()
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:27:  owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid()
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:31:CREATE POLICY "Игрок может покинуть комнату"
+supabase\migrations\20260112123906_a674668f-f5da-44c6-a85d-eee89461ecd6.sql:35:  owner_auth_id IS NOT NULL AND owner_auth_id = auth.uid()
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:19:DROP POLICY IF EXISTS "Публичный доступ к базовым данным профиля" ON public.profiles;
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:20:CREATE POLICY "Публичный доступ к базовым данным профиля"
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:26:DROP POLICY IF EXISTS "Пользователь видит только свой пр" ON public.profiles;
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:29:DROP POLICY IF EXISTS "Игрок может обновлять свою запись" ON public.room_players;
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:30:DROP POLICY IF EXISTS "Игрок может покинуть комнату" ON public.room_players;
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:33:CREATE POLICY "Авторизованный игрок обновляет свою запись"
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:37:  auth.uid() IS NOT NULL 
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:38:  AND owner_auth_id = auth.uid()
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:41:  auth.uid() IS NOT NULL 
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:42:  AND owner_auth_id = auth.uid()
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:46:CREATE POLICY "Авторизованный игрок покидает комнату"
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:50:  auth.uid() IS NOT NULL 
+supabase\migrations\20260112124519_a11ba935-9136-459f-a84c-7db7d13db436.sql:51:  AND owner_auth_id = auth.uid()
+supabase\migrations\20260112125221_629b6ceb-93a9-497d-8f82-e46bee18ba05.sql:2:DROP POLICY IF EXISTS "Публичный доступ к базовым данным профиля" ON public.profiles;
+supabase\migrations\20260112125221_629b6ceb-93a9-497d-8f82-e46bee18ba05.sql:5:CREATE POLICY "Авторизованные видят профили"
+supabase\migrations\20260112125221_629b6ceb-93a9-497d-8f82-e46bee18ba05.sql:8:USING (auth.uid() IS NOT NULL);supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:2:DROP POLICY IF EXISTS "Авторизованные видят профили" ON public.profiles;
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:4:CREATE POLICY "Пользователь видит только свой профиль"
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:7:USING (auth.uid() = user_id);
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:10:DROP POLICY IF EXISTS "Anyone can view rooms" ON public.rooms;
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:12:CREATE POLICY "Авторизованные видят комнаты"
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:15:USING (auth.uid() IS NOT NULL);
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:18:DROP POLICY IF EXISTS "Anyone can create rooms" ON public.rooms;
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:20:CREATE POLICY "Авторизованные создают комнаты"
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:23:WITH CHECK (auth.uid() IS NOT NULL AND owner_auth_id = auth.uid());
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:26:DROP POLICY IF EXISTS "Система может создавать записи уч" ON public.match_players;
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:28:CREATE POLICY "Владелец матча создаёт записи участников"
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:36:    AND r.owner_auth_id = auth.uid()
+supabase\migrations\20260112125518_0dac87de-ae14-4a05-bd81-69f216b1ec19.sql:45:    AND auth.uid() IS NOT NULL
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:4:DROP POLICY IF EXISTS "Пользователь видит только свой пр" ON public.profiles;
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:5:DROP POLICY IF EXISTS "Пользователь видит только свой профиль" ON public.profiles;
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:6:DROP POLICY IF EXISTS "Пользователь может обновлять свой" ON public.profiles;
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:7:DROP POLICY IF EXISTS "Пользователь может создать свой п" ON public.profiles;
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:10:CREATE POLICY "Пользователь видит свой профиль"
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:14:USING (auth.uid() = user_id);
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:16:CREATE POLICY "Пользователь обновляет свой профиль"
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:20:USING (auth.uid() = user_id)
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:21:WITH CHECK (auth.uid() = user_id);
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:23:CREATE POLICY "Пользователь создаёт свой профиль"
+supabase\migrations\20260112131552_15f86367-fad9-4edb-92ed-ef6cf9239993.sql:27:WITH CHECK (auth.uid() = user_id);supabase\migrations\20260112143801_0a2b718e-b127-4273-98bc-dbb9950cad76.sql:5:CREATE POLICY "Только авторизованные видят публичные профили"
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:21:CREATE POLICY "Участники комнаты могут читать состояние"
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:29:    AND rp.owner_auth_id = auth.uid()
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:33:CREATE POLICY "Участники комнаты могут создавать состояние"
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:41:    AND rp.owner_auth_id = auth.uid()
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:45:CREATE POLICY "Участники комнаты могут обновлять состояние"
+supabase\migrations\20260112145647_e3c33272-9118-4574-ba08-c4cbc76a5fc3.sql:53:    AND rp.owner_auth_id = auth.uid()
+supabase\migrations\20260112161214_e6fa0e75-fc2b-4223-ae8b-efa3119bda30.sql:2:DROP POLICY IF EXISTS "Любой может видеть историю матчей" ON public.match_history;
+supabase\migrations\20260112161214_e6fa0e75-fc2b-4223-ae8b-efa3119bda30.sql:5:CREATE POLICY "Authenticated users can view match history" 
+supabase\migrations\20260112162145_a8370ee1-f5f8-48af-8a83-61ab534f71a4.sql:2:DROP POLICY IF EXISTS "Любой может видеть участников" ON public.match_players;
+supabase\migrations\20260112162145_a8370ee1-f5f8-48af-8a83-61ab534f71a4.sql:4:CREATE POLICY "Authenticated users can view match players" 
+supabase\migrations\20260112162145_a8370ee1-f5f8-48af-8a83-61ab534f71a4.sql:12:DROP POLICY IF EXISTS "Только авторизованные видят публи" ON public.profiles;
+supabase\migrations\20260112162145_a8370ee1-f5f8-48af-8a83-61ab534f71a4.sql:16:CREATE POLICY "Authenticated users can view profiles" 
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:2:DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.profiles;
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:17:    WHERE rp1.owner_auth_id = auth.uid()
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:23:CREATE POLICY "Users can view own or co-player profiles"
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:27:  auth.uid() = user_id 
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:33:DROP POLICY IF EXISTS "Authenticated users can view match history" ON public.match_history;
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:48:      AND p.user_id = auth.uid()
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:53:CREATE POLICY "Users can view own match history"
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:60:DROP POLICY IF EXISTS "Authenticated users can view match players" ON public.match_players;
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:63:CREATE POLICY "Users can view players from own matches"
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:70:DROP POLICY IF EXISTS "Авторизованные видят комнаты" ON public.rooms;
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:84:      AND rp.owner_auth_id = auth.uid()
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:89:CREATE POLICY "Users can view public or own rooms"
+supabase\migrations\20260112201518_0a6d89fa-d287-4300-af91-13728a280f36.sql:94:  OR owner_auth_id = auth.uid()
+supabase\migrations\20260113084748_5fd5e954-ae9d-4275-9440-5ecd0a9c9378.sql:2:DROP POLICY IF EXISTS "Пользователь видит свой профиль" ON public.profiles;
+supabase\migrations\20260113084748_5fd5e954-ae9d-4275-9440-5ecd0a9c9378.sql:17:    WHERE rp1.owner_auth_id = auth.uid()
+supabase\migrations\20260113085706_28942914-3662-4c2b-91f8-8713237e5d2b.sql:4:CREATE POLICY "Хост может кикать игроков из своей комнаты" 
+supabase\migrations\20260113085706_28942914-3662-4c2b-91f8-8713237e5d2b.sql:8:  auth.uid() IS NOT NULL 
+supabase\migrations\20260113085706_28942914-3662-4c2b-91f8-8713237e5d2b.sql:12:    AND r.owner_auth_id = auth.uid()

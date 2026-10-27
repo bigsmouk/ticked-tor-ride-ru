@@ -47,6 +47,78 @@ const Index = () => {
   useEffect(() => {
     if (playerName.trim()) localStorage.setItem('ttr_guest_name', playerName.trim());
   }, [playerName]);
+  const loadPublicRooms = async () => {
+    if (!user) return;
+    setLoadingRooms(true);
+    const rooms = await fetchPublicRooms();
+    setPublicRooms(rooms);
+    setLoadingRooms(false);
+  };
+
+  // Автоматическая очистка пустых комнат каждые 5 минут
+  useEffect(() => {
+    const cleanupRooms = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('cleanup-rooms');
+        if (data?.deleted > 0) {
+          console.log(`[Cleanup] Deleted ${data.deleted} rooms:`, data.details);
+        }
+      } catch (err) {
+        // Тихо игнорируем ошибки cleanup
+        console.error('[Cleanup] Error:', err);
+      }
+    };
+
+    // Запускаем сразу при загрузке страницы
+    cleanupRooms();
+
+    // Затем каждые 5 минут
+    const interval = setInterval(cleanupRooms, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Загружаем открытые комнаты при входе на страницу + realtime подписка
+  useEffect(() => {
+    if (!user || showCreate || showJoin) return;
+    
+    // Начальная загрузка
+    loadPublicRooms();
+
+    // Подписка на изменения в таблице rooms
+    const channel = supabase
+      .channel('public-rooms-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: 'is_private=eq.false',
+        },
+        () => {
+          // Обновляем список при любых изменениях
+          loadPublicRooms();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'room_players',
+        },
+        () => {
+          // Обновляем список при изменении игроков
+          loadPublicRooms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, showCreate, showJoin]);
 
   // Показываем загрузку пока идёт восстановление сессии
   if (isRecovering) {
@@ -124,79 +196,6 @@ const Index = () => {
       </div>
     );
   }
-
-  const loadPublicRooms = async () => {
-    if (!user) return;
-    setLoadingRooms(true);
-    const rooms = await fetchPublicRooms();
-    setPublicRooms(rooms);
-    setLoadingRooms(false);
-  };
-
-  // Автоматическая очистка пустых комнат каждые 5 минут
-  useEffect(() => {
-    const cleanupRooms = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('cleanup-rooms');
-        if (data?.deleted > 0) {
-          console.log(`[Cleanup] Deleted ${data.deleted} rooms:`, data.details);
-        }
-      } catch (err) {
-        // Тихо игнорируем ошибки cleanup
-        console.error('[Cleanup] Error:', err);
-      }
-    };
-
-    // Запускаем сразу при загрузке страницы
-    cleanupRooms();
-
-    // Затем каждые 5 минут
-    const interval = setInterval(cleanupRooms, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Загружаем открытые комнаты при входе на страницу + realtime подписка
-  useEffect(() => {
-    if (!user || showCreate || showJoin) return;
-    
-    // Начальная загрузка
-    loadPublicRooms();
-
-    // Подписка на изменения в таблице rooms
-    const channel = supabase
-      .channel('public-rooms-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'rooms',
-          filter: 'is_private=eq.false',
-        },
-        () => {
-          // Обновляем список при любых изменениях
-          loadPublicRooms();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'room_players',
-        },
-        () => {
-          // Обновляем список при изменении игроков
-          loadPublicRooms();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, showCreate, showJoin]);
 
   const handleCreateGame = async () => {
     if (playerName.trim() && roomName.trim()) {

@@ -108,32 +108,43 @@ export const useGameSync = (roomId: string | null) => {
   }, [clearRetryTimer, clearReconnectTimer, clearStaleCheckTimer]);
 
   // Унифицированная отправка broadcast (предпочитаем REST-доставку)
-  const sendBroadcast = useCallback(async (event: string, payload: Record<string, any>) => {
-    const channel = channelRef.current as any;
-    if (!channel) return;
+  const sendBroadcast = useCallback(async (
+  event: string,
+  payload: Record<string, unknown>
+) => {
+  const channel = channelRef.current;
 
-    try {
-      if (typeof channel.httpSend === 'function') {
-        await channel.httpSend({ type: 'broadcast', event, payload });
-        return;
-      }
-    } catch (e) {
-      console.warn('[GameSync] httpSend failed, falling back to send()', e);
-    }
+  if (!channel) {
+    console.error('[GameSync DEBUG] Cannot send: channel is missing');
+    return;
+  }
 
-    // Помечаем что используем REST fallback
-    if (!usingRestFallbackRef.current) {
-      usingRestFallbackRef.current = true;
-      setConnectionStatus('degraded');
-      console.log('[GameSync] Switched to REST fallback mode');
-    }
+  console.log('[GameSync DEBUG] Sending broadcast:', {
+    event,
+    channelState: channel.state,
+    payload,
+  });
 
-    try {
-      await channel.send({ type: 'broadcast', event, payload });
-    } catch (e) {
-      console.error('[GameSync] send() failed', e);
+  try {
+    const status = await channel.send({
+      type: 'broadcast',
+      event,
+      payload,
+    });
+
+    console.log('[GameSync DEBUG] Broadcast result:', {
+      event,
+      status,
+      channelState: channel.state,
+    });
+
+    if (status !== 'ok') {
+      console.error('[GameSync DEBUG] Broadcast was not acknowledged:', status);
     }
-  }, []);
+  } catch (error) {
+    console.error('[GameSync DEBUG] Broadcast error:', error);
+  }
+}, []);
 
   // Отправка действия хосту (для не-хостов)
   const sendActionToHost = useCallback((action: GameAction) => {
@@ -198,36 +209,24 @@ export const useGameSync = (roomId: string | null) => {
 
   // Автоматическое переподключение при потере связи
   const attemptReconnect = useCallback(() => {
-    if (!roomId || !localPlayerId || isHostRef.current || !mountedRef.current) return;
+  if (!roomId || !localPlayerId || !mountedRef.current) return;
 
-    if (reconnectAttemptsRef.current >= SYNC_CONFIG.MAX_RECONNECT_ATTEMPTS) {
-      console.log('[GameSync] Max reconnect attempts reached');
-      setConnectionStatus('disconnected');
-      return;
-    }
+  if (reconnectAttemptsRef.current >= SYNC_CONFIG.MAX_RECONNECT_ATTEMPTS) {
+    console.error('[GameSync] Max reconnect attempts reached');
+    setConnectionStatus('disconnected');
+    return;
+  }
 
-    reconnectAttemptsRef.current += 1;
-    setReconnectAttempt(reconnectAttemptsRef.current);
-    setConnectionStatus('reconnecting');
-    
-    console.log('[GameSync] Attempting reconnect, attempt:', reconnectAttemptsRef.current);
-    
-    // Пересоздаём канал
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+  reconnectAttemptsRef.current += 1;
 
-    // Небольшая задержка перед переподключением
-    clearReconnectTimer();
-    reconnectTimerRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        // Эффект перезапустится из-за изменения зависимости
-        retryCountRef.current = 0;
-        requestSyncWithRetry();
-      }
-    }, SYNC_CONFIG.RECONNECT_DELAY);
-  }, [roomId, localPlayerId, requestSyncWithRetry, clearReconnectTimer]);
+  console.log(
+    '[GameSync] Scheduling channel reconnect, attempt:',
+    reconnectAttemptsRef.current
+  );
+
+  setConnectionStatus('reconnecting');
+  setReconnectAttempt(prev => prev + 1);
+}, [roomId, localPlayerId]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -254,11 +253,14 @@ export const useGameSync = (roomId: string | null) => {
       },
     });
 
-    const sendFromChannel = async (event: string, payload: Record<string, any>) => {
-      const ch = channel as any;
+    const sendFromChannel = async (
+  event: string,
+  payload: Record<string, unknown>
+) => {
+  const ch = channel;
       try {
         if (typeof ch.httpSend === 'function') {
-          await ch.httpSend({ type: 'broadcast', event, payload });
+          await ch.httpSend(event, payload);
           return;
         }
       } catch (e) {
@@ -296,7 +298,9 @@ export const useGameSync = (roomId: string | null) => {
           hostOnlineRef.current = true;
           setConnectionStatus(prev => prev === 'connecting' ? 'connected' : prev);
           
-          const hostPresence = hostPresences[0] as any;
+          const hostPresence = hostPresences[0] as {
+  gameState?: string;
+};
           if (hostPresence?.gameState) {
             try {
               const parsedState = JSON.parse(hostPresence.gameState) as GameState;
@@ -419,8 +423,19 @@ export const useGameSync = (roomId: string | null) => {
         
         const { playerId, action } = payload.payload as { playerId: string; action: GameAction };
         console.log('[GameSync] Host received action from player:', playerId, 'action:', action.type);
+	console.log('[GameSync DEBUG] Action received:', {
+  	 senderPlayerId: playerId,
+	 actionType: action.type,
+  	 hostPlayerId: localPlayerId,
+	 isHost: isHostRef.current,
+	});
         
         const currentState = useGameStore.getState().gameState;
+	console.log('[GameSync DEBUG] Current turn:', {
+  	 currentPlayerId: currentState?.currentPlayerId,
+  	 turnNumber: currentState?.turnNumber,
+  	 senderMatchesCurrentPlayer: currentState?.currentPlayerId === playerId,
+	});
         if (!currentState) {
           console.log('[GameSync] Ignoring action - no game state');
           return;
@@ -515,7 +530,7 @@ export const useGameSync = (roomId: string | null) => {
           setConnectionStatus('disconnected');
           
           // Автоматически пытаемся переподключиться (для не-хостов)
-          if (!isHostRef.current && mountedRef.current) {
+          if (mountedRef.current) {
             clearReconnectTimer();
             reconnectTimerRef.current = setTimeout(() => {
               if (mountedRef.current && reconnectAttemptsRef.current < SYNC_CONFIG.MAX_RECONNECT_ATTEMPTS) {
@@ -581,7 +596,7 @@ export const useGameSync = (roomId: string | null) => {
       channelRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer]);
+  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer, reconnectAttempt, clearRetryTimer]);
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {
