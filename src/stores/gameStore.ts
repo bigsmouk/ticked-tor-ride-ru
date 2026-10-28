@@ -1179,6 +1179,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ticketPenalty: number;
       longestPathBonus: number;
       unusedStationsBonus: number;
+      unusedStations: number;
       totalScore: number;
       longestPath: number; 
       completedTickets: number; 
@@ -1228,8 +1229,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       console.log(`  Длина самого длинного пути: ${longestPath}`);
       
       // Calculate unused stations bonus (+4 per unused station)
-      const unusedStationsBonus = player.stationsRemaining * UNUSED_STATION_POINTS;
-      console.log(`  Неиспользованные станции: ${player.stationsRemaining} x ${UNUSED_STATION_POINTS} = +${unusedStationsBonus}`);
+      // Derive from actual placed stations, so an out-of-sync remaining counter
+      // cannot silently erase the end-of-game +4 bonus per unbuilt station.
+      const unusedStations = Math.max(0, 3 - playerStations.length);
+      const unusedStationsBonus = unusedStations * UNUSED_STATION_POINTS;
+      console.log(`  Неиспользованные станции: ${unusedStations} x ${UNUSED_STATION_POINTS} = +${unusedStationsBonus}`);
       
       finalScores.push({
         playerId: player.id,
@@ -1238,6 +1242,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ticketPenalty,
         longestPathBonus: 0, // Will be set in second pass
         unusedStationsBonus,
+        unusedStations,
         totalScore: player.score + ticketBonus - ticketPenalty + unusedStationsBonus,
         longestPath,
         completedTickets: completedCount,
@@ -1292,7 +1297,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const fs = finalScores.find(f => f.playerId === player.id);
       return {
         ...player,
-        score: fs?.totalScore || player.score,
+        score: fs?.totalScore ?? player.score,
         destinationTickets: player.destinationTickets.map(ticket => ({
           ...ticket,
           isCompleted: areCitiesConnected(player.id, ticket.cities[0], ticket.cities[1]),
@@ -1312,6 +1317,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         finalScores: finalScores.map(fs => ({
           playerId: fs.playerId,
           score: fs.totalScore,
+          routePoints: fs.routePoints,
+          unusedStationsBonus: fs.unusedStationsBonus,
+          unusedStations: fs.unusedStations,
           longestPath: fs.longestPath,
           completedTickets: fs.completedTickets,
           failedTickets: fs.failedTickets,
