@@ -35,7 +35,6 @@ export const GameBoard: React.FC = () => {
   const [showGameLog, setShowGameLog] = useState(false);
   const [showHand, setShowHand] = useState(false);
   const [showDeck, setShowDeck] = useState(false);
-  const [mapInteracting, setMapInteracting] = useState(false);
   const [hoveredTicket, setHoveredTicket] = useState<DestinationTicket | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
@@ -458,10 +457,9 @@ export const GameBoard: React.FC = () => {
                 onRouteClick={handleRouteClick}
                 selectedRoute={selectedRoute}
                 highlightedCities={hoveredTicket?.cities ?? null}
-                onInteractionChange={setMapInteracting}
               />
         </div>
-        <aside className={`ttr-players ttr-overlay ${mapInteracting ? "ttr-map-interacting" : ""}`} aria-label="Игроки">
+        <aside className={`ttr-players ttr-overlay`} aria-label="Игроки">
           {gameState.players.map((player, i) => (
             <div className="ttr-player-card" key={player.id}>
               <PlayerPanel
@@ -476,13 +474,13 @@ export const GameBoard: React.FC = () => {
             </div>
           ))}
         </aside>
-        <div className={`ttr-history-anchor ttr-overlay ${mapInteracting ? "ttr-map-interacting" : ""}`}>
+        <div className={`ttr-history-anchor ttr-overlay`}>
           <button type="button" className="ttr-log-toggle" onClick={() => setShowGameLog(prev => !prev)} aria-expanded={showGameLog}>
             📜 {showGameLog ? 'Скрыть историю' : 'История'}
           </button>
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
-        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${mapInteracting ? 'ttr-map-interacting' : ''}`}>
+        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''}`}>
           <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (O)">
             🃏 Колода <span className="ttr-shortcut">O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
           </button>
@@ -518,7 +516,7 @@ export const GameBoard: React.FC = () => {
             </div>
           </div>
         </div>
-        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' } ${mapInteracting ? 'ttr-map-interacting' : ''}`} aria-label="Мои карты и билеты">
+        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' }`} aria-label="Мои карты и билеты">
           <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (J)">
             <span aria-hidden="true">{showHand ? '❯' : '❮'}</span>
             <span>Карты</span><span>Билеты</span>
