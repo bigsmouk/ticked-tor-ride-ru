@@ -162,7 +162,7 @@ const Index = () => {
         {/* Header */}
         <header className="py-6 text-center border-b-4 border-ornament bg-primary">
           <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
-            <Link to="/" title="На главную" className="hover:opacity-80">🚂 Ticket to Ride</Link>
+            <Link to="/" title="На главную" className="hover:opacity-80">🚂 Ticket to Ride</Link> <span className="align-middle text-sm font-semibold text-amber-300">(beta)</span>
           </h1>
           <p className="font-display text-xl text-gold mt-2">ЕВРОПА</p>
         </header>
@@ -262,7 +262,7 @@ const Index = () => {
         </Link>
 
         <h1 className="vintage-title text-xl md:text-3xl font-bold text-primary-foreground">
-          <Link to="/" title="На главную" className="hover:opacity-80">Ticket to Ride</Link>
+          <Link to="/" title="На главную" className="hover:opacity-80">Ticket to Ride</Link> <span className="align-middle text-xs md:text-sm font-semibold tracking-normal text-amber-300">(beta)</span>
         </h1>
         <p className="vintage-subtitle text-sm md:text-base font-bold">
           ЕВРОПА
