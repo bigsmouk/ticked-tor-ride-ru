@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player, PlayerColor } from '@/types/game';
+import './PlayerPanel.css';
 
 interface PlayerPanelProps {
   player: Player;
@@ -12,34 +13,40 @@ interface PlayerPanelProps {
 }
 
 const PLAYER_COLORS: Record<PlayerColor, string> = {
-  red: '#bc3937', blue: '#317ab9', green: '#3c9872', yellow: '#cba543', black: '#55505a',
+  red: '#ba2633', blue: '#2774af', green: '#258a65', yellow: '#c39b2b', black: '#47424b',
 };
 
 export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   player, isCurrentPlayer, isLocalPlayer, isOnline = true, onClick,
 }) => {
-  const accent = PLAYER_COLORS[player.color] ?? '#8a6c48';
+  const accent = PLAYER_COLORS[player.color] ?? '#846e51';
+  const cardCount = player.trainCards.length;
+  const ticketCount = player.destinationTickets.length;
   return (
     <button
       type="button"
-      className={`player-panel ttr-player-compact ${isCurrentPlayer ? 'ttr-player-active' : ''}`}
+      className={`player-panel ttr-player-reference ${isCurrentPlayer ? 'ttr-player-active' : ''}`}
       style={{ '--player-accent': accent } as React.CSSProperties}
       onClick={onClick}
-      title={`Профиль игрока ${player.name}`}
+      title={`Открыть профиль: ${player.name}`}
+      aria-label={`Игрок ${player.name}, ${player.score} очков, ${player.trainsRemaining} вагонов, ${cardCount} карт, ${ticketCount} билетов`}
     >
-      <span className="ttr-player-avatar">
-        {player.avatarUrl ? <img src={player.avatarUrl} alt="" /> : player.name.charAt(0).toUpperCase()}
-        <span className={`ttr-player-online ${isOnline ? 'is-online' : ''}`} />
-      </span>
-      <span className="ttr-player-body">
-        <span className="ttr-player-name" title={player.name}>{player.name}{isLocalPlayer && <small> (Вы)</small>}</span>
-        <span className="ttr-player-score">🏆 {player.score} очков</span>
-        <span className="ttr-player-stats">
-          <span title="Оставшиеся вагоны">🚃 {player.trainsRemaining}</span>
-          <span title="Станции">🏛️ {player.stationsRemaining}</span>
-          <span title="Карты вагонов">🃏 {player.trainCards.length}</span>
-          <span title="Билеты">🎫 {player.destinationTickets.length}</span>
+      <span className="ttr-pr-head">
+        <span className="ttr-pr-avatar">
+          {player.avatarUrl ? <img src={player.avatarUrl} alt="" /> : player.isBot ? '🤖' : player.name.charAt(0).toUpperCase()}
+          {isLocalPlayer && <span className="ttr-pr-me" title="Вы">★</span>}
         </span>
+        <span className="ttr-pr-identity">
+          <span className="ttr-pr-name">{player.name}</span>
+          <span className="ttr-pr-score"><span aria-hidden="true">★</span> {player.score} <small>очков</small></span>
+        </span>
+        <span className="ttr-pr-status" title={isOnline ? 'В сети' : 'Не в сети'} aria-label={isOnline ? 'В сети' : 'Не в сети'} data-online={isOnline} />
+      </span>
+      <span className="ttr-pr-stats">
+        <span className="ttr-pr-wagons" title="Осталось вагонов"><span aria-hidden="true">🚃</span><strong>{player.trainsRemaining}</strong></span>
+        <span className="ttr-pr-stat" title="Карты вагонов"><span aria-hidden="true">🃏</span><strong>{cardCount}</strong></span>
+        <span className="ttr-pr-stat" title="Билеты маршрутов"><span aria-hidden="true">🎫</span><strong>{ticketCount}</strong></span>
+        <span className="ttr-pr-stat ttr-pr-stations" title="Осталось станций"><span aria-hidden="true">🏛️</span><strong>{player.stationsRemaining}/3</strong></span>
       </span>
     </button>
   );
