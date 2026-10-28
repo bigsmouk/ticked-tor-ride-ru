@@ -332,7 +332,7 @@ export const DESTINATION_TICKETS: DestinationTicket[] = [
   { id: 'ticket-29', cities: ['stockholm', 'wien'], points: 11 },
   { id: 'ticket-30', cities: ['venezia', 'constantinople'], points: 10 },
   { id: 'ticket-31', cities: ['warszawa', 'smolensk'], points: 6 },
-  { id: 'ticket-32', cities: ['zageb', 'brindisi'], points: 6 },
+  { id: 'ticket-32', cities: ['zagreb', 'brindisi'], points: 6 },
   { id: 'ticket-33', cities: ['athina', 'angora'], points: 5 },
   { id: 'ticket-34', cities: ['athina', 'wilno'], points: 11 },
   { id: 'ticket-35', cities: ['barcelona', 'bruxelles'], points: 8 },
