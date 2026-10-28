@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { GameLogEntry, Player } from '@/types/game';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -29,6 +29,11 @@ const ACTION_ICONS: Record<string, string> = {
 };
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const viewport = scrollViewportRef.current;
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
+  }, [logs.length]);
   const getPlayerName = (playerId?: string) => {
     if (!playerId) return 'Система';
     const player = players.find(p => p.id === playerId);
@@ -62,7 +67,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
         </h3>
       </div>
       
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1" viewportRef={scrollViewportRef}>
         <div className="p-2 space-y-1.5">
           {logs.length === 0 ? (
             <div className="text-muted-foreground text-xs text-center py-4">
