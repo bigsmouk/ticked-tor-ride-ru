@@ -288,7 +288,7 @@ const Index = () => {
 
             {!authLoading && !isAuthenticated && (
               <div className="mb-3 rounded-lg border border-amber-500 bg-amber-100 p-3 text-center text-sm text-amber-950">
-                🔒 Для игры необходима регистрация. Нажмите «Войти» в правом верхнем углу, чтобы создать аккаунт или авторизоваться.
+                🔒 Для игры с друзьями необходима регистрация. Соло-тренировка доступна без аккаунта.
               </div>
             )}
             {/* Player name input */}
@@ -344,7 +344,6 @@ const Index = () => {
                 <button
                   className="w-full rounded-lg py-3 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
                   onClick={async () => {
-                    if (!isAuthenticated) { toast.error('Сначала зарегистрируйтесь или войдите'); return; }
                     if (!effectivePlayerName) {
                       toast.error('Введите ваше имя');
                       return;
@@ -354,11 +353,11 @@ const Index = () => {
                       navigate('/game');
                     }
                   }}
-                  disabled={isLoading || !isAuthenticated}
+                  disabled={isLoading}
                 >
                   <span>🎯</span>
                   <span>Играть соло</span>
-                  <span className="text-xs text-muted-foreground">(тренировка)</span>
+                  <span className="text-xs text-muted-foreground">(без регистрации)</span>
                 </button>
 
                 {/* Список открытых комнат */}
