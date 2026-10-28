@@ -17,6 +17,7 @@ import EmailConfirmed from "./pages/EmailConfirmed";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
+import About from "./pages/About";
 import Rules from "./pages/Rules";
 import CookieConsent from "./components/CookieConsent";
 import { useAuth } from "./hooks/useAuth";
@@ -44,6 +45,12 @@ const AnalyticsRouteTracker = () => {
       '/rules': { title: 'Правила Ticket to Ride: Europe — как играть онлайн | Ticket to Ride', description: 'Подробные правила Ticket to Ride: Europe на русском: как строить маршруты, брать карты, выполнять билеты, использовать станции, туннели и паромы.' },
       '/privacy': { title: 'Конфиденциальность и cookies | Ticket to Ride', description: 'Политика конфиденциальности Ticket to Ride: Europe: регистрация, Supabase, cookies, Яндекс.Метрика и обработка данных.' },
     }[pathname];
+    if (pathname === '/about') {
+      document.title = language === 'en' ? 'About the Creator | Railway Game' : 'Об авторе и проекте | Железнодорожная игра';
+      document.querySelector('meta[name="description"]')?.setAttribute('content', language === 'en' ? 'About the creator and the independent browser game.' : 'Об авторе и независимой браузерной игре.');
+      document.querySelector('meta[property="og:title"]')?.setAttribute('content', document.title);
+      document.querySelector('meta[property="og:description"]')?.setAttribute('content', language === 'en' ? 'About the creator and the independent browser game.' : 'Об авторе и независимой браузерной игре.');
+    }
     if (seo) {
       if (language === "en") {
         const en = {
@@ -99,6 +106,7 @@ const App = () => (
             <Route path="/waiting" element={<RegisteredOnly><WaitingRoom /></RegisteredOnly>} />
             <Route path="/game" element={<RegisteredOnly><Game /></RegisteredOnly>} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/about" element={<About />} />
             <Route path="/rules" element={<Rules />} />
             <Route path="/email-confirmed" element={<EmailConfirmed />} />
             <Route path="/reset-password" element={<ResetPassword />} />
