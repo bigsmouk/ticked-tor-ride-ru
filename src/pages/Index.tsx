@@ -356,7 +356,7 @@ const Index = () => {
                   disabled={isLoading}
                 >
                   <span>🎯</span>
-                  <span>Играть соло</span>
+                  <span>Играть соло против бота</span>
                   <span className="text-xs text-muted-foreground">(без регистрации)</span>
                 </button>
 
