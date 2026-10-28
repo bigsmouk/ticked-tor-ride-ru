@@ -15,6 +15,7 @@ interface EuropeMapProps {
   routes: Route[];
   onRouteClick?: (routeId: string) => void;
   onCityClick?: (cityId: string) => void;
+  stationPlacementMode?: boolean;
   selectedRoute?: string | null;
   highlightedCities?: [string, string] | null;
 }
@@ -114,6 +115,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   routes,
   onRouteClick,
   onCityClick,
+  stationPlacementMode = false,
   selectedRoute,
   highlightedCities,
 }) => {
@@ -383,7 +385,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         />
         
         {/* Routes - using memoized components with cached paths */}
-        <g className="routes">
+        <g className="routes" style={{ pointerEvents: stationPlacementMode ? "none" : undefined }}>
           {routes.map((route) => {
             const cached = routePathsCache[route.id];
             if (!cached) return null;
@@ -451,7 +453,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           ))}
         </g>}
         {/* Cities - using memoized components */}
-        <g className="cities" style={{ pointerEvents: 'none' }}>
+        <g className="cities" style={{ pointerEvents: stationPlacementMode ? "auto" : "none" }}>
           {cities.map((city) => (
             <CityMarker
               key={city.id}
@@ -461,6 +463,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               showName={showCityNames || Boolean(highlightedCities?.includes(city.id))}
               highlighted={Boolean(highlightedCities?.includes(city.id))}
               onClick={() => onCityClick?.(city.id)}
+              interactive={stationPlacementMode}
+              unavailable={Boolean(gameState?.placedStations.some(station => station.cityId === city.id))}
             />
           ))}
         </g>
