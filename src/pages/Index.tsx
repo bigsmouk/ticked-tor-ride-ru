@@ -206,6 +206,7 @@ const Index = () => {
             <Link to="/" className="underline">Главная</Link>
             <Link to="/rules" className="underline">Правила игры</Link>
             <Link to="/privacy" className="underline">Конфиденциальность</Link>
+            <Link to="/about" className="underline">Об авторе</Link>
           </nav>
           <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
         </footer>
@@ -538,6 +539,7 @@ const Index = () => {
             <Link to="/" className="underline hover:text-amber-200">Главная</Link>
             <Link to="/rules" className="underline hover:text-amber-200">Правила игры</Link>
             <Link to="/privacy" className="underline hover:text-amber-200">Конфиденциальность</Link>
+            <Link to="/about" className="underline hover:text-amber-200">Об авторе</Link>
           </nav>
           <a 
             href="https://t.me/bigsssmoke" 
