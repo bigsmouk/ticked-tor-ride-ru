@@ -526,6 +526,7 @@ export const GameBoard: React.FC = () => {
             <PlayerHand
               trainCards={localPlayer.trainCards}
               destinationTickets={localPlayer.destinationTickets}
+              claimedRoutes={gameState.routes.filter(route => route.claimedBy === localPlayerId)}
               onTicketHover={setHoveredTicket}
               selectedCardIndices={selectedCardIndices}
               onCardSelect={handleCardSelect}
