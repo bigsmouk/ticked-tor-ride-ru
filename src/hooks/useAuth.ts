@@ -2,9 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-// Одна попытка гостевого входа для всех компонентов, использующих useAuth.
-let anonymousSignInPromise: ReturnType<typeof supabase.auth.signInAnonymously> | null = null;
-
 interface Profile {
   id: string;
   user_id: string;
@@ -185,19 +182,8 @@ export const useAuth = () => {
           if (!session.user.is_anonymous) startProfileLoad(session.user);
           else setAuthState(prev => ({ ...prev, profile: null, profileLoading: false }));
         } else {
-          // Гостевой вход: без email, пароля и формы регистрации.
-          // В Supabase должен быть включён Anonymous Sign-Ins.
-          if (!anonymousSignInPromise) {
-            anonymousSignInPromise = supabase.auth.signInAnonymously().finally(() => {
-              anonymousSignInPromise = null;
-            });
-          }
-          return anonymousSignInPromise.then(({ error }) => {
-            if (error) {
-              console.error('Anonymous sign-in failed:', error);
-              if (isMounted) setAuthState(prev => ({ ...prev, loading: false }));
-            }
-          });
+          // No session: stay signed out. Do not create anonymous auth.users records.
+          setAuthState({ user: null, session: null, profile: null, loading: false, profileLoading: false });
         }
       })
       .catch((e) => {
