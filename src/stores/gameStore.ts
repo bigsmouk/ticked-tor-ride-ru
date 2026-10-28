@@ -1085,32 +1085,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
       );
     };
     
-    // Check if two cities are connected for a player (considering stations)
-    // Station allows using ONE route of another player at that city
+    // Every placed station may borrow ONE opponent route. Multiple stations may
+    // be combined for the same destination ticket (the old logic tried only one).
     const areCitiesConnected = (playerId: string, city1: string, city2: string): boolean => {
-      // First, check without using any stations
-      const ownConnections = getConnectionsWithStation(playerId, null, null);
-      if (checkConnectivity(ownConnections, city1, city2)) return true;
-      
-      // Get player's stations
-      const playerStations = gameState.placedStations.filter(s => s.playerId === playerId);
-      if (playerStations.length === 0) return false;
-      
-      // Try each station with each available borrowed route
-      for (const station of playerStations) {
-        const availableRoutes = getAvailableStationRoutes(playerId, station.cityId);
-        
-        for (const route of availableRoutes) {
-          const connectionsWithBorrow = getConnectionsWithStation(playerId, station.cityId, route.id);
-          if (checkConnectivity(connectionsWithBorrow, city1, city2)) {
-            return true;
+      const own = getConnectionsWithStation(playerId, null, null);
+      if (checkConnectivity(own, city1, city2)) return true;
+      const stations = gameState.placedStations.filter(s => s.playerId === playerId);
+      if (!stations.length) return false;
+      const borrowed = new Set<string>();
+      const tryStations = (index: number): boolean => {
+        if (index === stations.length) {
+          const graph = new Map<string, Set<string>>();
+          for (const [city, neighbors] of own) graph.set(city, new Set(neighbors));
+          for (const routeId of borrowed) {
+            const route = gameState.routes.find(r => r.id === routeId);
+            if (!route) continue;
+            const [a, b] = route.cities;
+            if (!graph.has(a)) graph.set(a, new Set());
+            if (!graph.has(b)) graph.set(b, new Set());
+            graph.get(a)!.add(b);
+            graph.get(b)!.add(a);
           }
+          return checkConnectivity(graph, city1, city2);
         }
-      }
-      
-      return false;
+        if (tryStations(index + 1)) return true; // A station need not be used.
+        for (const route of getAvailableStationRoutes(playerId, stations[index].cityId)) {
+          if (borrowed.has(route.id)) continue;
+          borrowed.add(route.id);
+          if (tryStations(index + 1)) return true;
+          borrowed.delete(route.id);
+        }
+        return false;
+      };
+      return tryStations(0);
     };
-    
+
     // Calculate longest path using DFS - each wagon can only be counted once
     const calculateLongestPath = (playerId: string): number => {
       const routes = gameState.routes.filter(r => r.claimedBy === playerId);
