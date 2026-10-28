@@ -6,7 +6,7 @@ export default function Privacy() {
       <article className="mx-auto max-w-3xl rounded-xl bg-white shadow-lg p-6 sm:p-10 space-y-5">
         <Link to="/" className="text-amber-800 underline">← На главную</Link>
         <h1 className="text-3xl font-bold">Конфиденциальность и использование cookies</h1>
-        <p className="text-sm text-amber-700">Информация о работе сайта «Железнодорожное Приключение: Европа» (tickettoride.online). Дата обновления: 28 октября 2026 года.</p>
+        <p className="text-sm text-amber-700">Информация о работе сайта «Ticket to Ride: Europe» (tickettoride.online). Дата обновления: 28 октября 2026 года.</p>
         <h2 className="text-xl font-semibold">Какие данные обрабатываются</h2>
         <p>При регистрации и использовании игры могут обрабатываться email, никнейм, идентификатор учётной записи, данные авторизации и сессии, выбранный аватар, игровые комнаты, результаты матчей и технические данные запросов (например, IP-адрес и сведения об устройстве). Пароль обрабатывается сервисом авторизации Supabase; сайт не должен хранить его в открытом виде.</p>
         <h2 className="text-xl font-semibold">Сервисы и цели</h2>
