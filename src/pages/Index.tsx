@@ -27,7 +27,7 @@ interface PublicRoom {
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, startSoloGame, isLoading, isReady } = useMultiplayer();
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated, loading: authLoading } = useAuth();
   const {
     isRecovering,
     showRecoveryPrompt,
@@ -209,6 +209,7 @@ const Index = () => {
   }
 
   const handleCreateGame = async () => {
+    if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
     if (effectivePlayerName && roomName.trim()) {
       const result = await createRoom(roomName.trim(), effectivePlayerName, isPrivate);
       if (result) {
@@ -218,6 +219,7 @@ const Index = () => {
   };
 
   const handleJoinGame = async () => {
+    if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
     if (effectivePlayerName && joinCode.trim()) {
       const result = await joinRoom(joinCode.trim(), effectivePlayerName);
       if (result) {
@@ -227,6 +229,7 @@ const Index = () => {
   };
 
  const handleJoinPublicRoom = async (roomId: string) => {
+  if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
   if (!effectivePlayerName) {
     alert('Введите имя игрока, чтобы присоединиться к комнате.');
     return;
@@ -278,6 +281,11 @@ const Index = () => {
               <div className="ornate-divider my-2"></div>
             </div>
 
+            {!authLoading && !isAuthenticated && (
+              <div className="mb-3 rounded-lg border border-amber-500 bg-amber-100 p-3 text-center text-sm text-amber-950">
+                🔒 Для игры необходима регистрация. Нажмите «Войти» в правом верхнем углу, чтобы создать аккаунт или авторизоваться.
+              </div>
+            )}
             {/* Player name input */}
             <div className="mb-2">
               <label className="block font-display text-sm font-semibold mb-1 text-foreground">
@@ -296,14 +304,16 @@ const Index = () => {
               <div className="space-y-3">
                 <button
                   className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => isAuthenticated ? setShowCreate(true) : toast.error('Сначала зарегистрируйтесь или войдите')}
+                  disabled={!isAuthenticated}
                 >
                   ➕ Создать комнату
                 </button>
                 
                 <button
                   className="btn-vintage w-full rounded-lg py-2 hover-scale"
-                  onClick={() => setShowJoin(true)}
+                  onClick={() => isAuthenticated ? setShowJoin(true) : toast.error('Сначала зарегистрируйтесь или войдите')}
+                  disabled={!isAuthenticated}
                 >
                   🔗 Присоединиться по коду
                 </button>
@@ -321,6 +331,7 @@ const Index = () => {
                 <button
                   className="w-full rounded-lg py-3 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
                   onClick={async () => {
+                    if (!isAuthenticated) { toast.error('Сначала зарегистрируйтесь или войдите'); return; }
                     if (!effectivePlayerName) {
                       toast.error('Введите ваше имя');
                       return;
@@ -330,7 +341,7 @@ const Index = () => {
                       navigate('/game');
                     }
                   }}
-                  disabled={isLoading}
+                  disabled={isLoading || !isAuthenticated}
                 >
                   <span>🎯</span>
                   <span>Играть соло</span>
@@ -338,7 +349,7 @@ const Index = () => {
                 </button>
 
                 {/* Список открытых комнат */}
-                {user && (
+                {isAuthenticated && (
                   <div className="mt-2 pt-2 border-t border-ornament">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
@@ -432,7 +443,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleCreateGame}
-                  disabled={!effectivePlayerName || !roomName.trim() || isLoading}
+                  disabled={!isAuthenticated || !effectivePlayerName || !roomName.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Создание...' : '✓ Создать комнату'}
                 </button>
@@ -463,7 +474,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleJoinGame}
-                  disabled={!effectivePlayerName || !joinCode.trim() || isLoading}
+                  disabled={!isAuthenticated || !effectivePlayerName || !joinCode.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Присоединение...' : '🚂 Присоединиться'}
                 </button>
@@ -509,6 +520,7 @@ const Index = () => {
           <p className="text-primary-foreground font-display text-sm md:text-base">
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
           </p>
+          <a href="/privacy" className="text-gold underline text-xs">Конфиденциальность и cookies</a>
           <a 
             href="https://t.me/bigsssmoke" 
             target="_blank" 
