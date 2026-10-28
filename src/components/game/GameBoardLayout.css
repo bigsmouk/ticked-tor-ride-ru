@@ -238,3 +238,8 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
  .ttr-log { width: 180px; height: 220px; }
  .ttr-players { max-height: 44dvh; }
 }
+
+/* One visual card per color; separate inventory and selected counters. */
+.ttr-train-item { position:relative; overflow:visible; }
+.ttr-card-stack-count { position:absolute; bottom:17px; right:-5px; z-index:5; min-width:25px; height:25px; padding:0 5px; display:grid; place-items:center; border-radius:50%; border:2px solid #70451e; background:#efc567; color:#36200f; font-weight:800; font-size:12px; box-shadow:0 2px 7px #0005; pointer-events:none; }
+.ttr-card-selected-count { position:absolute; top:-8px; right:-8px; z-index:6; border-radius:20px; background:#237e55; color:white; font-size:11px; font-weight:800; padding:2px 5px; border:1px solid white; pointer-events:none; }
