@@ -80,13 +80,18 @@ export const RouteSegment = memo<RouteSegmentProps>(({
       {isClaimed && claimingPlayerColor ? (
         // Claimed route - show player wagons on each segment
         <>
-          {/* Occupied track: continuous contrasting base beneath all wagon SVGs. */}
-          <path d={path} stroke="#fff8df" strokeWidth={20} fill="none"
-            strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
-          <path d={path} stroke={PLAYER_COLORS[claimingPlayerColor]} strokeWidth={15}
-            fill="none" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
-          <path d={path} stroke="#1c2530" strokeWidth={1.8} strokeDasharray="3 4"
-            fill="none" pointerEvents="none" />
+          {/* Keep ownership markings inside the exact calibrated wagon slots.
+              A city-to-city path would cut across curves and parallel tracks. */}
+          {segments.map((seg, i) => (
+            <g key={`occupied-slot-${i}`}
+               transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+               pointerEvents="none">
+              <rect x={-12.5} y={-6.5} width={25} height={13} rx={2.5}
+                fill="#fff9e9" stroke="#1b2634" strokeWidth={1.2} />
+              <rect x={-11.5} y={-5.5} width={23} height={11} rx={2}
+                fill={PLAYER_COLORS[claimingPlayerColor]} />
+            </g>
+          ))}
           {/* Each wagon is an SVG painted in the claiming player's color. */}
           {segments.map((seg, i) => (
             <ClaimedWagon
