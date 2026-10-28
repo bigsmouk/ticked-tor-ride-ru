@@ -146,6 +146,12 @@ export const GameBoard: React.FC = () => {
 
   // Вычисляем значения даже если gameState null — хуки всегда вызываются
   const localPlayer = gameState?.players.find(p => p.id === localPlayerId) ?? null;
+  // Card selection is UI-only: reconcile indices against the authoritative hand.
+  const handSignature = localPlayer?.trainCards.join('|') ?? '';
+  useEffect(() => {
+    setSelectedCardIndices([]);
+    setSelectedCards([]);
+  }, [handSignature, localPlayerId]);
   const isMyTurn = gameState?.currentPlayerId === localPlayerId;
   const canInteract = isMyTurn && gameState?.currentAction === 'none';
   
