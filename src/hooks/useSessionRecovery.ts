@@ -252,6 +252,15 @@ export const useSessionRecovery = () => {
         try {
           const restoredGameState = JSON.parse(session.gameStateSnapshot);
           console.log('[SessionRecovery] Restoring gameState from snapshot, turn:', restoredGameState.turnNumber);
+          // Room membership owns the player's chosen color. A stale local snapshot
+          // must not recolor a returning player (or their claimed routes).
+          if (Array.isArray(restoredGameState.players) && restoredGameState.roomId === room.id) {
+            const roomColors = new Map(gamePlayers.map(p => [p.id, p.color]));
+            restoredGameState.players = restoredGameState.players.map((player: Player) => ({
+              ...player,
+              color: roomColors.get(player.id) ?? player.color,
+            }));
+          }
           setGameState(restoredGameState);
         } catch (e) {
           console.warn('[SessionRecovery] Failed to parse gameState snapshot:', e);
