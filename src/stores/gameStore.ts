@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { validateRoutePayment } from '@/utils/routePayment';
 import { toast } from '@/hooks/use-toast';
 import {
   GameState, 
@@ -418,8 +419,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const player = gameState.players[playerIndex];
     
-    // Verify player has enough trains
-    if (player.trainsRemaining < route.length) return;
+    // Validate every submitted card before changing state (also protects host actions).
+    if (player.trainsRemaining < route.length || validateRoutePayment(route, cardsUsed, player.trainCards) || get().getClaimRouteError(routeId)) return;
     
     // Remove used cards from player's hand
     let newHand = [...player.trainCards];
@@ -531,7 +532,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (playerIndex === -1) return;
     
     const player = gameState.players[playerIndex];
-    if (player.trainsRemaining < route.length) return;
+    if (player.trainsRemaining < route.length || validateRoutePayment(route, cardsUsed, player.trainCards) || get().getClaimRouteError(routeId)) return;
     
     // Determine what color the player is using
     let colorUsed: TrainCardType = 'locomotive';
@@ -612,6 +613,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (playerIndex === -1) return;
     
     const player = gameState.players[playerIndex];
+    if (validateRoutePayment(route, cardsUsed, player.trainCards)) return;
+    const baseColor = cardsUsed.find(card => card !== 'locomotive');
+    if (extraCards.some(card => card !== 'locomotive' && card !== baseColor)) return;
+    const remainingPayment = [...player.trainCards];
+    for (const card of [...cardsUsed, ...extraCards]) {
+      const index = remainingPayment.indexOf(card);
+      if (index === -1) return;
+      remainingPayment.splice(index, 1);
+    }
     
     // Remove all used cards (original + extra) from hand
     let newHand = [...player.trainCards];
@@ -1336,7 +1346,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (route.color === 'gray') {
       // Can use any color
       const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
-      return colors.some(color => {
+      return (locomotives >= route.length && locomotives >= ferryRequired) || colors.some(color => {
         const colorCount = cardCounts[color] || 0;
         return colorCount + locomotives >= route.length && locomotives >= ferryRequired;
       });
@@ -1396,7 +1406,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     if (route.color === 'gray') {
       const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
-      const hasEnough = colors.some(color => {
+      const hasEnough = locomotives >= route.length || colors.some(color => {
         const colorCount = cardCounts[color] || 0;
         return colorCount + locomotives >= route.length;
       });
