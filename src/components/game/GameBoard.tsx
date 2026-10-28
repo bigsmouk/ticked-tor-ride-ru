@@ -46,22 +46,21 @@ export const GameBoard: React.FC = () => {
   const [showStationBuilder, setShowStationBuilder] = useState(false);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
-  // Ctrl+J/O can be intercepted by the browser; Ctrl+P opens both panels.
+  // Browser-safe single-key shortcuts: J = hand, O = deck, P = both.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
-      const key = event.key.toLowerCase();
-      if (!['j', 'o', 'p'].includes(key)) return;
+      if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.repeat) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'j' && key !== 'o' && key !== 'p') return;
       event.preventDefault();
-      event.stopPropagation();
       if (key === 'j') setShowHand(open => !open);
       if (key === 'o') setShowDeck(open => !open);
       if (key === 'p') { setShowHand(true); setShowDeck(true); }
     };
-    window.addEventListener('keydown', onKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -484,8 +483,8 @@ export const GameBoard: React.FC = () => {
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
         <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${mapInteracting ? 'ttr-map-interacting' : ''}`}>
-          <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (Ctrl+O)">
-            🃏 Колода <span className="ttr-shortcut">Ctrl+O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
+          <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (O)">
+            🃏 Колода <span className="ttr-shortcut">O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
           </button>
           <div id="ttr-deck-drawer" className="ttr-controls" aria-hidden={!showDeck}>
             <div className="ttr-deck">
@@ -520,10 +519,10 @@ export const GameBoard: React.FC = () => {
           </div>
         </div>
         {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' } ${mapInteracting ? 'ttr-map-interacting' : ''}`} aria-label="Мои карты и билеты">
-          <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (Ctrl+J)">
+          <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (J)">
             <span aria-hidden="true">{showHand ? '❯' : '❮'}</span>
             <span>Карты</span><span>Билеты</span>
-            <small>Ctrl+J</small>
+            <small>J</small>
           </button>
           <div id="ttr-hand-drawer" className="ttr-hand-content" aria-hidden={!showHand}>
             <PlayerHand
