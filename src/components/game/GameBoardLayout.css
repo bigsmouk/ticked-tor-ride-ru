@@ -272,3 +272,20 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
  .ttr-stage .ttr-history-anchor.ttr-overlay { right:55px; top:215px; }
  .ttr-stage .ttr-history-anchor .ttr-log { width:min(205px,calc(100vw - 100px)); height:min(240px,calc(100dvh - 270px)); }
 }
+
+/* History control: fixed to the upper-right corner of the game stage. */
+.ttr-stage .ttr-history-anchor.ttr-overlay {
+ position:absolute; top:12px; right:60px; left:auto; bottom:auto;
+ width:auto; max-width:none; height:auto; max-height:none;
+ display:block; overflow:visible; z-index:42;
+}
+.ttr-stage .ttr-history-anchor .ttr-log {
+ position:absolute; top:calc(100% + 7px); right:0; left:auto;
+ width:min(300px,calc(100vw - 95px));
+ height:min(340px,calc(100dvh - 110px)); max-height:calc(100dvh - 110px);
+ overflow:hidden; overscroll-behavior:contain;
+}
+@media(max-width:600px) {
+ .ttr-stage .ttr-history-anchor.ttr-overlay { top:7px; right:46px; left:auto; }
+ .ttr-stage .ttr-history-anchor .ttr-log { width:min(230px,calc(100vw - 70px)); height:min(280px,calc(100dvh - 90px)); }
+}
