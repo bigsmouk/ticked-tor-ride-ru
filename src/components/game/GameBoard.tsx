@@ -184,6 +184,20 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  // Cancel only the local route/card selection; no cards or turn are spent.
+  const handleCancelRouteSelection = () => {
+    setSelectedRoute(null);
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+    setNotice(null);
+  };
+
+  const handleResetRouteCards = () => {
+    setSelectedCards([]);
+    setSelectedCardIndices([]);
+    setNotice('Выбор карт сброшен. Можно выбрать другие карты для этого маршрута.');
+  };
+
   const handleCardSelect = (card: TrainCardType, cardIndex: number) => {
     // Проверяем что наш ход и нет активного действия
     if (!canInteract) return;
@@ -497,7 +511,7 @@ export const GameBoard: React.FC = () => {
           </button>
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
-        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''}`}>
+        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${showDestinationPicker && hoveredTicket ? 'ttr-ticket-preview-hidden' : ''}`}>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {isMyTurn && gameState.currentAction === 'none' && (localPlayer?.stationsRemaining ?? 0) > 0 && (
               <button type="button" className="ttr-deck-drawer-toggle" onClick={handleStartBuildStation} title="Построить станцию">
@@ -508,6 +522,16 @@ export const GameBoard: React.FC = () => {
             🃏 Колода <span className="ttr-shortcut">O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
           </button>
           </div>
+          {selectedRoute && gameState.currentAction === 'none' && isMyTurn && (
+            <div className="flex flex-wrap justify-center gap-2 rounded-lg bg-amber-100/95 border border-amber-600 p-2 shadow-lg">
+              <button type="button" onClick={handleResetRouteCards} className="rounded-md border border-amber-700 bg-white px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-200">
+                ↻ Перевыбрать карты
+              </button>
+              <button type="button" onClick={handleCancelRouteSelection} className="rounded-md bg-red-800 px-3 py-2 text-xs font-bold text-white hover:bg-red-700">
+                ✕ Отменить маршрут
+              </button>
+            </div>
+          )}
           <div id="ttr-deck-drawer" className="ttr-controls" aria-hidden={!showDeck}>
             <div className="ttr-deck">
               <CardDeckArea
@@ -540,7 +564,7 @@ export const GameBoard: React.FC = () => {
             </div>
           </div>
         </div>
-        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' }`} aria-label="Мои карты и билеты">
+        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' } ${showDestinationPicker && hoveredTicket ? 'ttr-ticket-preview-hidden' : ''}`} aria-label="Мои карты и билеты">
           <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (J)">
             <span aria-hidden="true">{showHand ? '❯' : '❮'}</span>
             <span>Карты</span><span>Билеты</span>
