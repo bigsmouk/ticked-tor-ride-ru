@@ -10,6 +10,7 @@ interface PlayerHandProps {
   selectedCardIndices: number[];
   onCardSelect: (card: TrainCardType, index: number) => void;
   onTicketClick?: (ticket: DestinationTicket) => void;
+  onTicketHover?: (ticket: DestinationTicket | null) => void;
   routeRequirement?: { color: string; count: number } | null;
 }
 
@@ -19,6 +20,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   selectedCardIndices,
   onCardSelect,
   onTicketClick,
+  onTicketHover,
   routeRequirement,
 }) => {
   // Group cards by type with individual indices
@@ -166,13 +168,14 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
           <ScrollArea className="ttr-tickets-scroll flex-1 min-h-0">
             <div className="flex flex-col gap-2 pr-3">
               {destinationTickets.map((ticket) => (
+                <div key={ticket.id} onMouseEnter={() => onTicketHover?.(ticket)} onMouseLeave={() => onTicketHover?.(null)} onFocus={() => onTicketHover?.(ticket)} onBlur={() => onTicketHover?.(null)} tabIndex={0} aria-label="Подсветить города маршрута">
                 <DestinationCard
-                  key={ticket.id}
                   ticket={ticket}
                   size="small"
                   isCompleted={ticket.isCompleted}
                   onClick={onTicketClick ? () => onTicketClick(ticket) : undefined}
                 />
+                </div>
               ))}
               
               {destinationTickets.length === 0 && (
