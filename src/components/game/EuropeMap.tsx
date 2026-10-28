@@ -17,7 +17,6 @@ interface EuropeMapProps {
   onCityClick?: (cityId: string) => void;
   selectedRoute?: string | null;
   highlightedCities?: [string, string] | null;
-  onInteractionChange?: (active: boolean) => void;
 }
 
 
@@ -117,7 +116,6 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   onCityClick,
   selectedRoute,
   highlightedCities,
-  onInteractionChange,
 }) => {
   const { gameState, canClaimRoute } = useGameStore();
   
@@ -130,13 +128,6 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   const [hoveredRoute, setHoveredRoute] = useState<Route | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const notifyInteraction = useCallback(() => {
-    onInteractionChange?.(true);
-    if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
-    interactionTimerRef.current = setTimeout(() => onInteractionChange?.(false), 750);
-  }, [onInteractionChange]);
-  
   // Refs for RAF optimization
   const dragStartRef = useRef({ x: 0, y: 0 });
   const rafIdRef = useRef<number | null>(null);
@@ -169,49 +160,38 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   useEffect(() => {
     return () => {
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
-      if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
     };
   }, []);
   
   // Handle mouse wheel zoom with RAF
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    notifyInteraction();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     
-    setScale(prev => {
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev * delta));
-      pendingScaleRef.current = newScale;
-      scheduleUpdate();
-      return prev; // Don't update immediately, let RAF handle it
-    });
-    
-    // Actually update via RAF
-    pendingScaleRef.current = Math.min(MAX_SCALE, Math.max(MIN_SCALE, (pendingScaleRef.current ?? scale) * delta));
+    const currentScale = pendingScaleRef.current ?? scale;
+    pendingScaleRef.current = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * delta));
     scheduleUpdate();
-  }, [scale, scheduleUpdate, notifyInteraction]);
+  }, [scale, scheduleUpdate]);
   
   // Handle mouse down for panning
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 0) { // Left mouse button
       if ((e.target as Element).closest('button')) return;
       setIsDragging(true);
-      notifyInteraction();
-      dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+        dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
     }
-  }, [position, notifyInteraction]);
+  }, [position]);
   
   // Handle mouse move for panning with RAF
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isDragging) {
-      notifyInteraction();
-      pendingPositionRef.current = {
+        pendingPositionRef.current = {
         x: e.clientX - dragStartRef.current.x,
         y: e.clientY - dragStartRef.current.y,
       };
       scheduleUpdate();
     }
-  }, [isDragging, scheduleUpdate, notifyInteraction]);
+  }, [isDragging, scheduleUpdate]);
   
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
@@ -249,19 +229,19 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
       {/* Map controls */}
       <div className="ttr-map-controls absolute top-4 right-4 z-30 flex flex-col gap-2" onMouseDown={(e) => e.stopPropagation()}>
         <button 
-          onClick={() => { notifyInteraction(); setScale(prev => Math.min(MAX_SCALE, prev * 1.2)); }}
+          onClick={() => { setScale(prev => Math.min(MAX_SCALE, prev * 1.2)); }}
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors"
         >
           +
         </button>
         <button 
-          onClick={() => { notifyInteraction(); setScale(prev => Math.max(MIN_SCALE, prev * 0.8)); }}
+          onClick={() => { setScale(prev => Math.max(MIN_SCALE, prev * 0.8)); }}
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors"
         >
           −
         </button>
         <button 
-          onClick={() => { notifyInteraction(); pendingScaleRef.current = null; pendingPositionRef.current = null; setScale(1.08); setPosition({ x: 0, y: 0 }); }}
+          onClick={() => { pendingScaleRef.current = null; pendingPositionRef.current = null; setScale(1.08); setPosition({ x: 0, y: 0 }); }}
           title="Сбросить масштаб и положение карты"
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs"
         >
