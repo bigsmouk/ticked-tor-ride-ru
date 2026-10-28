@@ -1346,7 +1346,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (route.color === 'gray') {
       // Can use any color
       const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
-      return colors.some(color => {
+      return (locomotives >= route.length && locomotives >= ferryRequired) || colors.some(color => {
         const colorCount = cardCounts[color] || 0;
         return colorCount + locomotives >= route.length && locomotives >= ferryRequired;
       });
@@ -1406,7 +1406,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     if (route.color === 'gray') {
       const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'white', 'black'];
-      const hasEnough = colors.some(color => {
+      const hasEnough = locomotives >= route.length || colors.some(color => {
         const colorCount = cardCounts[color] || 0;
         return colorCount + locomotives >= route.length;
       });
