@@ -224,13 +224,13 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
 .ttr-bottom-ui.ttr-map-interacting { transform: translate(-50%, calc(100% + 50px)) !important; }
 .ttr-hand-side.ttr-map-interacting { transform: translateX(110%) !important; }
 .ttr-overlay { transition: opacity .18s ease; }
-.ttr-history-anchor { top: 12px; right: clamp(55px, 27vw, 380px); max-height: min(62dvh, 460px); }
+.ttr-history-anchor { top: 215px; right: clamp(55px, 27vw, 380px); max-height: min(48dvh, 350px); }
 .ttr-log { width: min(300px, 27vw); height: min(340px, 47dvh); }
 .ttr-players { max-height: min(65dvh, 540px); }
 .ttr-hand-side.is-open { box-shadow: -6px 0 24px #0003; }
 @media(max-width:900px) {
  .ttr-map-controls { right: 55px; top: 6px; }
- .ttr-history-anchor { right: 100px; top: 6px; }
+ .ttr-history-anchor { right: 100px; top: 215px; }
  .ttr-log { width: 220px; }
 }
 @media(max-width:600px) {
