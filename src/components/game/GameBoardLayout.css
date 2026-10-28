@@ -272,3 +272,13 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
  .ttr-stage .ttr-history-anchor.ttr-overlay { right:55px; top:215px; }
  .ttr-stage .ttr-history-anchor .ttr-log { width:min(205px,calc(100vw - 100px)); height:min(240px,calc(100dvh - 270px)); }
 }
+
+/* Steam-inspired ownership clarity: persistent personal color and one-click route spotlight. */
+.ttr-route-ownership-legend { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:38; display:flex; align-items:center; gap:8px; white-space:nowrap; border:1px solid #c6a56d; border-radius:10px; background:rgba(36,31,27,.94); color:#fff4dd; box-shadow:0 3px 14px #0006; padding:7px 10px; font-size:12px; pointer-events:auto; }
+.ttr-route-owner-swatch { width:17px; height:17px; border:2px solid #fff5d5; border-radius:4px; box-shadow:0 0 0 1px #171b23; flex-shrink:0; }
+.ttr-route-owner-total { border-radius:9px; padding:1px 7px; background:#fff3d429; font-weight:800; }
+.ttr-route-ownership-legend button { border:1px solid #dfbb75; border-radius:6px; padding:4px 7px; color:#fff6e7; background:#77502a; font-size:11px; cursor:pointer; }
+.ttr-route-ownership-legend button[aria-pressed="true"] { background:#e4b952; color:#302014; font-weight:800; }
+.ttr-owner-tooltip { margin-top:5px; padding:5px 8px; border-radius:5px; background:#e2e5e9; color:#24364d; font-size:12px; font-weight:800; }
+.ttr-owner-tooltip.is-mine { background:#ffdf75; color:#382b10; }
+@media(max-width:600px) { .ttr-route-ownership-legend { top:7px; left:calc(50% - 8px); gap:5px; padding:5px; font-size:10px; } .ttr-route-ownership-legend button { font-size:10px; padding:3px 5px; } }
