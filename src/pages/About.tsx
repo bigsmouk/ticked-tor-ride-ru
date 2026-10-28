@@ -5,7 +5,7 @@ export default function About() {
   const { language } = useLanguage();
   const en = language === 'en';
   return (
-    <main className="min-h-screen bg-amber-50 px-4 py-10 text-amber-950">
+    <main data-no-translate className="min-h-screen bg-amber-50 px-4 py-10 text-amber-950">
       <article className="mx-auto max-w-3xl space-y-6 rounded-2xl border border-amber-700/30 bg-white p-6 shadow-xl sm:p-10">
         <nav className="flex flex-wrap gap-4 text-sm text-amber-800 underline" aria-label={en ? 'Navigation' : 'Навигация'}>
           <Link to="/">{en ? 'Home' : 'Главная'}</Link>
