@@ -5,20 +5,21 @@ interface CityMarkerProps {
   y: number;
   name: string;
   showName: boolean;
+  highlighted?: boolean;
   onClick?: () => void;
 }
 
 // Memoized city marker component
-export const CityMarker = memo<CityMarkerProps>(({ x, y, name, showName, onClick }) => (
+export const CityMarker = memo<CityMarkerProps>(({ x, y, name, showName, highlighted = false, onClick }) => (
   <g onClick={onClick}>
     {/* City circle */}
     <circle
       cx={x}
       cy={y}
-      r={8}
+      r={highlighted ? 12 : 8}
       fill="hsl(40 35% 92%)"
-      stroke="hsl(30 50% 30%)"
-      strokeWidth={2}
+      stroke={highlighted ? "#fbbf24" : "hsl(30 50% 30%)"}
+      strokeWidth={highlighted ? 4 : 2}
       style={{ pointerEvents: 'none' }}
     />
     
@@ -40,7 +41,7 @@ export const CityMarker = memo<CityMarkerProps>(({ x, y, name, showName, onClick
           width={60}
           height={14}
           rx={2}
-          fill="hsl(30 20% 15% / 0.85)"
+          fill={highlighted ? "#78350f" : "hsl(30 20% 15% / 0.85)"}
           style={{ pointerEvents: 'none' }}
         />
         <text

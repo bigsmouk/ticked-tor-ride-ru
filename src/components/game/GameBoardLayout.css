@@ -215,3 +215,31 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
  .ttr-hand-side .ttr-train-section { max-height:40%; }
 }
 @media(prefers-reduced-motion:reduce) { .ttr-hand-side.ttr-overlay, .ttr-bottom-ui.ttr-overlay { transition:none; } }
+
+/* Map controls stay reachable when the right drawer is open. */
+.ttr-map-controls { right: clamp(55px, 27vw, 380px); z-index: 35; pointer-events: auto; }
+.ttr-map-controls button { cursor: pointer; box-shadow: 0 2px 8px #0004; }
+/* Hide floating panels only while actively panning/zooming, restoring previous open states. */
+.ttr-overlay.ttr-map-interacting { opacity: 0 !important; pointer-events: none !important; }
+.ttr-bottom-ui.ttr-map-interacting { transform: translate(-50%, calc(100% + 50px)) !important; }
+.ttr-hand-side.ttr-map-interacting { transform: translateX(110%) !important; }
+.ttr-overlay { transition: opacity .18s ease; }
+.ttr-history-anchor { top: 215px; right: clamp(55px, 27vw, 380px); max-height: min(48dvh, 350px); }
+.ttr-log { width: min(300px, 27vw); height: min(340px, 47dvh); }
+.ttr-players { max-height: min(65dvh, 540px); }
+.ttr-hand-side.is-open { box-shadow: -6px 0 24px #0003; }
+@media(max-width:900px) {
+ .ttr-map-controls { right: 55px; top: 6px; }
+ .ttr-history-anchor { right: 100px; top: 215px; }
+ .ttr-log { width: 220px; }
+}
+@media(max-width:600px) {
+ .ttr-history-anchor { top: 215px; right: 55px; }
+ .ttr-log { width: 180px; height: 220px; }
+ .ttr-players { max-height: 44dvh; }
+}
+
+/* One visual card per color; separate inventory and selected counters. */
+.ttr-train-item { position:relative; overflow:visible; }
+.ttr-card-stack-count { position:absolute; bottom:17px; right:-5px; z-index:5; min-width:25px; height:25px; padding:0 5px; display:grid; place-items:center; border-radius:50%; border:2px solid #70451e; background:#efc567; color:#36200f; font-weight:800; font-size:12px; box-shadow:0 2px 7px #0005; pointer-events:none; }
+.ttr-card-selected-count { position:absolute; top:-8px; right:-8px; z-index:6; border-radius:20px; background:#237e55; color:white; font-size:11px; font-weight:800; padding:2px 5px; border:1px solid white; pointer-events:none; }
