@@ -3,6 +3,7 @@ import { City, Route, PlayerColor } from '@/types/game';
 import { useGameStore } from '@/stores/gameStore';
 import { PRELOADED_MAPS } from '@/hooks/useAssetPreloader';
 import { ROUTE_WAGON_POSITIONS } from '@/data/europeMap';
+import { useLanguage } from '@/i18n/language';
 import { RouteSegment } from './map/RouteSegment';
 import { CityMarker } from './map/CityMarker';
 import { StationMarker } from './map/StationMarker';
@@ -120,6 +121,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   highlightedCities,
 }) => {
   const { gameState, canClaimRoute } = useGameStore();
+  const { language } = useLanguage();
   
   // Zoom and pan state
   const [scale, setScale] = useState(1.08);
@@ -459,7 +461,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
               key={city.id}
               x={city.x}
               y={city.y}
-              name={city.name}
+              name={language === 'en' ? city.id.replace(/(^|[-_])([a-z])/g, (_, sep, letter: string) => letter.toUpperCase()) : city.name}
               showName={showCityNames || Boolean(highlightedCities?.includes(city.id))}
               highlighted={Boolean(highlightedCities?.includes(city.id))}
               onClick={() => onCityClick?.(city.id)}
