@@ -295,3 +295,11 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
 .ttr-hand-side .ttr-hand-content { border-left:0 !important; border-radius:0 !important; box-shadow:none !important; background:#faf3e2; }
 .ttr-hand-side .ttr-hand-content > .ttr-hand-panel { box-shadow:none !important; border-radius:0 !important; }
 .ttr-hand-edge-toggle { box-shadow:none !important; }
+
+/* A translated (closed) hand drawer still has a full-size hit box. Let pointer
+   events reach the map controls underneath; only the visible handle is clickable. */
+.ttr-hand-side.ttr-overlay:not(.is-open) { pointer-events:none !important; }
+.ttr-hand-side.ttr-overlay:not(.is-open) > .ttr-hand-edge-toggle { pointer-events:auto !important; }
+.ttr-hand-side.ttr-overlay:not(.is-open) > .ttr-hand-content { pointer-events:none !important; visibility:hidden; }
+.ttr-hand-side.ttr-overlay.is-open { pointer-events:auto !important; }
+.ttr-hand-side.ttr-overlay.is-open > .ttr-hand-content { visibility:visible; pointer-events:auto !important; }
