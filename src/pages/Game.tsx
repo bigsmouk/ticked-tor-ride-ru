@@ -6,6 +6,7 @@ import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 import { GameSyncProvider, useGameSyncContext } from '@/contexts/gameSyncContext';
 import { AssetPreloader } from '@/components/game/AssetPreloader';
+import { SoloBotController } from '@/components/game/SoloBotController';
 
 // Внутренний компонент с доступом к контексту синхронизации
 const GameInner: React.FC<{
@@ -197,6 +198,7 @@ const GameWithRecovery = () => {
 
   return (
     <GameSyncProvider roomId={roomId}>
+      <SoloBotController />
       <GameInner isRecovering={isRecovering} hasSession={hasSession} onRetryRecovery={attemptRecovery} />
     </GameSyncProvider>
   );
