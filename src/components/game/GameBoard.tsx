@@ -563,7 +563,7 @@ export const GameBoard: React.FC = () => {
       )}
       
       {/* Station builder modal */}
-      {showStationBuilder && gameState.currentAction === 'buildStation' && (
+      {showStationBuilder && (
         <StationBuilderModal
           cities={gameState.cities}
           cost={stationCost}
