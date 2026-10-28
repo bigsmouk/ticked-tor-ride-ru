@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrainCard } from './TrainCard';
 import { DestinationCard } from './DestinationCard';
-import { TrainCardType, DestinationTicket } from '@/types/game';
+import { TrainCardType, DestinationTicket, Route } from '@/types/game';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PlayerHandProps {
   trainCards: TrainCardType[];
   destinationTickets: DestinationTicket[];
+  claimedRoutes?: Route[];
   selectedCardIndices: number[];
   onCardSelect: (card: TrainCardType, index: number) => void;
   onTicketClick?: (ticket: DestinationTicket) => void;
@@ -17,12 +18,37 @@ interface PlayerHandProps {
 export const PlayerHand: React.FC<PlayerHandProps> = ({
   trainCards,
   destinationTickets,
+  claimedRoutes = [],
   selectedCardIndices,
   onCardSelect,
   onTicketClick,
   onTicketHover,
   routeRequirement,
 }) => {
+  // Recompute connected cities as soon as the player claims a route, not only at final scoring.
+  const connectedCities = useMemo(() => {
+    const graph = new Map<string, Set<string>>();
+    for (const route of claimedRoutes) {
+      const [from, to] = route.cities;
+      if (!graph.has(from)) graph.set(from, new Set());
+      if (!graph.has(to)) graph.set(to, new Set());
+      graph.get(from)!.add(to);
+      graph.get(to)!.add(from);
+    }
+    return (from: string, to: string) => {
+      if (from === to) return true;
+      const visited = new Set<string>([from]);
+      const queue = [from];
+      for (let index = 0; index < queue.length; index++) {
+        for (const neighbor of graph.get(queue[index]) ?? []) {
+          if (neighbor === to) return true;
+          if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); }
+        }
+      }
+      return false;
+    };
+  }, [claimedRoutes]);
+
   // Group cards by type with individual indices
   const cardGroups: { type: TrainCardType; indices: number[] }[] = [];
   const cardTypeCounts: Record<string, number[]> = {};
@@ -161,7 +187,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                 <DestinationCard
                   ticket={ticket}
                   size="small"
-                  isCompleted={ticket.isCompleted}
+                  isCompleted={ticket.isCompleted || connectedCities(ticket.cities[0], ticket.cities[1])}
                   onClick={onTicketClick ? () => onTicketClick(ticket) : undefined}
                 />
                 </div>

@@ -89,7 +89,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
       </div>
       
       {/* Long route badge */}
-      {ticket.isLongRoute && (
+      {ticket.isLongRoute && !isCompleted && (
         <div 
           className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-xs font-display font-bold"
           style={{
@@ -118,13 +118,13 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         </div>
       </div>
       
-      {/* Status icon */}
+      {/* Ticket status is visible in the upper-right corner. */}
       {(isCompleted || isFailed) && (
         <div 
-          className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center z-10"
           style={{
             background: statusColor,
-            fontSize: 12,
+            fontSize: 15,
             color: 'white',
           }}
         >
