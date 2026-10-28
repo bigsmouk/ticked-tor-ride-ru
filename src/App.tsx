@@ -25,6 +25,11 @@ const AnalyticsRouteTracker = () => {
   useEffect(() => {
     const robots = document.querySelector('meta[name="robots"]');
     if (robots) robots.setAttribute('content', pathname === '/' ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) {
+      if (pathname === '/') canonical.setAttribute('href', 'https://tickettoride.online/');
+      else canonical.removeAttribute('href');
+    }
     if (initial.current) { initial.current = false; return; }
     // Metrika init counts the first page; hit() tracks subsequent SPA navigation.
     const tracker = (window as Window & { ym?: (id: number, action: string, url: string) => void }).ym;
