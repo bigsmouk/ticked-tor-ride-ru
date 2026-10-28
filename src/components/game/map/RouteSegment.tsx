@@ -39,6 +39,8 @@ interface RouteSegmentProps {
   isClaimable: boolean;
   claimingPlayerColor: PlayerColor | null;
   claimingPlayerName: string | null;
+  isOwnRoute: boolean;
+  dimOtherPlayers: boolean;
   onClick?: () => void;
   onMouseEnter: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
@@ -54,6 +56,8 @@ export const RouteSegment = memo<RouteSegmentProps>(({
   isClaimable,
   claimingPlayerColor,
   claimingPlayerName,
+  isOwnRoute,
+  dimOtherPlayers,
   onClick,
   onMouseEnter,
   onMouseMove,
@@ -78,8 +82,8 @@ export const RouteSegment = memo<RouteSegmentProps>(({
       onMouseLeave={onMouseLeave}
     >
       {isClaimed && claimingPlayerColor ? (
-        // Claimed route - show player wagons on each segment
-        <>
+        // Claimed route: one player-colored car per calibrated slot.
+        <g opacity={dimOtherPlayers && !isOwnRoute ? 0.28 : 1}>
           {/* Keep ownership markings inside the exact calibrated wagon slots.
               A city-to-city path would cut across curves and parallel tracks. */}
           {segments.map((seg, i) => (
@@ -92,7 +96,14 @@ export const RouteSegment = memo<RouteSegmentProps>(({
                 fill={PLAYER_COLORS[claimingPlayerColor]} />
             </g>
           ))}
-          {/* Each wagon is an SVG painted in the claiming player's color. */}
+          {/* Golden border identifies your tracks even on similarly colored map slots. */}
+          {segments.map((seg, i) => (
+            <rect key={`outline-${i}`} x={-13} y={-7} width={26} height={14} rx={3}
+              transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+              fill="none" stroke={isOwnRoute ? "#ffd34c" : "#172232"}
+              strokeWidth={isOwnRoute ? 2.8 : 1.5} pointerEvents="none" />
+          ))}
+          {/* Each wagon is an SVG painted in the claiming player\'s color. */}
           {segments.map((seg, i) => (
             <ClaimedWagon
               key={i}
@@ -104,8 +115,13 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               animationIndex={i}
             />
           ))}
-          <title>{`Занято: ${claimingPlayerName ?? 'игрок'} — ${segments.length} вагонов`}</title>
-        </>
+          {segments.map((seg, i) => (
+            <rect key={`hit-${i}`} x={-14} y={-9} width={28} height={18} rx={3}
+              transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+              fill="transparent" pointerEvents="all" style={{ cursor: 'help' }} />
+          ))}
+          <title>{`${isOwnRoute ? 'ВАШ ПУТЬ' : 'Путь соперника'}: ${claimingPlayerName ?? 'игрок'}`}</title>
+        </g>
       ) : (
         // Unclaimed route - show wagon slots
         <>
@@ -169,6 +185,8 @@ export const RouteSegment = memo<RouteSegmentProps>(({
     prevProps.isClaimable === nextProps.isClaimable &&
     prevProps.claimingPlayerColor === nextProps.claimingPlayerColor &&
     prevProps.claimingPlayerName === nextProps.claimingPlayerName &&
+    prevProps.isOwnRoute === nextProps.isOwnRoute &&
+    prevProps.dimOtherPlayers === nextProps.dimOtherPlayers &&
     prevProps.path === nextProps.path
   );
 });
