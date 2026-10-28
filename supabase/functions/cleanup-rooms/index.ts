@@ -18,126 +18,64 @@ Deno.serve(async (req) => {
     // Use service role to bypass RLS
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
-    const tenMinutesAgo = new Date();
-    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
-
-    const fiveMinutesAgo = new Date();
-    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
-
-    // 1. Find old waiting rooms (24+ hours)
-    const { data: oldRooms, error: findOldError } = await supabase
+    // Delete ONLY waiting rooms that have had no members for at least 3 minutes.
+    // Never remove an occupied room just because its updated_at is old.
+    const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    const { data: candidates, error: findError } = await supabase
       .from("rooms")
-      .select("id, code, name, created_at")
+      .select("id, code, name, created_at, updated_at")
       .eq("status", "waiting")
-      .lt("updated_at", twentyFourHoursAgo.toISOString());
+      .lt("created_at", threeMinutesAgo);
+    if (findError) throw findError;
 
-    if (findOldError) {
-      throw findOldError;
-    }
-
-    // 2. Find all waiting rooms to check player status
-    const { data: waitingRooms, error: findWaitingError } = await supabase
-      .from("rooms")
-      .select("id, code, name, host_id, updated_at")
-      .eq("status", "waiting");
-
-    if (findWaitingError) {
-      throw findWaitingError;
-    }
-
-    // Check which rooms have no host or no players at all
-    const hostlessRooms: Array<{ id: string; code: string; name: string }> = [];
     const emptyRooms: Array<{ id: string; code: string; name: string }> = [];
-
-    for (const room of waitingRooms || []) {
-      // Get all players in the room
-      const { data: players, error: playersError } = await supabase
+    for (const room of candidates || []) {
+      const { count, error } = await supabase
         .from("room_players")
-        .select("id, is_host")
+        .select("id", { count: "exact", head: true })
         .eq("room_id", room.id);
-
-      if (playersError) {
-        console.error(`Error checking players for room ${room.code}:`, playersError);
-        continue;
-      }
-
-      const playerCount = players?.length || 0;
-      const hasHost = players?.some(p => p.is_host) || false;
-
-      // 3. Empty rooms (no players at all) - delete after 5 minutes
-      if (playerCount === 0 && new Date(room.updated_at) < fiveMinutesAgo) {
-        emptyRooms.push({ id: room.id, code: room.code, name: room.name });
-        continue;
-      }
-
-      // 4. Rooms with players but no host - delete after 10 minutes
-      if (!hasHost && new Date(room.updated_at) < tenMinutesAgo) {
-        hostlessRooms.push({ id: room.id, code: room.code, name: room.name });
-      }
+      if (error) throw error;
+      if (count === 0) emptyRooms.push({ id: room.id, code: room.code, name: room.name });
     }
-
-    // Combine rooms to delete (avoid duplicates)
-    const oldRoomIds = (oldRooms || []).map((r) => r.id);
-    const hostlessRoomIds = hostlessRooms.map((r) => r.id);
-    const emptyRoomIds = emptyRooms.map((r) => r.id);
-    const allRoomIds = [...new Set([...oldRoomIds, ...hostlessRoomIds, ...emptyRoomIds])];
+    const allRoomIds = emptyRooms.map(room => room.id);
 
     if (allRoomIds.length === 0) {
       return new Response(
         JSON.stringify({ 
           message: "No rooms to clean up", 
           deleted: 0,
-          oldRooms: 0,
-          hostlessRooms: 0,
           emptyRooms: 0
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Delete room_players first (foreign key constraint)
-    const { error: playersError } = await supabase
-      .from("room_players")
-      .delete()
-      .in("room_id", allRoomIds);
-
-    if (playersError) {
-      console.error("Error deleting room_players:", playersError);
+    // Recheck immediately before deletion: a player may have joined meanwhile.
+    // Delete only the rooms still empty, and fail safely if the check fails.
+    const deletedRooms: typeof emptyRooms = [];
+    for (const room of emptyRooms) {
+      const { count, error: countError } = await supabase
+        .from("room_players")
+        .select("id", { count: "exact", head: true })
+        .eq("room_id", room.id);
+      if (countError) throw countError;
+      if (count !== 0) continue;
+      const { data: deleted, error: deleteError } = await supabase
+        .from("rooms")
+        .delete()
+        .eq("id", room.id)
+        .eq("status", "waiting")
+        .select("id");
+      if (deleteError) throw deleteError;
+      if (deleted?.length) deletedRooms.push(room);
     }
 
-    // Delete the rooms
-    const { error: roomsError } = await supabase
-      .from("rooms")
-      .delete()
-      .in("id", allRoomIds);
-
-    if (roomsError) {
-      throw roomsError;
-    }
-
-    console.log(`Cleaned up ${allRoomIds.length} rooms:`);
-    console.log(`  - ${oldRoomIds.length} old rooms (24h+):`, (oldRooms || []).map(r => r.code));
-    console.log(`  - ${hostlessRooms.length} hostless rooms (10min+):`, hostlessRooms.map(r => r.code));
-    console.log(`  - ${emptyRoomIds.length} empty rooms (5min+):`, emptyRooms.map(r => r.code));
-
-    return new Response(
-      JSON.stringify({
-        message: `Deleted ${allRoomIds.length} rooms`,
-        deleted: allRoomIds.length,
-        oldRooms: oldRoomIds.length,
-        hostlessRooms: hostlessRooms.length,
-        emptyRooms: emptyRoomIds.length,
-        details: {
-          old: (oldRooms || []).map((r) => ({ code: r.code, name: r.name })),
-          hostless: hostlessRooms.map((r) => ({ code: r.code, name: r.name })),
-          empty: emptyRooms.map((r) => ({ code: r.code, name: r.name })),
-        }
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      message: `Deleted ${deletedRooms.length} empty waiting rooms`,
+      deleted: deletedRooms.length,
+      emptyRooms: deletedRooms.length,
+      details: { empty: deletedRooms.map(r => ({ code: r.code, name: r.name })) },
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Cleanup error:", error);
