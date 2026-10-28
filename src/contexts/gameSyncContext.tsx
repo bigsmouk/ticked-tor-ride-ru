@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useCallback, useMemo } fro
 
 import { useGameSync, ConnectionStatus, GameAction } from "@/hooks/useGameSync";
 import { useGameStatePersistence } from "@/hooks/useGameStatePersistence";
+import { useGameStore } from "@/stores/gameStore";
 
 export type GameSyncContextValue = ReturnType<typeof useGameSync> & {
   restoreFromDb: () => Promise<boolean>;
@@ -29,25 +30,27 @@ export const GameSyncProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ roomId, children }) => {
   // Всегда вызываем оба хука - порядок хуков критичен!
-  const syncValue = useGameSync(roomId);
-  const { restoreFromDb } = useGameStatePersistence({ roomId, enabled: !!roomId });
+  const isSolo = useGameStore(state => Boolean(state.currentRoom?.isSoloMode));
+  const syncValue = useGameSync(isSolo ? null : roomId);
+  const { restoreFromDb } = useGameStatePersistence({ roomId: isSolo ? null : roomId, enabled: !!roomId && !isSolo });
 
   // При монтировании пытаемся восстановить состояние из БД (только для хоста)
   useEffect(() => {
-    if (roomId && syncValue.isHost) {
+    if (roomId && !isSolo && syncValue.isHost) {
       restoreFromDb().then((restored) => {
         if (restored) {
           console.log('[GameSyncProvider] Host restored state from DB');
         }
       });
     }
-  }, [roomId, syncValue.isHost, restoreFromDb]);
+  }, [roomId, isSolo, syncValue.isHost, restoreFromDb]);
 
   // Мемоизируем value чтобы избежать лишних ререндеров
   const value = useMemo<GameSyncContextValue>(() => ({
     ...syncValue,
+    isHost: isSolo || syncValue.isHost,
     restoreFromDb,
-  }), [syncValue, restoreFromDb]);
+  }), [syncValue, isSolo, restoreFromDb]);
 
   return <GameSyncContext.Provider value={value}>{children}</GameSyncContext.Provider>;
 };
