@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
@@ -162,7 +162,7 @@ const Index = () => {
         {/* Header */}
         <header className="py-6 text-center border-b-4 border-ornament bg-primary">
           <h1 className="font-display text-4xl md:text-5xl font-bold text-primary-foreground text-shadow-vintage">
-            🚂 Ticket to Ride
+            <Link to="/" title="На главную" className="hover:opacity-80">🚂 Ticket to Ride</Link>
           </h1>
           <p className="font-display text-xl text-gold mt-2">ЕВРОПА</p>
         </header>
@@ -252,12 +252,12 @@ const Index = () => {
         
         <div className="absolute right-2 md:right-4 top-2 z-20"><AuthControls /></div>
         {/* Decorative train icon */}
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block animate-scale-in">
-          <Train className="h-10 w-10 text-gold opacity-80" />
-        </div>
+        <Link to="/" aria-label="Ticket to Ride — на главную" title="На главную" className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 block animate-scale-in rounded-md p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold hover:scale-110 transition-transform">
+          <Train className="h-7 w-7 md:h-10 md:w-10 text-gold opacity-90" />
+        </Link>
 
         <h1 className="vintage-title text-xl md:text-3xl font-bold text-primary-foreground">
-          Ticket to Ride
+          <Link to="/" title="На главную" className="hover:opacity-80">Ticket to Ride</Link>
         </h1>
         <p className="vintage-subtitle text-sm md:text-base font-bold">
           ЕВРОПА

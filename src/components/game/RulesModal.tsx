@@ -45,12 +45,23 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
             <Train className="h-8 w-8 text-gold scale-x-[-1]" />
           </DialogTitle>
           <p className="text-center text-gold font-display text-lg tracking-widest mt-1">
-            ЖЕЛЕЗНОДОРОЖНОЕ ПРИКЛЮЧЕНИЕ: ЕВРОПА
+            TICKET TO RIDE: ЕВРОПА
           </p>
         </DialogHeader>
         
         <ScrollArea className="h-[65vh] px-6 py-6">
           <div className="space-y-8 text-sm leading-relaxed">
+            <section className="rounded-xl border-2 border-gold bg-gold/10 p-4 space-y-3">
+              <h3 className="text-lg font-bold text-primary">🚀 Как начать играть за 1 минуту</h3>
+              <ol className="list-decimal pl-5 space-y-2 text-foreground">
+                <li><strong>Войдите в аккаунт.</strong> Создайте комнату или присоединитесь к другу по коду. Для тренировки выберите соло-режим.</li>
+                <li><strong>Получите карты.</strong> Цветные карты вагонов нужны для строительства дорог, а карты назначений показывают, какие города требуется соединить.</li>
+                <li><strong>Делайте одно действие за ход:</strong> берите карты вагонов, стройте маршрут, получайте новые назначения или ставьте станцию.</li>
+                <li><strong>Соединяйте города.</strong> Цепочка ваших дорог между двумя городами выполняет назначение и приносит очки. Неисполненное назначение отнимает очки.</li>
+                <li><strong>Побеждает игрок с наибольшим количеством очков</strong> после завершения партии.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">Пример: между Парижем и Франкфуртом маршрут длиной 3 клетки. Для его постройки нужны 3 карты указанного цвета (локомотив может заменить любую из них) и 3 свободных вагончика. За маршрут вы получаете очки сразу, а за соединение городов по назначению — в конце партии.</p>
+            </section>
             
             {/* Цель игры */}
             <section className="rules-section">
@@ -162,7 +173,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                     <ul className="list-none space-y-2 text-foreground/90">
                       <li className="flex items-start gap-2">
                         <span className="text-green-500">•</span>
-                        Сыграйте карты нужного цвета в количестве вагонов на маршруте
+                        Выберите свободную дорогу на карте и сыграйте столько карт нужного цвета, сколько на ней клеток. Например, маршрут из 3 клеток требует 3 карты
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500">•</span>
@@ -230,7 +241,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-amber-500">•</span>
-                        Станция позволяет использовать <strong>1 чужой маршрут</strong> из этого города для выполнения назначений
+                        Станция позволяет засчитать <strong>один маршрут другого игрока</strong>, выходящий из этого города, при проверке ваших назначений (но не делает дорогу вашей)
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-amber-500">•</span>
@@ -384,8 +395,8 @@ export const RulesModal: React.FC<RulesModalProps> = ({ trigger }) => {
                   </p>
                   <ol className="list-decimal list-inside mt-2 space-y-1 text-foreground/80">
                     <li>Вытяните <strong>3 карты</strong> из колоды вагонов</li>
-                    <li>За каждую карту <strong>совпадающего цвета</strong> (или локомотив) — доплатите 1 карту</li>
-                    <li>Если не можете доплатить — маршрут не занимается, ваши карты остаются на руке</li>
+                    <li>За каждую карту <strong>совпадающего цвета</strong> (или локомотив) — доплатите 1 карту того же цвета или локомотив</li>
+                    <li>Если не можете или не хотите доплачивать — маршрут не строится, а первоначально выбранные карты остаются у вас</li>
                   </ol>
                 </div>
                 
