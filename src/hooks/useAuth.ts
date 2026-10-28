@@ -217,7 +217,7 @@ export const useAuth = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/email-confirmed`,
+        emailRedirectTo: 'https://tickettoride.online/',
         data: {
           display_name: displayName,
         },
