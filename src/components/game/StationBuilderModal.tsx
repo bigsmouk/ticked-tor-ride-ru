@@ -6,6 +6,7 @@ import { TrainCard } from './TrainCard';
 interface StationBuilderModalProps {
   cities: City[];
   cost: number;
+  selectedCityId: string;
   onConfirm: (cityId: string, cardsUsed: TrainCardType[]) => void;
   onCancel: () => void;
 }
@@ -13,29 +14,15 @@ interface StationBuilderModalProps {
 export const StationBuilderModal: React.FC<StationBuilderModalProps> = ({
   cities,
   cost,
+  selectedCityId,
   onConfirm,
   onCancel,
 }) => {
   const { gameState, localPlayerId, canBuildStation } = useGameStore();
   
-  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   
   const player = gameState?.players.find(p => p.id === localPlayerId);
-  
-  // Get available cities (no station yet) - recalculates when placedStations changes
-  const availableCities = useMemo(() => {
-    if (!gameState) return [];
-    const stationCityIds = new Set(gameState.placedStations.map(s => s.cityId));
-    return cities.filter(city => !stationCityIds.has(city.id));
-  }, [cities, gameState?.placedStations]);
-  
-  // Reset selected city if it becomes unavailable
-  React.useEffect(() => {
-    if (selectedCityId && gameState?.placedStations.some(s => s.cityId === selectedCityId)) {
-      setSelectedCityId(null);
-    }
-  }, [gameState?.placedStations, selectedCityId]);
   
   // Group player cards by type
   const cardGroups = useMemo(() => {
@@ -110,30 +97,14 @@ export const StationBuilderModal: React.FC<StationBuilderModalProps> = ({
           Стоимость: {cost} {cost === 1 ? 'карта любого цвета' : `карты одного цвета`}
         </p>
         
-        {/* City selection */}
-        <div className="mb-6">
-          <h3 className="text-lg font-display font-semibold text-foreground mb-3">
-            Выберите город:
-          </h3>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-40 overflow-y-auto p-2 bg-background/50 rounded-lg">
-            {availableCities.map(city => (
-              <button
-                key={city.id}
-                onClick={() => setSelectedCityId(city.id)}
-                className={`
-                  px-2 py-1.5 text-xs rounded-lg border-2 transition-all duration-200
-                  ${selectedCityId === city.id 
-                    ? 'border-gold bg-gold/20 text-foreground shadow-md' 
-                    : 'border-border bg-background hover:border-gold/50 text-muted-foreground hover:text-foreground'
-                  }
-                `}
-              >
-                {city.name}
-              </button>
-            ))}
-          </div>
+        <div className="mb-5 rounded-lg border border-amber-600 bg-amber-100/70 p-3 text-center text-amber-950">
+          <p className="font-bold">📍 Город: {cities.find(city => city.id === selectedCityId)?.name ?? selectedCityId}</p>
+          <p className="mt-1 text-sm">Выберите {cost} {cost === 1 ? 'карту' : 'карты'} для строительства станции.</p>
+          <button type="button" onClick={onCancel} className="mt-2 rounded-lg border border-amber-800 bg-white px-4 py-2 text-sm font-semibold hover:bg-amber-200">
+            ↩ Изменить город
+          </button>
         </div>
-        
+
         {/* Card selection */}
         <div className="mb-6">
           <h3 className="text-lg font-display font-semibold text-foreground mb-3">
@@ -205,11 +176,11 @@ export const StationBuilderModal: React.FC<StationBuilderModalProps> = ({
             onClick={onCancel}
             className="btn-vintage px-6 py-2 rounded-lg"
           >
-            Отмена
+            ↩ Выбрать другой город
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!selectedCityId || !isValidSelection}
+            disabled={!isValidSelection}
             className="btn-gold px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Построить
