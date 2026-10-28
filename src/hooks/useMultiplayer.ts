@@ -556,7 +556,6 @@ export const useMultiplayer = () => {
 
   // Начать соло-игру (без создания комнаты в БД)
   const startSoloGame = useCallback(async (playerName: string) => {
-    if (!isAuthenticated) { toast.error('Для игры необходима регистрация'); return null; }
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -595,11 +594,13 @@ export const useMultiplayer = () => {
       isSoloMode: true,
       createdAt: new Date(),
     });
-    setView('waiting');
+    // Соло-режим полностью локальный: без регистрации, комнаты в БД и Realtime.
+    useGameStore.getState().initializeGame();
+    setView('game');
 
     toast.success('Соло-игра создана!');
     return soloRoomId;
-  }, [playerId, profile, isAuthenticated, setCurrentRoom, setView]);
+  }, [playerId, profile, setCurrentRoom, setView]);
 
   // Сменить цвет игрока в комнате ожидания
   const changePlayerColor = useCallback(async (roomId: string, newColor: PlayerColor) => {
