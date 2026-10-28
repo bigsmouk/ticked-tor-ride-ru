@@ -80,15 +80,19 @@ export const RouteSegment = memo<RouteSegmentProps>(({
       {isClaimed && claimingPlayerColor ? (
         // Claimed route - show player wagons on each segment
         <>
-          {/* Dark outline for contrast */}
-          <path
-            d={path}
-            stroke="hsl(0 0% 0% / 0.5)"
-            strokeWidth={14}
-            fill="none"
-            strokeLinecap="round"
-          />
-          {/* Individual claimed wagon cars with staggered animation */}
+          {/* Keep ownership markings inside the exact calibrated wagon slots.
+              A city-to-city path would cut across curves and parallel tracks. */}
+          {segments.map((seg, i) => (
+            <g key={`occupied-slot-${i}`}
+               transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+               pointerEvents="none">
+              <rect x={-12.5} y={-6.5} width={25} height={13} rx={2.5}
+                fill="#fff9e9" stroke="#1b2634" strokeWidth={1.2} />
+              <rect x={-11.5} y={-5.5} width={23} height={11} rx={2}
+                fill={PLAYER_COLORS[claimingPlayerColor]} />
+            </g>
+          ))}
+          {/* Each wagon is an SVG painted in the claiming player's color. */}
           {segments.map((seg, i) => (
             <ClaimedWagon
               key={i}
@@ -100,6 +104,7 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               animationIndex={i}
             />
           ))}
+          <title>{`Занято: ${claimingPlayerName ?? 'игрок'} — ${segments.length} вагонов`}</title>
         </>
       ) : (
         // Unclaimed route - show wagon slots
