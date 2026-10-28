@@ -321,7 +321,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         </button>
       </div>
       
-      {showStations && (gameState?.placedStations.length ?? 0) === 0 && (
+      {false && showStations && (gameState?.placedStations.length ?? 0) === 0 && (
         <div className="absolute z-40 top-48 right-14 pointer-events-none bg-amber-50/95 text-amber-950 border border-amber-700 rounded-md px-3 py-2 text-xs shadow-md">
           Станций на карте пока нет
         </div>
@@ -482,6 +482,11 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             ))}
           </g>
         )}
+        {/* All cities become clearly visible when the Г toggle is on. */}
+        {showCityNames && <g pointerEvents="none">
+          {cities.map(city => <circle key={'city-halo-' + city.id} cx={city.x} cy={city.y}
+            r={15} fill="#ffe16b" fillOpacity={0.18} stroke="#f3b52b" strokeWidth={2.5} />)}
+        </g>}
         {/* Cities - using memoized components */}
         <g className="cities" style={{ pointerEvents: 'none' }}>
           {cities.map((city) => (
