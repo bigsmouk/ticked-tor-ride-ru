@@ -913,14 +913,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const playerIndex = gameState.players.findIndex(p => p.id === localPlayerId);
     if (playerIndex === -1) return;
     
-    // В соло-режиме ход остаётся у того же игрока
-    const isSolo = currentRoom?.isSoloMode;
-    const nextPlayerIndex = isSolo ? playerIndex : (playerIndex + 1) % gameState.players.length;
+    // В соло-режиме с ботом ходы чередуются как в обычной партии.
+    const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
     
     const updatedPlayers = [...gameState.players];
-    if (!isSolo) {
-      updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], isActive: false };
-    }
+    updatedPlayers[playerIndex] = { ...updatedPlayers[playerIndex], isActive: false };
     updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
     
     set({
