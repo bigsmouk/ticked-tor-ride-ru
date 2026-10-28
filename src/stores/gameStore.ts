@@ -524,7 +524,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Tunnel mechanics: attempt to claim - reveals 3 cards first
   attemptClaimTunnel: (routeId, cardsUsed) => {
     const { gameState, localPlayerId } = get();
-    if (!gameState || gameState.currentPlayerId !== localPlayerId) return;
+    if (!gameState || gameState.currentPlayerId !== localPlayerId || gameState.currentAction !== 'none' || gameState.tunnelReveal) return;
     
     const route = gameState.routes.find(r => r.id === routeId);
     if (!route || route.claimedBy || !route.isTunnel) return;
@@ -599,7 +599,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Confirm tunnel claim with extra cards
   confirmTunnelClaim: (extraCards) => {
     const { gameState, localPlayerId } = get();
-    if (!gameState || !gameState.tunnelReveal) return;
+    if (!gameState || !gameState.tunnelReveal || gameState.currentAction !== 'tunnelReveal') return;
     if (gameState.currentPlayerId !== localPlayerId) return;
     
     const { routeId, cardsUsed, extraCardsNeeded, routeName } = gameState.tunnelReveal;
@@ -615,6 +615,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const player = gameState.players[playerIndex];
     if (validateRoutePayment(route, cardsUsed, player.trainCards)) return;
+    // Extra payment must match the committed color, even on gray tunnels.
+    // If the initial payment consisted entirely of locomotives, only
+    // locomotives can be added (no new color may be introduced).
     const baseColor = cardsUsed.find(card => card !== 'locomotive');
     if (extraCards.some(card => card !== 'locomotive' && card !== baseColor)) return;
     const remainingPayment = [...player.trainCards];
@@ -1454,7 +1457,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     // Count available matching cards
-    const matchingCount = (remainingCards[colorUsed] || 0) + (remainingCards['locomotive'] || 0);
+    const matchingCount = (remainingCards[colorUsed] || 0) + (colorUsed === 'locomotive' ? 0 : (remainingCards['locomotive'] || 0));
     
     return matchingCount >= extraCardsNeeded;
   },
