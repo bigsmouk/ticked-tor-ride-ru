@@ -22,6 +22,7 @@ export const dictionary: Record<string, string> = {
   "46 городов": "46 cities",
   "Правила игры": "Game rules",
   "Главная": "Home",
+  "Об авторе": "About the creator",
   "Конфиденциальность": "Privacy",
   "Карта сайта:": "Site map:",
   "Разработчик:": "Developer:",
