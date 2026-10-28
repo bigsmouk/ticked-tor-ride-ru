@@ -5,4 +5,4 @@ Disallow: /game
 Disallow: /reset-password
 Disallow: /email-confirmed
 
-Sitemap: https://tickettoride.tuqo.ru/sitemap.xml
+Sitemap: https://tickettoride.online/sitemap.xml
