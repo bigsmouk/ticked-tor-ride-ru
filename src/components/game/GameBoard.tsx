@@ -35,6 +35,8 @@ export const GameBoard: React.FC = () => {
   const [showGameLog, setShowGameLog] = useState(false);
   const [showHand, setShowHand] = useState(false);
   const [showDeck, setShowDeck] = useState(false);
+  const [mapInteracting, setMapInteracting] = useState(false);
+  const [hoveredTicket, setHoveredTicket] = useState<DestinationTicket | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<TrainCardType[]>([]);
   const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
@@ -44,18 +46,22 @@ export const GameBoard: React.FC = () => {
   const [showStationBuilder, setShowStationBuilder] = useState(false);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
-  // Keyboard shortcut: toggle hand. Browsers may reserve Ctrl+J for Downloads.
+  // Ctrl+J/O can be intercepted by the browser; Ctrl+P opens both panels.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || !['j', 'o'].includes(event.key.toLowerCase())) return;
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+      const key = event.key.toLowerCase();
+      if (!['j', 'o', 'p'].includes(key)) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       event.preventDefault();
-      if (event.key.toLowerCase() === 'j') setShowHand(open => !open);
-      if (event.key.toLowerCase() === 'o') setShowDeck(open => !open);
+      event.stopPropagation();
+      if (key === 'j') setShowHand(open => !open);
+      if (key === 'o') setShowDeck(open => !open);
+      if (key === 'p') { setShowHand(true); setShowDeck(true); }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
   }, []);
 
   useEffect(() => {
@@ -446,9 +452,11 @@ export const GameBoard: React.FC = () => {
                 routes={gameState.routes}
                 onRouteClick={handleRouteClick}
                 selectedRoute={selectedRoute}
+                highlightedCities={hoveredTicket?.cities ?? null}
+                onInteractionChange={setMapInteracting}
               />
         </div>
-        <aside className="ttr-players ttr-overlay" aria-label="Игроки">
+        <aside className={`ttr-players ttr-overlay ${mapInteracting ? "ttr-map-interacting" : ""}`} aria-label="Игроки">
           {gameState.players.map((player, i) => (
             <div className="ttr-player-card" key={player.id}>
               <PlayerPanel
@@ -463,13 +471,13 @@ export const GameBoard: React.FC = () => {
             </div>
           ))}
         </aside>
-        <div className="ttr-history-anchor ttr-overlay">
+        <div className={`ttr-history-anchor ttr-overlay ${mapInteracting ? "ttr-map-interacting" : ""}`}>
           <button type="button" className="ttr-log-toggle" onClick={() => setShowGameLog(prev => !prev)} aria-expanded={showGameLog}>
             📜 {showGameLog ? 'Скрыть историю' : 'История'}
           </button>
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
-        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''}`}>
+        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${mapInteracting ? 'ttr-map-interacting' : ''}`}>
           <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (Ctrl+O)">
             🃏 Колода <span className="ttr-shortcut">Ctrl+O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
           </button>
@@ -505,7 +513,7 @@ export const GameBoard: React.FC = () => {
             </div>
           </div>
         </div>
-        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : ''}`} aria-label="Мои карты и билеты">
+        {localPlayer && <aside className={`ttr-hand-side ttr-overlay ${showHand ? 'is-open' : '' } ${mapInteracting ? 'ttr-map-interacting' : ''}`} aria-label="Мои карты и билеты">
           <button type="button" className="ttr-hand-edge-toggle" onClick={() => setShowHand(open => !open)} aria-expanded={showHand} aria-controls="ttr-hand-drawer" title="Мои карты и билеты (Ctrl+J)">
             <span aria-hidden="true">{showHand ? '❯' : '❮'}</span>
             <span>Карты</span><span>Билеты</span>
@@ -515,6 +523,7 @@ export const GameBoard: React.FC = () => {
             <PlayerHand
               trainCards={localPlayer.trainCards}
               destinationTickets={localPlayer.destinationTickets}
+              onTicketHover={setHoveredTicket}
               selectedCardIndices={selectedCardIndices}
               onCardSelect={handleCardSelect}
               routeRequirement={routeRequirement}
