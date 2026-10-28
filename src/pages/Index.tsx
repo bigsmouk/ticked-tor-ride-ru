@@ -12,6 +12,7 @@ import { Loader2, RefreshCw, Users, Lock, Globe, Train, Send } from 'lucide-reac
 import AnimatedTrainBackground from '@/components/home/AnimatedTrainBackground';
 import ActiveGamesCounter from '@/components/home/ActiveGamesCounter';
 import { toast } from 'sonner';
+import { AuthControls } from '@/components/auth/AuthControls';
 
 interface PublicRoom {
   id: string;
@@ -229,13 +230,14 @@ const Index = () => {
 };
 
   return (
-    <div className="h-screen parchment flex flex-col relative overflow-hidden">
+    <div className="min-h-screen parchment flex flex-col relative">
       {/* Background */}
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
-      <header className="retro-header py-4 md:py-6 text-center relative z-10 flex-shrink-0 animate-fade-in">
+      <header className="retro-header py-4 md:py-6 text-center relative z-10 animate-fade-in">
         
+        <div className="relative z-20 flex justify-end px-4 mb-2"><AuthControls /></div>
         {/* Decorative train icon */}
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block animate-scale-in">
           <Train className="h-10 w-10 text-gold opacity-80" />
@@ -250,7 +252,7 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative z-10 overflow-y-auto min-h-0">
+      <main className="flex-1 flex flex-col items-center justify-start p-4 md:p-6 relative z-10">
         {/* Active games counter */}
         <div className="mb-3 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
@@ -346,7 +348,7 @@ const Index = () => {
                         <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                       </div>
                     ) : publicRooms.length > 0 ? (
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                      <div className="space-y-2">
                         {publicRooms.map((room) => (
                           <button
                             key={room.id}
@@ -497,7 +499,7 @@ const Index = () => {
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
           </p>
           <a 
-            href="https://t.me/timursimineev" 
+            href="https://t.me/bigsssmoke" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold/20 hover:bg-gold/40 transition-colors"
