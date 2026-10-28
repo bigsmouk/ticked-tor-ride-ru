@@ -303,6 +303,7 @@ const Index = () => {
             {!showCreate && !showJoin ? (
               <div className="space-y-3">
                 <button
+                  id="create-room-button"
                   className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
                   onClick={() => isAuthenticated ? setShowCreate(true) : toast.error('Сначала зарегистрируйтесь или войдите')}
                   disabled={!isAuthenticated}
