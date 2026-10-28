@@ -27,7 +27,7 @@ interface PublicRoom {
 const Index = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom, joinRoomById, fetchPublicRooms, startSoloGame, isLoading, isReady } = useMultiplayer();
-  const { user } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
   const {
     isRecovering,
     showRecoveryPrompt,
@@ -44,10 +44,20 @@ const Index = () => {
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
-  // Сохраняем имя гостя между посещениями.
+  // For signed-in players the account nickname takes precedence over the guest name.
+  const accountName = isAuthenticated
+    ? (profile?.display_name?.trim() || (user?.user_metadata?.display_name as string | undefined)?.trim() || '')
+    : '';
+  const effectivePlayerName = accountName || playerName.trim();
+
   useEffect(() => {
-    if (playerName.trim()) localStorage.setItem('ttr_guest_name', playerName.trim());
-  }, [playerName]);
+    if (accountName) setPlayerName(accountName);
+    else if (!isAuthenticated) setPlayerName(localStorage.getItem('ttr_guest_name') || '');
+  }, [accountName, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated && playerName.trim()) localStorage.setItem('ttr_guest_name', playerName.trim());
+  }, [playerName, isAuthenticated]);
   const loadPublicRooms = async () => {
     if (!user) return;
     setLoadingRooms(true);
@@ -199,8 +209,8 @@ const Index = () => {
   }
 
   const handleCreateGame = async () => {
-    if (playerName.trim() && roomName.trim()) {
-      const result = await createRoom(roomName.trim(), playerName.trim(), isPrivate);
+    if (effectivePlayerName && roomName.trim()) {
+      const result = await createRoom(roomName.trim(), effectivePlayerName, isPrivate);
       if (result) {
         navigate('/waiting');
       }
@@ -208,8 +218,8 @@ const Index = () => {
   };
 
   const handleJoinGame = async () => {
-    if (playerName.trim() && joinCode.trim()) {
-      const result = await joinRoom(joinCode.trim(), playerName.trim());
+    if (effectivePlayerName && joinCode.trim()) {
+      const result = await joinRoom(joinCode.trim(), effectivePlayerName);
       if (result) {
         navigate('/waiting');
       }
@@ -217,12 +227,12 @@ const Index = () => {
   };
 
  const handleJoinPublicRoom = async (roomId: string) => {
-  if (!playerName.trim()) {
+  if (!effectivePlayerName) {
     alert('Введите имя игрока, чтобы присоединиться к комнате.');
     return;
   }
 
-  const result = await joinRoomById(roomId, playerName.trim());
+  const result = await joinRoomById(roomId, effectivePlayerName);
 
   if (result) {
     navigate('/waiting');
@@ -274,8 +284,9 @@ const Index = () => {
                 Ваше имя
               </label>
               <Input
-                value={playerName}
+                value={effectivePlayerName}
                 onChange={(e) => setPlayerName(e.target.value)}
+                readOnly={Boolean(accountName)}
                 placeholder="Введите имя..."
                 className="w-full bg-background border-ornament"
               />
@@ -310,11 +321,11 @@ const Index = () => {
                 <button
                   className="w-full rounded-lg py-3 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
                   onClick={async () => {
-                    if (!playerName.trim()) {
+                    if (!effectivePlayerName) {
                       toast.error('Введите ваше имя');
                       return;
                     }
-                    const result = await startSoloGame(playerName.trim());
+                    const result = await startSoloGame(effectivePlayerName);
                     if (result) {
                       navigate('/game');
                     }
@@ -421,7 +432,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleCreateGame}
-                  disabled={!playerName.trim() || !roomName.trim() || isLoading}
+                  disabled={!effectivePlayerName || !roomName.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Создание...' : '✓ Создать комнату'}
                 </button>
@@ -452,7 +463,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleJoinGame}
-                  disabled={!playerName.trim() || !joinCode.trim() || isLoading}
+                  disabled={!effectivePlayerName || !joinCode.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Присоединение...' : '🚂 Присоединиться'}
                 </button>
