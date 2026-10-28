@@ -365,6 +365,10 @@ export const GameBoard: React.FC = () => {
       }
     }
     
+    if (extraCards.length !== extraCardsNeeded) {
+      setNotice('Недостаточно карт нужного цвета для доплаты за туннель');
+      return;
+    }
     if (isHost) {
       confirmTunnelClaim(extraCards);
     } else {
