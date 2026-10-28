@@ -1,8 +1,15 @@
+# Only the public homepage is intended for search indexing.
+# Do not crawl game sessions, waiting rooms, auth or developer pages.
 User-agent: *
 Allow: /
-Disallow: /waiting
 Disallow: /game
+Disallow: /waiting
 Disallow: /reset-password
 Disallow: /email-confirmed
+Disallow: /test
+Disallow: /calibration
+Disallow: /routes
+Disallow: /test-calibration
+Disallow: /test-routes
 
 Sitemap: https://tickettoride.online/sitemap.xml
