@@ -21,6 +21,7 @@ import Rules from "./pages/Rules";
 import CookieConsent from "./components/CookieConsent";
 import { useAuth } from "./hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import { useGameStore } from "./stores/gameStore";
 
 const queryClient = new QueryClient();
 
@@ -59,7 +60,9 @@ const AnalyticsRouteTracker = () => {
 };
 
 const RegisteredOnly = ({ children }: { children: React.ReactNode }) => {
+  const soloGame = useGameStore(state => Boolean(state.currentRoom?.isSoloMode));
   const { isAuthenticated, loading } = useAuth();
+  if (soloGame) return <>{children}</>;
   if (loading) return <div className="min-h-screen flex items-center justify-center">Проверка авторизации…</div>;
   return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 };
