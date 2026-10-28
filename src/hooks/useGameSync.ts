@@ -108,8 +108,6 @@ export const useGameSync = (roomId: string | null) => {
     clearRetryTimer();
     clearReconnectTimer();
     clearStaleCheckTimer();
-    pendingActionsRef.current.forEach(item => { if (item.timer) clearTimeout(item.timer); });
-    pendingActionsRef.current.clear();
   }, [clearRetryTimer, clearReconnectTimer, clearStaleCheckTimer]);
 
   // Отправляем игровые события только через активный Realtime-канал.
@@ -291,19 +289,11 @@ export const useGameSync = (roomId: string | null) => {
         return;
       }
       try {
-        if (typeof ch.httpSend === 'function') {
-          await ch.httpSend(event, payload);
-          return;
-        }
-      } catch (e) {
-        console.warn('[GameSync] httpSend failed (channel), falling back to send()', e);
+        const status = await ch.send({ type: 'broadcast', event, payload });
+        if (status !== 'ok') console.warn('[GameSync] Broadcast delivery failed:', event, status);
+      } catch (error) {
+        console.error('[GameSync] Broadcast failed:', event, error);
       }
-      if (!usingRestFallbackRef.current) {
-        usingRestFallbackRef.current = true;
-        setConnectionStatus('degraded');
-        console.log('[GameSync] Switched to REST fallback mode');
-      }
-      await ch.send({ type: 'broadcast', event, payload });
     };
 
     channel
@@ -660,6 +650,7 @@ export const useGameSync = (roomId: string | null) => {
     channelRef.current = channel;
 
     return () => {
+      pendingActionsRef.current.forEach(item => { if (item.timer) clearTimeout(item.timer); item.timer = null; });
       console.log('[GameSync] Cleaning up channel');
       mountedRef.current = false;
       clearAllTimers();
