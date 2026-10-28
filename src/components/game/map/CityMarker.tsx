@@ -7,20 +7,25 @@ interface CityMarkerProps {
   showName: boolean;
   highlighted?: boolean;
   onClick?: () => void;
+  interactive?: boolean;
+  unavailable?: boolean;
 }
 
 // Memoized city marker component
-export const CityMarker = memo<CityMarkerProps>(({ x, y, name, showName, highlighted = false, onClick }) => (
-  <g onClick={onClick}>
+export const CityMarker = memo<CityMarkerProps>(({ x, y, name, showName, highlighted = false, onClick, interactive = false, unavailable = false }) => (
+  <g onClick={interactive && !unavailable ? onClick : undefined} role={interactive ? 'button' : undefined} tabIndex={interactive && !unavailable ? 0 : undefined}
+    aria-label={interactive ? (unavailable ? `${name}: станция уже есть` : `Выбрать город ${name} для станции`) : undefined}
+    onKeyDown={interactive && !unavailable ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onClick?.(); } } : undefined}
+    style={{ cursor: interactive ? unavailable ? 'not-allowed' : 'pointer' : undefined, pointerEvents: interactive ? 'all' : 'none' }}>
     {/* City circle */}
     <circle
       cx={x}
       cy={y}
-      r={highlighted ? 12 : 8}
-      fill="hsl(40 35% 92%)"
+      r={interactive ? 15 : highlighted ? 12 : 8}
+      fill={interactive ? unavailable ? "#b7a79a" : "#ffeb9c" : "hsl(40 35% 92%)"}
       stroke={highlighted ? "#fbbf24" : "hsl(30 50% 30%)"}
       strokeWidth={highlighted ? 4 : 2}
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: interactive ? "auto" : "none" }}
     />
     
     {/* Inner circle */}
