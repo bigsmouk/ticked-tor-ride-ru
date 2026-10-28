@@ -249,3 +249,26 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
 .ttr-stage .ttr-history-anchor .ttr-log { width:min(285px,calc(100vw - 95px)); max-height: min(340px,45dvh); }
 .ttr-map-controls button[aria-pressed="true"] { background:#a77727 !important; color:#fff !important; border-color:#fff2ba !important; outline:2px solid #ffdf79; outline-offset:1px; }
 @media(max-width:600px) { .ttr-stage .ttr-history-anchor.ttr-overlay { top:9px; left:8px; } }
+
+/* History belongs on the right, below map tools, never above player cards. */
+.ttr-stage .ttr-history-anchor.ttr-overlay {
+  position:absolute; left:auto; right:clamp(56px, 27vw, 380px); top:215px; bottom:auto;
+  width:max-content; max-width:min(300px,calc(100vw - 100px));
+  display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+  z-index:24; overflow:visible;
+}
+.ttr-stage .ttr-history-anchor .ttr-log {
+  width:min(285px,calc(100vw - 100px));
+  height:min(340px,calc(100dvh - 285px)); max-height:45dvh;
+  min-height:0; overflow:hidden; overscroll-behavior:contain;
+}
+.ttr-stage .ttr-history-anchor .ttr-log [data-radix-scroll-area-viewport] {
+  overscroll-behavior:contain;
+}
+@media(max-width:900px) {
+ .ttr-stage .ttr-history-anchor.ttr-overlay { right:55px; top:215px; }
+}
+@media(max-width:600px) {
+ .ttr-stage .ttr-history-anchor.ttr-overlay { right:55px; top:215px; }
+ .ttr-stage .ttr-history-anchor .ttr-log { width:min(205px,calc(100vw - 100px)); height:min(240px,calc(100dvh - 270px)); }
+}

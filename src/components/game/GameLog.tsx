@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { GameLogEntry, Player } from '@/types/game';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -29,15 +29,6 @@ const ACTION_ICONS: Record<string, string> = {
 };
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
-  const scrollEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new logs arrive
-  useEffect(() => {
-    if (scrollEndRef.current) {
-      scrollEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs.length]);
-
   const getPlayerName = (playerId?: string) => {
     if (!playerId) return 'Система';
     const player = players.find(p => p.id === playerId);
@@ -106,8 +97,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
               </div>
             ))
           )}
-          {/* Anchor for auto-scroll */}
-          <div ref={scrollEndRef} />
+
         </div>
       </ScrollArea>
     </div>
