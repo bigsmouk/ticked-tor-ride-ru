@@ -119,7 +119,10 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
   highlightedCities,
   onInteractionChange,
 }) => {
-  const { gameState, canClaimRoute } = useGameStore();
+  const { gameState, canClaimRoute, localPlayerId } = useGameStore();
+  const [showOnlyMyRoutes, setShowOnlyMyRoutes] = useState(false);
+  const myPlayer = gameState?.players.find(player => player.id === localPlayerId);
+  const myColor = myPlayer?.color ?? 'black';
   
   // Zoom and pan state
   const [scale, setScale] = useState(1.08);
@@ -246,6 +249,17 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Owner legend stays fixed on screen while the map is zoomed or panned. */}
+      <div className="ttr-route-ownership-legend" onMouseDown={(e) => e.stopPropagation()}>
+        <span className="ttr-route-owner-swatch" style={{ backgroundColor: ({ red:'#e23b3b', blue:'#256fe0', green:'#23a05b', yellow:'#f7c948', black:'#323946' } as Record<PlayerColor,string>)[myColor] }} />
+        <strong>Мои пути</strong>
+        <span className="ttr-route-owner-total">{routes.filter(route => route.claimedBy === localPlayerId).length}</span>
+        <button type="button" aria-pressed={showOnlyMyRoutes}
+          onClick={(e) => { e.stopPropagation(); setShowOnlyMyRoutes(prev => !prev); }}
+          title="Приглушить пути других игроков">
+          {showOnlyMyRoutes ? '✓ Только мои' : 'Выделить мои'}
+        </button>
+      </div>
       {/* Map controls */}
       <div className="ttr-map-controls absolute top-4 right-4 z-30 flex flex-col gap-2" onMouseDown={(e) => e.stopPropagation()}>
         <button 
@@ -304,6 +318,13 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
             {hoveredRoute.isTunnel && <span>🚇</span>}
             {hoveredRoute.ferryLocomotives && <span>⛵</span>}
           </div>
+          {hoveredRoute.claimedBy && (() => {
+            const owner = gameState?.players.find(player => player.id === hoveredRoute.claimedBy);
+            const mine = hoveredRoute.claimedBy === localPlayerId;
+            return <div className={mine ? 'ttr-owner-tooltip is-mine' : 'ttr-owner-tooltip'}>
+              {mine ? '★ ВАШ ПУТЬ' : '🚂 Путь соперника'} · {owner?.name ?? 'Неизвестный игрок'}
+            </div>;
+          })()}
           <div className="text-muted-foreground text-xs flex gap-2 mt-1 flex-wrap">
             <span>Длина: {hoveredRoute.length}</span>
             <span>•</span>
@@ -406,6 +427,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
                 isClaimable={isClaimable}
                 claimingPlayerColor={claimingPlayer?.color || null}
                 claimingPlayerName={claimingPlayer?.name || null}
+                isOwnRoute={!!route.claimedBy && route.claimedBy === localPlayerId}
+                dimOtherPlayers={showOnlyMyRoutes}
                 onClick={() => onRouteClick?.(route.id)}
                 onMouseEnter={(e) => {
                   if (containerRef.current) {
