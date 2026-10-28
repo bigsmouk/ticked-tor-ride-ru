@@ -16,6 +16,10 @@ import TestRouteCalibration from "./pages/TestRouteCalibration";
 import EmailConfirmed from "./pages/EmailConfirmed";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import CookieConsent from "./components/CookieConsent";
+import { useAuth } from "./hooks/useAuth";
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -33,9 +37,15 @@ const AnalyticsRouteTracker = () => {
     if (initial.current) { initial.current = false; return; }
     // Metrika init counts the first page; hit() tracks subsequent SPA navigation.
     const tracker = (window as Window & { ym?: (id: number, action: string, url: string) => void }).ym;
-    tracker?.(113841365, 'hit', window.location.origin + pathname + search);
+    if (localStorage.getItem('ttr_analytics_consent') === 'accepted') tracker?.(113841365, 'hit', window.location.origin + pathname + search);
   }, [pathname, search]);
   return null;
+};
+
+const RegisteredOnly = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Проверка авторизации…</div>;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 const App = () => (
@@ -46,6 +56,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AnalyticsRouteTracker />
+          <CookieConsent />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/test" element={<TestSandbox />} />
@@ -53,8 +64,9 @@ const App = () => (
             <Route path="/routes" element={<RouteCalibration />} />
             <Route path="/test-calibration" element={<TestMapCalibration />} />
             <Route path="/test-routes" element={<TestRouteCalibration />} />
-            <Route path="/waiting" element={<WaitingRoom />} />
-            <Route path="/game" element={<Game />} />
+            <Route path="/waiting" element={<RegisteredOnly><WaitingRoom /></RegisteredOnly>} />
+            <Route path="/game" element={<RegisteredOnly><Game /></RegisteredOnly>} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/email-confirmed" element={<EmailConfirmed />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />

@@ -13,3 +13,5 @@ Disallow: /test-calibration
 Disallow: /test-routes
 
 Sitemap: https://tickettoride.online/sitemap.xml
+
+Disallow: /privacy
