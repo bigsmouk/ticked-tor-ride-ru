@@ -171,7 +171,7 @@ const Index = () => {
                 Код комнаты: <span className="font-mono text-primary">{savedSessionData.roomCode}</span>
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <button
                   className="btn-gold w-full rounded-lg py-4 text-lg"
                   onClick={attemptRecovery}
@@ -230,38 +230,38 @@ const Index = () => {
 };
 
   return (
-    <div className="min-h-screen parchment flex flex-col relative">
+    <div className="h-[100dvh] parchment flex flex-col relative overflow-hidden">
       {/* Background */}
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
-      <header className="retro-header py-4 md:py-6 text-center relative z-10 animate-fade-in">
+      <header className="retro-header py-2 md:py-3 text-center relative z-10 flex-shrink-0 animate-fade-in">
         
-        <div className="relative z-20 flex justify-end px-4 mb-2"><AuthControls /></div>
+        <div className="absolute right-2 md:right-4 top-2 z-20"><AuthControls /></div>
         {/* Decorative train icon */}
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:block animate-scale-in">
           <Train className="h-10 w-10 text-gold opacity-80" />
         </div>
 
-        <h1 className="vintage-title text-2xl md:text-4xl font-bold text-primary-foreground">
+        <h1 className="vintage-title text-xl md:text-3xl font-bold text-primary-foreground">
           Железнодорожное Приключение
         </h1>
-        <p className="vintage-subtitle text-lg md:text-xl mt-1 font-bold">
+        <p className="vintage-subtitle text-sm md:text-base font-bold">
           ЕВРОПА
         </p>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-start p-4 md:p-6 relative z-10">
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-2 md:px-4 md:py-3 relative z-10 overflow-hidden">
         {/* Active games counter */}
-        <div className="mb-3 animate-fade-in flex-shrink-0">
+        <div className="mb-1 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-lg w-full flex-shrink-0 animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-          <div className="vintage-card rounded-xl p-5 md:p-6">
+        <div className="max-w-lg w-full min-h-0 flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
+          <div className="vintage-card rounded-xl p-3 md:p-4 min-h-0 overflow-y-auto">
             {/* Welcome text */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-2">
               <h2 className="font-display text-xl font-bold text-foreground mb-1">
                 Добро пожаловать!
               </h2>
@@ -269,7 +269,7 @@ const Index = () => {
             </div>
 
             {/* Player name input */}
-            <div className="mb-4">
+            <div className="mb-2">
               <label className="block font-display text-sm font-semibold mb-1 text-foreground">
                 Ваше имя
               </label>
@@ -328,7 +328,7 @@ const Index = () => {
 
                 {/* Список открытых комнат */}
                 {user && (
-                  <div className="mt-4 pt-3 border-t border-ornament">
+                  <div className="mt-2 pt-2 border-t border-ornament">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
                         <Globe className="h-4 w-4" />
@@ -469,7 +469,7 @@ const Index = () => {
           </div>
 
           {/* Game info and rules */}
-          <div className="mt-4 text-center space-y-2 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+          <div className="mt-2 text-center space-y-1 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             <div className="inline-flex flex-wrap justify-center gap-2 md:gap-4 text-xs md:text-sm">
               <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30 hover-scale">
                 <span className="text-gold">👥</span>
@@ -493,7 +493,7 @@ const Index = () => {
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-3 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
+      <footer className="py-1.5 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
         <div className="flex items-center justify-center gap-2">
           <p className="text-primary-foreground font-display text-sm md:text-base">
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
