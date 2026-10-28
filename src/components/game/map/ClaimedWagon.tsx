@@ -35,6 +35,8 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
           <stop offset="100%" stopColor={palette.dark} />
         </linearGradient>
       </defs>
+      {/* Match the calibrated 24x10 wagon slot footprint, including on curves. */}
+      <g transform="scale(0.78)">
       {/* Strong halo makes the claimed route legible on any map background. */}
       <rect x="-15" y="-9" width="30" height="18" rx="4"
         fill="#fff9e9" stroke="#1b2634" strokeWidth="1.8" />
@@ -57,6 +59,7 @@ export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor,
       {/* High contrast owner color mark */}
       <rect x="-3.5" y="-3.3" width="7" height="4.2" rx=".7"
         fill={palette.trim} stroke={palette.dark} strokeWidth=".6" />
+      </g>
     </g>
   );
 });
