@@ -284,6 +284,7 @@ export const GameBoard: React.FC = () => {
     }
     
     setShowDestinationPicker(false);
+    setHoveredTicket(null);
     setAvailableDestinations([]);
   };
 
@@ -566,6 +567,7 @@ export const GameBoard: React.FC = () => {
           minKeep={1}
           onConfirm={handleKeepDestinations}
           onCancel={handleCancelDestinations}
+          onTicketPreview={setHoveredTicket}
         />
       )}
       
