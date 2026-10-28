@@ -343,6 +343,7 @@ export const useAuth = () => {
     uploadAvatar,
     refreshProfile,
     syncFromProvider,
-    isAuthenticated: !!authState.user,
+    // Anonymous Supabase sessions are guests, not registered accounts.
+    isAuthenticated: !!authState.user && !authState.user.is_anonymous,
   };
 };
