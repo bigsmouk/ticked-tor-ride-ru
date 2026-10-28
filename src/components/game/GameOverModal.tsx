@@ -3,6 +3,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { UNUSED_STATION_POINTS } from '@/types/game';
 
 export const GameOverModal: React.FC = () => {
   const { gameState, currentRoom, leaveRoom, localPlayerId } = useGameStore();
@@ -92,84 +93,36 @@ export const GameOverModal: React.FC = () => {
         )}
         
         <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-8 gap-1 text-xs font-semibold text-muted-foreground border-b pb-2">
-            <span>Место</span>
-            <span>Игрок</span>
-            <span className="text-right">Маршруты</span>
-            <span className="text-right text-green-600">+Билеты</span>
-            <span className="text-right text-red-600">−Штраф</span>
-            <span className="text-right text-purple-600">🏛️</span>
-            <span className="text-right text-blue-600">Путь</span>
-            <span className="text-right font-bold">Итого</span>
-          </div>
-          
+          <p className="text-sm text-center text-muted-foreground">Итог = построенные пути + выполненные билеты − невыполненные билеты + неиспользованные станции + самый длинный путь.</p>
           {sortedPlayers.map((player, index) => {
-            const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
-            const isWinner = player.id === gameState.winnerId;
-            const routePoints = (finalScore as any)?.routePoints ?? player.score;
-            const ticketBonus = (finalScore as any)?.ticketBonus ?? 0;
-            const ticketPenalty = (finalScore as any)?.ticketPenalty ?? 0;
-            const longestPathBonus = (finalScore as any)?.longestPathBonus ?? 0;
-            const unusedStationsBonus = (finalScore as any)?.unusedStationsBonus ?? 0;
-            const longestPath = (finalScore as any)?.longestPath ?? 0;
-            
+            const fs = gameState.finalScores?.find(score => score.playerId === player.id);
+            const stationCount = Math.max(0, 3 - gameState.placedStations.filter(station => station.playerId === player.id).length);
+            const stationBonus = fs?.unusedStationsBonus ?? stationCount * UNUSED_STATION_POINTS;
+            const routePoints = fs?.routePoints ?? player.score - (fs?.ticketBonus ?? 0) + (fs?.ticketPenalty ?? 0) - (fs?.longestPathBonus ?? 0) - stationBonus;
+            const ticketBonus = fs?.ticketBonus ?? 0;
+            const ticketPenalty = fs?.ticketPenalty ?? 0;
+            const longestBonus = fs?.longestPathBonus ?? 0;
+            const total = routePoints + ticketBonus - ticketPenalty + stationBonus + longestBonus;
+            const winner = player.id === gameState.winnerId;
             return (
-              <div 
-                key={player.id}
-                className={`grid grid-cols-8 gap-1 items-center p-2 rounded text-sm ${
-                  isWinner ? 'bg-gold/20 border border-gold' : 'bg-muted/30'
-                }`}
-              >
-                <span className="font-bold text-lg">
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
-                </span>
-                <span className="font-medium truncate">{player.name}</span>
-                <span className="text-right">{routePoints}</span>
-                <span className="text-right text-green-600">+{ticketBonus}</span>
-                <span className="text-right text-red-600">−{ticketPenalty}</span>
-                <span className="text-right text-purple-600">
-                  {unusedStationsBonus > 0 ? `+${unusedStationsBonus}` : '0'}
-                </span>
-                <span className="text-right text-blue-600">
-                  {longestPathBonus > 0 ? `+${longestPathBonus}` : '0'}
-                  <span className="text-muted-foreground text-xs ml-1">({longestPath})</span>
-                </span>
-                <span className="text-right font-bold text-lg">{player.score}</span>
+              <div key={player.id} className={`rounded-xl border p-3 space-y-2 ${winner ? 'border-gold bg-gold/15' : 'border-border bg-muted/20'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold truncate">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`} {player.name}</div>
+                  <div className="font-bold text-xl">{total} очков</div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="rounded bg-background/50 p-2"><div className="text-muted-foreground">🚂 Построенные пути</div><strong>+{routePoints}</strong></div>
+                  <div className="rounded bg-background/50 p-2"><div className="text-muted-foreground">✓ Выполненные билеты ({fs?.completedTickets ?? 0})</div><strong className="text-green-600">+{ticketBonus}</strong></div>
+                  <div className="rounded bg-background/50 p-2"><div className="text-muted-foreground">✗ Невыполненные билеты ({fs?.failedTickets ?? 0})</div><strong className="text-red-600">−{ticketPenalty}</strong></div>
+                  <div className="rounded bg-background/50 p-2"><div className="text-muted-foreground">🏛️ Не построены станции ({fs?.unusedStations ?? stationCount} из 3)</div><strong className="text-purple-600">+{stationBonus} ({fs?.unusedStations ?? stationCount} × {UNUSED_STATION_POINTS})</strong></div>
+                  <div className="rounded bg-background/50 p-2"><div className="text-muted-foreground">🏅 Самый длинный путь ({fs?.longestPath ?? 0} вагонов)</div><strong className="text-blue-600">+{longestBonus}</strong></div>
+                </div>
+                <div className="text-xs text-muted-foreground">Расчёт: {routePoints} + {ticketBonus} − {ticketPenalty} + {stationBonus} + {longestBonus} = <strong className="text-foreground">{total}</strong></div>
               </div>
             );
           })}
         </div>
-        
-        {/* Destination tickets and stations breakdown */}
-        <div className="mb-4 space-y-2">
-          <h3 className="font-semibold text-sm">Детали маршрутных билетов и станций:</h3>
-          {sortedPlayers.map(player => {
-            const finalScore = gameState.finalScores?.find(fs => fs.playerId === player.id);
-            const playerStations = gameState.placedStations?.filter(s => s.playerId === player.id) || [];
-            const stationsUsed = 3 - player.stationsRemaining;
-            
-            return (
-              <div key={player.id} className="text-xs bg-muted/20 p-2 rounded">
-                <span className="font-medium">{player.name}:</span>
-                <span className="ml-2">
-                  Билеты — ✓{(finalScore as any)?.completedTickets || 0}, ✗{(finalScore as any)?.failedTickets || 0}
-                </span>
-                <span className="ml-3 text-purple-600">
-                  🏛️ Станции: {stationsUsed}/3 построено
-                  {playerStations.length > 0 && (
-                    <span className="text-muted-foreground ml-1">
-                      ({playerStations.map(s => {
-                        const city = gameState.cities?.find(c => c.id === s.cityId);
-                        return city?.name || s.cityId;
-                      }).join(', ')})
-                    </span>
-                  )}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        
+
         <div className="text-xs text-muted-foreground mb-4 space-y-1 bg-muted/10 p-2 rounded">
           <p className="font-semibold">Правила подсчёта очков:</p>
           <p>• Очки за построенные маршруты (1-8 вагонов)</p>
