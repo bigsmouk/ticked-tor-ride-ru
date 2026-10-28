@@ -74,7 +74,7 @@ const Index = () => {
     cleanupRooms();
 
     // Затем каждые 5 минут
-    const interval = setInterval(cleanupRooms, 5 * 60 * 1000);
+    const interval = setInterval(cleanupRooms, 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

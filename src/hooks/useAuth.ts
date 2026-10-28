@@ -156,7 +156,8 @@ export const useAuth = () => {
           session,
           loading: false,
         }));
-        startProfileLoad(session.user);
+        if (!session.user.is_anonymous) startProfileLoad(session.user);
+        else setAuthState(prev => ({ ...prev, profile: null, profileLoading: false }));
       } else {
         setAuthState({
           user: null,
@@ -181,7 +182,8 @@ export const useAuth = () => {
             session,
             loading: false,
           }));
-          startProfileLoad(session.user);
+          if (!session.user.is_anonymous) startProfileLoad(session.user);
+          else setAuthState(prev => ({ ...prev, profile: null, profileLoading: false }));
         } else {
           // Гостевой вход: без email, пароля и формы регистрации.
           // В Supabase должен быть включён Anonymous Sign-Ins.
@@ -343,7 +345,7 @@ export const useAuth = () => {
     uploadAvatar,
     refreshProfile,
     syncFromProvider,
-    // Anonymous Supabase sessions are guests, not registered accounts.
     isAuthenticated: !!authState.user && !authState.user.is_anonymous,
+    isGuest: !!authState.user?.is_anonymous,
   };
 };
