@@ -55,7 +55,7 @@ const Index = () => {
     setLoadingRooms(false);
   };
 
-  // Автоматическая очистка пустых комнат каждые 5 минут
+  // Проверяем пустые комнаты каждую минуту (сервер удаляет после 3 минут).
   useEffect(() => {
     const cleanupRooms = async () => {
       try {
@@ -72,8 +72,8 @@ const Index = () => {
     // Запускаем сразу при загрузке страницы
     cleanupRooms();
 
-    // Затем каждые 5 минут
-    const interval = setInterval(cleanupRooms, 5 * 60 * 1000);
+    // Затем каждую минуту, пока открыта главная страница.
+    const interval = setInterval(cleanupRooms, 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
