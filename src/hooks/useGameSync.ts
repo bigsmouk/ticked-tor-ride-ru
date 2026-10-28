@@ -57,6 +57,9 @@ export const useGameSync = (roomId: string | null) => {
   const staleCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
+  const pendingActionsRef = useRef(new Map<string, { action: GameAction; retries: number; timer: ReturnType<typeof setTimeout> | null }>());
+  const processedActionsRef = useRef(new Set<string>());
+  const actionSequenceRef = useRef(0);
   
   // Game actions from store (host will execute these)
   const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
@@ -105,6 +108,8 @@ export const useGameSync = (roomId: string | null) => {
     clearRetryTimer();
     clearReconnectTimer();
     clearStaleCheckTimer();
+    pendingActionsRef.current.forEach(item => { if (item.timer) clearTimeout(item.timer); });
+    pendingActionsRef.current.clear();
   }, [clearRetryTimer, clearReconnectTimer, clearStaleCheckTimer]);
 
   // Отправляем игровые события только через активный Realtime-канал.
@@ -149,16 +154,36 @@ export const useGameSync = (roomId: string | null) => {
   }
 }, []);
 
-  // Отправка действия хосту (для не-хостов)
-  const sendActionToHost = useCallback((action: GameAction) => {
-    if (!channelRef.current || isHostRef.current) return;
-
-    console.log('[GameSync] Sending action to host:', action.type);
-    void sendBroadcast('player_action', {
-      playerId: localPlayerId,
-      action,
-    });
+  // Действие повторяется с тем же ID до подтверждения хостом.
+  // Хост дедуплицирует ID, поэтому повтор не выполняет ход дважды.
+  const dispatchPendingAction = useCallback((actionId: string) => {
+    const pending = pendingActionsRef.current.get(actionId);
+    if (!pending || !mountedRef.current) return;
+    if (pending.timer) clearTimeout(pending.timer);
+    const channel = channelRef.current;
+    if (channel?.state === 'joined') {
+      void sendBroadcast('player_action', {
+        playerId: localPlayerId,
+        actionId,
+        action: pending.action,
+      });
+      pending.retries += 1;
+    }
+    if (pending.retries >= 12) {
+      console.error('[GameSync] Action not acknowledged by host:', actionId, pending.action.type);
+      pendingActionsRef.current.delete(actionId);
+      setConnectionStatus('degraded');
+      return;
+    }
+    pending.timer = setTimeout(() => dispatchPendingAction(actionId), 2000);
   }, [localPlayerId, sendBroadcast]);
+
+  const sendActionToHost = useCallback((action: GameAction) => {
+    if (isHostRef.current || !localPlayerId) return;
+    const actionId = `${localPlayerId}-${Date.now()}-${++actionSequenceRef.current}`;
+    pendingActionsRef.current.set(actionId, { action, retries: 0, timer: null });
+    dispatchPendingAction(actionId);
+  }, [localPlayerId, dispatchPendingAction]);
 
   // Запрос синхронизации у хоста с экспоненциальным backoff
   const requestSyncWithRetry = useCallback(() => {
@@ -425,10 +450,30 @@ export const useGameSync = (roomId: string | null) => {
         }
       })
       // Хост слушает действия от других игроков
+      .on('broadcast', { event: 'action_ack' }, ({ payload }) => {
+        if (payload.targetPlayerId !== localPlayerId) return;
+        const pending = pendingActionsRef.current.get(payload.actionId as string);
+        if (!pending) return;
+        if (pending.timer) clearTimeout(pending.timer);
+        pendingActionsRef.current.delete(payload.actionId as string);
+        if (payload.accepted === false) {
+          console.warn('[GameSync] Host rejected action:', payload.actionId, payload.reason);
+          setConnectionStatus('degraded');
+          void sendBroadcast('request_sync', { playerId: localPlayerId, timestamp: Date.now() });
+        }
+      })
       .on('broadcast', { event: 'player_action' }, (payload) => {
         if (!isHostRef.current || channel.state !== 'joined') return;
         
-        const { playerId, action } = payload.payload as { playerId: string; action: GameAction };
+        const { playerId, action, actionId } = payload.payload as { playerId: string; action: GameAction; actionId?: string };
+        if (!playerId || !action?.type) return;
+        const acknowledge = (accepted: boolean, reason?: string) => {
+          if (actionId) void sendFromChannel('action_ack', { actionId, targetPlayerId: playerId, accepted, reason });
+        };
+        if (actionId && processedActionsRef.current.has(actionId)) {
+          acknowledge(true);
+          return;
+        }
         console.log('[GameSync] Host received action from player:', playerId, 'action:', action.type);
 	console.log('[GameSync DEBUG] Action received:', {
   	 senderPlayerId: playerId,
@@ -445,6 +490,7 @@ export const useGameSync = (roomId: string | null) => {
 	});
         if (!currentState) {
           console.log('[GameSync] Ignoring action - no game state');
+          acknowledge(false, 'no_game_state');
           return;
         }
         
@@ -454,6 +500,7 @@ export const useGameSync = (roomId: string | null) => {
           // Проверяем, что действие от текущего активного игрока
           if (currentState.currentPlayerId !== playerId) {
             console.log('[GameSync] Ignoring action - not from current player');
+            acknowledge(false, 'not_current_player');
             return;
           }
         }
@@ -519,11 +566,20 @@ export const useGameSync = (roomId: string | null) => {
         
         } catch (error) {
           console.error('[GameSync] Failed to process remote action:', action.type, error);
+          acknowledge(false, 'processing_failed');
           return;
         } finally {
           useGameStore.setState({ localPlayerId: originalPlayerId });
         }
         
+        if (actionId) {
+          processedActionsRef.current.add(actionId);
+          if (processedActionsRef.current.size > 500) {
+            const oldest = processedActionsRef.current.values().next().value;
+            if (oldest) processedActionsRef.current.delete(oldest);
+          }
+        }
+        acknowledge(true);
         // После выполнения действия сразу рассылаем обновлённое состояние
         const updatedState = useGameStore.getState().gameState;
         if (updatedState) {
@@ -563,6 +619,7 @@ export const useGameSync = (roomId: string | null) => {
 
           // Все клиенты должны track-аться в presence
           if (!isHostRef.current) {
+            pendingActionsRef.current.forEach((_, actionId) => dispatchPendingAction(actionId));
             await channel.track({
               updatedAt: Date.now(),
               isHost: false,
@@ -610,7 +667,7 @@ export const useGameSync = (roomId: string | null) => {
       channelRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [roomId, localPlayerId, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer, reconnectAttempt, clearRetryTimer]);
+  }, [roomId, localPlayerId, dispatchPendingAction, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer, reconnectAttempt, clearRetryTimer]);
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {
