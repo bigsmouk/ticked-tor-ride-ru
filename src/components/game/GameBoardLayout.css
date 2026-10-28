@@ -303,3 +303,7 @@ html:has(.ttr-game), body:has(.ttr-game), #root:has(.ttr-game) { height:100%; ov
 .ttr-hand-side.ttr-overlay:not(.is-open) > .ttr-hand-content { pointer-events:none !important; visibility:hidden; }
 .ttr-hand-side.ttr-overlay.is-open { pointer-events:auto !important; }
 .ttr-hand-side.ttr-overlay.is-open > .ttr-hand-content { visibility:visible; pointer-events:auto !important; }
+
+/* Give ticket map previews the full canvas, including the collapsed drawer handles. */
+.ttr-stage .ttr-ticket-preview-hidden { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
+.ttr-stage .ttr-ticket-preview-hidden * { pointer-events:none !important; }
