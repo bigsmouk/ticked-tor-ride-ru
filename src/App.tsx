@@ -22,12 +22,15 @@ import CookieConsent from "./components/CookieConsent";
 import { useAuth } from "./hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { useGameStore } from "./stores/gameStore";
+import { LanguageDOMBridge, useLanguage } from "./i18n/language";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
 
 const queryClient = new QueryClient();
 
 const AnalyticsRouteTracker = () => {
   const { pathname, search } = useLocation();
   const initial = useRef(true);
+  const { language } = useLanguage();
   useEffect(() => {
     const robots = document.querySelector('meta[name="robots"]');
     if (robots) robots.setAttribute('content', ['/', '/rules', '/privacy'].includes(pathname) ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
@@ -42,6 +45,14 @@ const AnalyticsRouteTracker = () => {
       '/privacy': { title: 'Конфиденциальность и cookies | Ticket to Ride', description: 'Политика конфиденциальности Ticket to Ride: Europe: регистрация, Supabase, cookies, Яндекс.Метрика и обработка данных.' },
     }[pathname];
     if (seo) {
+      if (language === "en") {
+        const en = {
+          "/": { title: "Ticket to Ride: Europe — Play Online with Friends", description: "Play Ticket to Ride: Europe online. Build railway routes across Europe, collect cards and complete destination tickets." },
+          "/rules": { title: "Ticket to Ride: Europe — Rules and How to Play", description: "Learn how to play Ticket to Ride: Europe: routes, destination tickets, stations, tunnels, ferries and scoring." },
+          "/privacy": { title: "Privacy Policy and Cookies | Ticket to Ride", description: "Learn about accounts, cookies, analytics and data processing for Ticket to Ride: Europe." },
+        }[pathname];
+        if (en) Object.assign(seo, en);
+      }
       document.title = seo.title;
       const desc = document.querySelector('meta[name="description"]');
       desc?.setAttribute('content', seo.description);
@@ -55,7 +66,7 @@ const AnalyticsRouteTracker = () => {
     // Metrika init counts the first page; hit() tracks subsequent SPA navigation.
     const tracker = (window as Window & { ym?: (id: number, action: string, url: string) => void }).ym;
     if (localStorage.getItem('ttr_analytics_consent') === 'accepted') tracker?.(113841365, 'hit', window.location.origin + pathname + search);
-  }, [pathname, search]);
+  }, [pathname, search, language]);
   return null;
 };
 
@@ -76,6 +87,8 @@ const App = () => (
         <BrowserRouter>
           <AnalyticsRouteTracker />
           <CookieConsent />
+          <LanguageDOMBridge />
+          <div className="fixed bottom-3 left-3 z-[100]"><LanguageSwitcher /></div>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/test" element={<TestSandbox />} />
