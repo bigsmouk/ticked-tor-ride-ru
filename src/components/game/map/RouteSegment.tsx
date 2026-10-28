@@ -96,13 +96,6 @@ export const RouteSegment = memo<RouteSegmentProps>(({
                 fill={PLAYER_COLORS[claimingPlayerColor]} />
             </g>
           ))}
-          {/* Golden border identifies your tracks even on similarly colored map slots. */}
-          {segments.map((seg, i) => (
-            <rect key={`outline-${i}`} x={-13} y={-7} width={26} height={14} rx={3}
-              transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
-              fill="none" stroke={isOwnRoute ? "#ffd34c" : "#172232"}
-              strokeWidth={isOwnRoute ? 2.8 : 1.5} pointerEvents="none" />
-          ))}
           {/* Each wagon is an SVG painted in the claiming player\'s color. */}
           {segments.map((seg, i) => (
             <ClaimedWagon
@@ -114,6 +107,13 @@ export const RouteSegment = memo<RouteSegmentProps>(({
               playerName={claimingPlayerName || undefined}
               animationIndex={i}
             />
+          ))}
+          {/* Golden border identifies your tracks even on similarly colored map slots. */}
+          {segments.map((seg, i) => (
+            <rect key={`outline-${i}`} x={-13} y={-7} width={26} height={14} rx={3}
+              transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+              fill="none" stroke={isOwnRoute ? "#ffd34c" : "#172232"}
+              strokeWidth={isOwnRoute ? 2.8 : 1.5} pointerEvents="none" />
           ))}
           {segments.map((seg, i) => (
             <rect key={`hit-${i}`} x={-14} y={-9} width={28} height={18} rx={3}
