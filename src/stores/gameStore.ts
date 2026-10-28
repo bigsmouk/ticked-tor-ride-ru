@@ -351,6 +351,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           trainCardDeck: newDeck,
           trainCardDiscard: newDiscard,
           faceUpCards: newFaceUp,
+          logs: [...gameState.logs, createLog(localPlayerId, 'Взял первую карту', fromFaceUp ? 'Из открытых' : 'Из колоды')],
         },
       });
     } else {
