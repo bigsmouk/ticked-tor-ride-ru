@@ -30,11 +30,11 @@ const GameInner: React.FC<{
   const handleExitToHome = useCallback(async () => {
     isExitingRef.current = true;
     navigate('/?noRecover=1');
-    if (roomId) {
+    if (roomId && !currentRoom?.isSoloMode) {
       void leaveRoomFromDb(roomId);
     }
     leaveRoom();
-  }, [navigate, roomId, leaveRoomFromDb, leaveRoom]);
+  }, [navigate, roomId, currentRoom?.isSoloMode, leaveRoomFromDb, leaveRoom]);
 
   const handleRequestSync = useCallback(() => {
     if (!roomId || isHost) return;
@@ -54,11 +54,11 @@ const GameInner: React.FC<{
 
   // Автоматическое восстановление из БД для хоста
   useEffect(() => {
-    if (isHost && !gameState && roomId && !hasTriedDbRecoveryRef.current && !isRecovering) {
+    if (isHost && !currentRoom?.isSoloMode && !gameState && roomId && !hasTriedDbRecoveryRef.current && !isRecovering) {
       hasTriedDbRecoveryRef.current = true;
       handleRestoreFromDb();
     }
-  }, [isHost, gameState, roomId, isRecovering, handleRestoreFromDb]);
+  }, [isHost, currentRoom?.isSoloMode, gameState, roomId, isRecovering, handleRestoreFromDb]);
 
   // Следим за online/offline чтобы UI мог предложить переподключение без refresh
   useEffect(() => {
