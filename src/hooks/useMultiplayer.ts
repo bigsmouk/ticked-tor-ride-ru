@@ -46,7 +46,7 @@ export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
-  const { user, profile } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
 
   const playerId = getOrCreatePlayerId();
 
@@ -58,7 +58,7 @@ export const useMultiplayer = () => {
   // Создание комнаты
   const createRoom = useCallback(async (roomName: string, playerName: string, isPrivate: boolean = false) => {
     // Требуем авторизацию для создания комнаты
-    if (!user) {
+    if (!isAuthenticated) {
       toast.error('Войдите в аккаунт для создания комнаты');
       return null;
     }
@@ -163,12 +163,12 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, setCurrentRoom, setView]);
+  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
     // Требуем авторизацию для присоединения к комнате
-    if (!user) {
+    if (!isAuthenticated) {
       toast.error('Войдите в аккаунт для присоединения к комнате');
       return null;
     }
@@ -294,7 +294,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, setCurrentRoom, setView]);
+  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
 
   // Выход из комнаты
   const leaveRoom = useCallback(async (roomId: string) => {
@@ -392,7 +392,7 @@ export const useMultiplayer = () => {
   // Присоединиться к комнате по ID (для открытых комнат)
   const joinRoomById = useCallback(async (roomId: string, playerName: string) => {
     // Требуем авторизацию
-    if (!user) {
+    if (!isAuthenticated) {
       toast.error('Войдите в аккаунт для присоединения к комнате');
       return null;
     }
@@ -510,7 +510,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, setCurrentRoom, setView]);
+  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
 
   // Кикнуть игрока (только для хоста в комнате ожидания)
   const kickPlayer = useCallback(async (roomId: string, targetPlayerId: string) => {
@@ -556,6 +556,7 @@ export const useMultiplayer = () => {
 
   // Начать соло-игру (без создания комнаты в БД)
   const startSoloGame = useCallback(async (playerName: string) => {
+    if (!isAuthenticated) { toast.error('Для игры необходима регистрация'); return null; }
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -598,7 +599,7 @@ export const useMultiplayer = () => {
 
     toast.success('Соло-игра создана!');
     return soloRoomId;
-  }, [playerId, profile, setCurrentRoom, setView]);
+  }, [playerId, profile, isAuthenticated, setCurrentRoom, setView]);
 
   // Сменить цвет игрока в комнате ожидания
   const changePlayerColor = useCallback(async (roomId: string, newColor: PlayerColor) => {
