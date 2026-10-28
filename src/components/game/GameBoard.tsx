@@ -42,9 +42,10 @@ export const GameBoard: React.FC = () => {
   const handleHandTicketHover = (ticket: DestinationTicket | null) => {
     if (handTicketTimer.current) clearTimeout(handTicketTimer.current);
     handTicketTimer.current = null;
-    if (ticket && !handTicketPreview) {
-      handTicketTimer.current = setTimeout(() => { setHoveredTicket(ticket); setHandTicketPreview(true); }, 5000);
-    }
+    if (handTicketPreview) return;
+    // Highlight cities immediately; expand to full-map preview after a deliberate hover.
+    setHoveredTicket(ticket);
+    if (ticket) handTicketTimer.current = setTimeout(() => setHandTicketPreview(true), 5000);
   };
   const closeHandTicketPreview = () => { setHandTicketPreview(false); setHoveredTicket(null); };
   const [notice, setNotice] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export const GameBoard: React.FC = () => {
   const [availableDestinations, setAvailableDestinations] = useState<DestinationTicket[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showStationBuilder, setShowStationBuilder] = useState(false);
+  const [selectedStationCity, setSelectedStationCity] = useState<string | null>(null);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   
   // Browser-safe single-key shortcuts: J = hand, O = deck, P = both.
@@ -424,13 +426,16 @@ export const GameBoard: React.FC = () => {
     setSelectedCards([]);
     setSelectedCardIndices([]);
     
-    setShowDeck(true);
+    setSelectedStationCity(null);
+    setShowHand(false);
+    setShowDeck(false);
     if (isHost) {
       startBuildStation();
     } else {
       sendActionToHost({ type: 'startBuildStation' });
     }
     setShowStationBuilder(true);
+    setNotice('🏛️ Выберите город прямо на карте. После выбора появятся карты для оплаты.');
   };
 
   const handleBuildStation = (cityId: string, cardsUsed: TrainCardType[]) => {
@@ -440,6 +445,7 @@ export const GameBoard: React.FC = () => {
       sendActionToHost({ type: 'buildStation', cityId, cardsUsed });
     }
     setShowStationBuilder(false);
+    setSelectedStationCity(null);
   };
 
   const handleCancelBuildStation = () => {
@@ -449,6 +455,16 @@ export const GameBoard: React.FC = () => {
       sendActionToHost({ type: 'cancelBuildStation' });
     }
     setShowStationBuilder(false);
+  };
+
+  const handleStationCityClick = (cityId: string) => {
+    if (!showStationBuilder || gameState.currentAction !== 'buildStation') return;
+    if (gameState.placedStations.some(station => station.cityId === cityId)) {
+      setNotice('В этом городе уже построена станция. Выберите другой город.');
+      return;
+    }
+    setSelectedStationCity(cityId);
+    setNotice(null);
   };
 
   // Получаем требования выбранного маршрута
@@ -495,7 +511,9 @@ export const GameBoard: React.FC = () => {
               <EuropeMap
                 cities={gameState.cities}
                 routes={gameState.routes}
-                onRouteClick={handleRouteClick}
+                onRouteClick={showStationBuilder ? undefined : handleRouteClick}
+                onCityClick={showStationBuilder ? handleStationCityClick : undefined}
+                stationPlacementMode={showStationBuilder && !selectedStationCity}
                 selectedRoute={selectedRoute}
                 highlightedCities={hoveredTicket?.cities ?? null}
               />
@@ -504,6 +522,11 @@ export const GameBoard: React.FC = () => {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-xl border-2 border-amber-600 bg-amber-50 px-4 py-3 shadow-xl text-amber-950">
             <strong>📍 {hoveredTicket.cities.join(' → ')} · {hoveredTicket.points} очков</strong>
             <button type="button" onClick={closeHandTicketPreview} className="rounded-lg bg-amber-800 px-3 py-2 text-sm font-bold text-white hover:bg-amber-700">Вернуть панели</button>
+          </div>
+        )}
+        {showStationBuilder && !selectedStationCity && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none rounded-lg bg-amber-50 border-2 border-amber-600 px-4 py-3 font-bold text-amber-950 shadow-lg">
+            🏛️ Нажмите на свободный город на карте, чтобы выбрать место для станции
           </div>
         )}
         <aside className={`ttr-players ttr-overlay`} aria-label="Игроки">
@@ -527,7 +550,7 @@ export const GameBoard: React.FC = () => {
           </button>
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
-        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${(handTicketPreview || (showDestinationPicker && hoveredTicket)) ? 'ttr-ticket-preview-hidden' : ''}`}>
+        <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''} ${(showStationBuilder || handTicketPreview || (showDestinationPicker && hoveredTicket)) ? 'ttr-ticket-preview-hidden' : ''}`}>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {isMyTurn && gameState.currentAction === 'none' && (localPlayer?.stationsRemaining ?? 0) > 0 && (
               <button type="button" className="ttr-deck-drawer-toggle" onClick={handleStartBuildStation} title="Построить станцию">
@@ -569,7 +592,7 @@ export const GameBoard: React.FC = () => {
                 onDrawCards={handleStartDrawingCards}
                 onDrawDestinations={handleDrawDestinations}
                 onClaimRoute={handleClaimRoute}
-                onCancelAction={gameState.currentAction === 'buildStation' ? handleCancelBuildStation : handleCancelDrawingCards}
+                onCancelAction={gameState.currentAction === 'buildStation' ? () => setSelectedStationCity(null) : handleCancelDrawingCards}
                 onBuildStation={handleStartBuildStation}
                 trainsRemaining={localPlayer?.trainsRemaining || 0}
                 stationsRemaining={localPlayer?.stationsRemaining || 0}
@@ -612,12 +635,13 @@ export const GameBoard: React.FC = () => {
       )}
       
       {/* Station builder modal */}
-      {showStationBuilder && (
+      {showStationBuilder && selectedStationCity && (
         <StationBuilderModal
           cities={gameState.cities}
+          selectedCityId={selectedStationCity}
           cost={stationCost}
           onConfirm={handleBuildStation}
-          onCancel={handleCancelBuildStation}
+          onCancel={() => setSelectedStationCity(null)}
         />
       )}
       

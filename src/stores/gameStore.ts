@@ -1710,22 +1710,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // Move to next player
     const isSolo = currentRoom?.isSoloMode;
-    const nextPlayerIndex = isSolo ? playerIndex : (playerIndex + 1) % gameState.players.length;
+    const nextPlayerIndex = (playerIndex + 1) % gameState.players.length;
     
     const updatedPlayers = [...gameState.players];
     updatedPlayers[playerIndex] = {
       ...player,
       trainCards: newHand,
       stationsRemaining: player.stationsRemaining - 1,
-      isActive: isSolo ? true : false,
+      isActive: false,
     };
-    if (!isSolo) {
-      updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
-    }
+    updatedPlayers[nextPlayerIndex] = { ...updatedPlayers[nextPlayerIndex], isActive: true };
     
     // Handle last round turn counting
     let turnsRemainingInLastRound = gameState.turnsRemainingInLastRound;
-    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined && !isSolo) {
+    if (gameState.phase === 'lastRound' && turnsRemainingInLastRound !== undefined  ) {
       turnsRemainingInLastRound = turnsRemainingInLastRound - 1;
     }
     
@@ -1765,7 +1763,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         logs: [
           ...gameState.logs,
           createLog(localPlayerId, 'Построил станцию', cityName),
-          ...(isSolo ? [] : [createLog(nextPlayer.id, 'Начинает ход')]),
+          createLog(nextPlayer.id, 'Начинает ход'),
         ],
       },
     });
