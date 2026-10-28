@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DestinationTicket } from '@/types/game';
 import { DestinationCard } from './DestinationCard';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,24 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
 }) => {
   // По умолчанию выбираем все карты при начальной загрузке
   const [previewTicket, setPreviewTicket] = useState<DestinationTicket | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHoverTimer = () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); hoverTimer.current = null; };
+  const schedulePreview = (ticket: DestinationTicket) => {
+    clearHoverTimer();
+    hoverTimer.current = setTimeout(() => {
+      setPreviewTicket(ticket);
+      setPreviewOpen(true);
+      onTicketPreview?.(ticket);
+    }, 5000);
+  };
+  const closePreview = () => {
+    clearHoverTimer();
+    setPreviewOpen(false);
+    setPreviewTicket(null);
+    onTicketPreview?.(null);
+  };
+  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); onTicketPreview?.(null); }, []);
   const [selectedIds, setSelectedIds] = useState<string[]>(() => 
     destinations.map(d => d.id)
   );
@@ -39,8 +57,8 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center z-50 ${previewTicket ? "bg-black/5" : "bg-black/60"}`}>
-      <div className={`parchment rounded-xl border-4 border-ornament p-6 shadow-2xl max-w-2xl w-full mx-4 transition-all duration-150 ${previewTicket ? "opacity-20 scale-95" : ""}`}>
+    <div className={`fixed inset-0 z-50 ${previewOpen ? "pointer-events-none" : "bg-black/60 flex items-center justify-center"}`}>
+      {!previewOpen && <div className="parchment rounded-xl border-4 border-ornament p-6 shadow-2xl max-w-2xl w-full mx-4">
         <h2 className="text-2xl font-display font-bold text-foreground mb-2 text-center">
           Выберите маршруты
         </h2>
@@ -55,10 +73,10 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
               <div
                 tabIndex={0}
                 key={ticket.id}
-                onMouseEnter={() => { setPreviewTicket(ticket); onTicketPreview?.(ticket); }}
-                onMouseLeave={() => { setPreviewTicket(null); onTicketPreview?.(null); }}
-                onFocus={() => { setPreviewTicket(ticket); onTicketPreview?.(ticket); }}
-                onBlur={() => { setPreviewTicket(null); onTicketPreview?.(null); }}
+                onMouseEnter={() => schedulePreview(ticket)}
+                onMouseLeave={clearHoverTimer}
+                onFocus={() => schedulePreview(ticket)}
+                onBlur={clearHoverTimer}
                 className={`
                   relative transition-all duration-200 rounded-lg
                   ${isTicketSelected ? 'ring-4 ring-gold shadow-lg shadow-gold/30 -translate-y-1' : 'opacity-60 hover:opacity-100'}
@@ -80,6 +98,7 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
           })}
         </div>
         
+        <p className="text-center text-xs text-muted-foreground mb-4">Наведите курсор на билет на 5 секунд, чтобы посмотреть его города на карте.</p>
         <div className="flex justify-center">
           <button
             onClick={handleConfirm}
@@ -89,8 +108,13 @@ export const DestinationPickerModal: React.FC<DestinationPickerModalProps> = ({
             Подтвердить ({selectedIds.length} выбрано)
           </button>
         </div>
-      </div>
-      {previewTicket && <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-amber-100 text-amber-950 border-2 border-amber-600 rounded-lg px-4 py-2 font-bold shadow-lg pointer-events-none text-center z-10">🗺️ {previewTicket.cities.join(" → ")} · {previewTicket.points} очков<br/><span className="text-xs font-normal">Золотая линия — рекомендуемый путь. Уведите курсор с билета, чтобы выбрать карты.</span></div>}
+      </div>}
+      {previewOpen && previewTicket && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex items-center gap-3 rounded-xl bg-amber-50 border-2 border-amber-600 px-4 py-3 text-amber-950 shadow-xl">
+          <span className="font-bold">📍 {previewTicket.cities.join(" → ")} · {previewTicket.points} очков</span>
+          <button type="button" onClick={closePreview} className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Вернуться к билетам</button>
+        </div>
+      )}
     </div>
   );
 };
