@@ -102,6 +102,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                     type={type}
                     count={totalCount}
                     size="medium"
+                    showCount={false}
                     onClick={() => {
                       // Если есть невыбранные карты этого типа, добавляем первую невыбранную
                       const unselectedIndex = indices.find(i => !selectedCardIndices.includes(i));
@@ -124,21 +125,9 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                     {cardNames[type]}
                   </span>
                   
-                  {/* Selected count indicator */}
-                  {selectedOfType > 0 && (
-                    <div 
-                      className="absolute -top-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full flex items-center justify-center font-display font-bold"
-                      style={{
-                        background: 'linear-gradient(180deg, hsl(140 60% 50%) 0%, hsl(140 55% 40%) 100%)',
-                        border: '2px solid hsl(140 50% 30%)',
-                        fontSize: 12,
-                        color: 'white',
-                        boxShadow: '0 2px 6px hsl(0 0% 0% / 0.2)',
-                      }}
-                    >
-                      {selectedOfType}
-                    </div>
-                  )}
+                  {/* Actual inventory count, never the temporary selected count. */}
+                  <span className="ttr-card-stack-count" aria-label={`Всего карт: ${totalCount}`}>{totalCount}</span>
+                  {selectedOfType > 0 && <span className="ttr-card-selected-count" aria-label={`Выбрано карт: ${selectedOfType}`}>✓ {selectedOfType}</span>}
                 </div>
               );
             })}
