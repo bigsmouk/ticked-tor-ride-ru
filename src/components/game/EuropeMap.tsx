@@ -228,43 +228,6 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
     return cache;
   }, [routes, cities]);
   
-  // Find a practical connection for the hovered ticket. Owned rails are free;
-  // unclaimed rails are weighted by wagons and tunnel/ferry difficulty.
-  const suggestedPath = useMemo(() => {
-    if (!highlightedCities || !gameState) return [];
-    const [start, finish] = highlightedCities;
-    const playerId = useGameStore.getState().localPlayerId;
-    const distances = new Map<string, number>([[start, 0]]);
-    const previous = new Map<string, { from: string; route: Route }>();
-    const seen = new Set<string>();
-    while (true) {
-      const next = [...distances].filter(([id]) => !seen.has(id)).sort((a,b) => a[1] - b[1])[0];
-      if (!next) return [];
-      const [city, distance] = next;
-      if (city === finish) break;
-      seen.add(city);
-      for (const route of routes) {
-        if (!route.cities.includes(city) || (route.claimedBy && route.claimedBy !== playerId)) continue;
-        const other = route.cities[0] === city ? route.cities[1] : route.cities[0];
-        if (seen.has(other)) continue;
-        const cost = route.claimedBy === playerId ? 0 : route.length + (route.isTunnel ? 2 : 0) + (route.ferryLocomotives || 0) * 1.5;
-        if (distance + cost < (distances.get(other) ?? Infinity)) {
-          distances.set(other, distance + cost);
-          previous.set(other, { from: city, route });
-        }
-      }
-    }
-    const result: Route[] = [];
-    let city = finish;
-    while (city !== start) {
-      const step = previous.get(city);
-      if (!step) return [];
-      result.unshift(step.route);
-      city = step.from;
-    }
-    return result;
-  }, [highlightedCities, routes, gameState?.players, gameState?.currentPlayerId]);
-
   return (
     <div 
       ref={containerRef}
@@ -471,21 +434,21 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           })}
         </g>
         
-        {/* Ticket preview: highlight the recommended connection, not just its endpoints. */}
-        {suggestedPath.length > 0 && (
-          <g className="ticket-suggested-path" pointerEvents="none">
-            {suggestedPath.map(route => (
-              <path key={route.id} d={routePathsCache[route.id]?.path || ''}
-                stroke="#ffe15a" strokeWidth={19} strokeLinecap="round" strokeLinejoin="round"
-                strokeDasharray={route.claimedBy ? "7 5" : "none"} fill="none"
-                opacity={0.85} filter="url(#glow)" />
-            ))}
-          </g>
-        )}
         {/* All cities become clearly visible when the Г toggle is on. */}
         {showCityNames && <g pointerEvents="none">
           {cities.map(city => <circle key={'city-halo-' + city.id} cx={city.x} cy={city.y}
             r={15} fill="#ffe16b" fillOpacity={0.18} stroke="#f3b52b" strokeWidth={2.5} />)}
+        </g>}
+        {/* Ticket preview: show the two destination cities prominently. */}
+        {highlightedCities && <g pointerEvents="none">
+          {cities.filter(city => highlightedCities.includes(city.id)).map(city => (
+            <g key={'ticket-highlight-' + city.id}>
+              <circle cx={city.x} cy={city.y} r={27} fill="#ffe35c" fillOpacity={0.32}
+                stroke="#ffd000" strokeWidth={5} />
+              <circle cx={city.x} cy={city.y} r={35} fill="none"
+                stroke="#a93416" strokeWidth={3} strokeDasharray="7 5" />
+            </g>
+          ))}
         </g>}
         {/* Cities - using memoized components */}
         <g className="cities" style={{ pointerEvents: 'none' }}>
