@@ -60,6 +60,15 @@ export const useGameSync = (roomId: string | null) => {
   const pendingActionsRef = useRef(new Map<string, { action: GameAction; retries: number; timer: ReturnType<typeof setTimeout> | null }>());
   const processedActionsRef = useRef(new Set<string>());
   const actionSequenceRef = useRef(0);
+  const latestStateTimestampRef = useRef(0);
+  const acceptHostState = useCallback((incoming: GameState, timestamp: number) => {
+    const current = useGameStore.getState().gameState;
+    if (current && incoming.turnNumber < current.turnNumber) return false;
+    if (timestamp < latestStateTimestampRef.current) return false;
+    latestStateTimestampRef.current = Math.max(latestStateTimestampRef.current, timestamp);
+    useGameStore.getState().setGameState(incoming);
+    return true;
+  }, []);
   
   // Game actions from store (host will execute these)
   const executeStartDrawingCards = useGameStore(state => state.startDrawingCards);
@@ -327,8 +336,7 @@ export const useGameSync = (roomId: string | null) => {
             try {
               const parsedState = JSON.parse(hostPresence.gameState) as GameState;
               console.log('[GameSync] Received state from presence, currentPlayer:', parsedState.currentPlayerId, 'turn:', parsedState.turnNumber);
-              setGameState(parsedState);
-              setLastSyncTime(Date.now());
+              if (acceptHostState(parsedState, Number((hostPresences[0] as {updatedAt?: number})?.updatedAt) || Date.now())) setLastSyncTime(Date.now());
               
               // Успешно получили состояние, останавливаем retry
               retryCountRef.current = 0;
@@ -401,8 +409,8 @@ export const useGameSync = (roomId: string | null) => {
         try {
           const parsedState = JSON.parse(gameStateStr) as GameState;
           console.log('[GameSync] Received sync response, currentPlayer:', parsedState.currentPlayerId, 'turn:', parsedState.turnNumber);
-          setGameState(parsedState);
-          setLastSyncTime(timestamp);
+          if (!acceptHostState(parsedState, timestamp)) return;
+          setLastSyncTime(Date.now());
           setConnectionStatus('connected');
           
           // Успешно, останавливаем retry
@@ -428,8 +436,8 @@ export const useGameSync = (roomId: string | null) => {
           // Принимаем обновление если оно новее или если у нас нет состояния
           if (!currentState || parsedState.turnNumber >= currentState.turnNumber) {
             console.log('[GameSync] Received broadcast state update, turn:', parsedState.turnNumber);
-            setGameState(parsedState);
-            setLastSyncTime(timestamp);
+            if (!acceptHostState(parsedState, timestamp)) return;
+            setLastSyncTime(Date.now());
             setConnectionStatus('connected');
             
             retryCountRef.current = 0;
@@ -658,7 +666,7 @@ export const useGameSync = (roomId: string | null) => {
       channelRef.current = null;
       setConnectionStatus('disconnected');
     };
-  }, [roomId, localPlayerId, dispatchPendingAction, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer, reconnectAttempt, clearRetryTimer]);
+  }, [roomId, localPlayerId, dispatchPendingAction, setGameState, executeStartDrawingCards, executeDrawTrainCard, executeCancelDrawingCards, executeClaimRoute, executeDrawDestinations, executeKeepDestinations, executeCancelDestinationDraw, executeEndTurn, executeRemovePlayer, executeInitiateKickVote, executeCastKickVote, requestSyncWithRetry, clearAllTimers, attemptReconnect, clearReconnectTimer, reconnectAttempt, clearRetryTimer, acceptHostState]);
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {
