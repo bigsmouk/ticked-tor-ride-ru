@@ -29,9 +29,9 @@ const ACTION_ICONS: Record<string, string> = {
 };
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
-  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const scrollRootRef = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
-    const viewport = scrollViewportRef.current;
+    const viewport = scrollRootRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
     if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [logs.length]);
   const getPlayerName = (playerId?: string) => {
@@ -67,7 +67,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
         </h3>
       </div>
       
-      <ScrollArea className="flex-1" viewportRef={scrollViewportRef}>
+      <div ref={scrollRootRef} className="flex-1 min-h-0"><ScrollArea className="h-full">
         <div className="p-2 space-y-1.5">
           {logs.length === 0 ? (
             <div className="text-muted-foreground text-xs text-center py-4">
@@ -104,7 +104,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, players }) => {
           )}
 
         </div>
-      </ScrollArea>
+      </ScrollArea></div>
     </div>
   );
 };
