@@ -52,12 +52,13 @@ export const GameBoard: React.FC = () => {
       if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.repeat) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
-      const key = event.key.toLowerCase();
-      if (key !== 'j' && key !== 'o' && key !== 'p') return;
+      const key = event.code;
+      if (!['KeyJ', 'KeyO', 'KeyP', 'KeyU'].includes(key)) return;
       event.preventDefault();
-      if (key === 'j') setShowHand(open => !open);
-      if (key === 'o') setShowDeck(open => !open);
-      if (key === 'p') { setShowHand(true); setShowDeck(true); }
+      if (key === 'KeyJ') setShowHand(open => !open);
+      if (key === 'KeyO') setShowDeck(open => !open);
+      if (key === 'KeyP') { setShowHand(true); setShowDeck(true); }
+      if (key === 'KeyU') setShowGameLog(open => !open);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -391,12 +392,13 @@ export const GameBoard: React.FC = () => {
     setSelectedCards([]);
     setSelectedCardIndices([]);
     
-    setShowStationBuilder(true);
+    setShowDeck(true);
     if (isHost) {
       startBuildStation();
     } else {
       sendActionToHost({ type: 'startBuildStation' });
     }
+    setShowStationBuilder(true);
   };
 
   const handleBuildStation = (cityId: string, cardsUsed: TrainCardType[]) => {
@@ -483,14 +485,21 @@ export const GameBoard: React.FC = () => {
         </aside>
         <div className={`ttr-history-anchor ttr-overlay`}>
           <button type="button" className="ttr-log-toggle" onClick={() => setShowGameLog(prev => !prev)} aria-expanded={showGameLog}>
-            📜 {showGameLog ? 'Скрыть историю' : 'История'}
+            📜 {showGameLog ? 'Скрыть историю' : 'История'} <span className="ttr-shortcut">Г / U</span>
           </button>
           {showGameLog && <div className="ttr-log"><GameLog logs={gameState.logs} players={gameState.players} /></div>}
         </div>
         <div className={`ttr-bottom-ui ttr-overlay ${showDeck ? 'is-open' : ''}`}>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {isMyTurn && gameState.currentAction === 'none' && (localPlayer?.stationsRemaining ?? 0) > 0 && (
+              <button type="button" className="ttr-deck-drawer-toggle" onClick={handleStartBuildStation} title="Построить станцию">
+                🏛️ Станция ({stationCost})
+              </button>
+            )}
           <button type="button" className="ttr-deck-drawer-toggle" onClick={() => setShowDeck(open => !open)} aria-expanded={showDeck} aria-controls="ttr-deck-drawer" title="Показать или скрыть колоду (O)">
             🃏 Колода <span className="ttr-shortcut">O</span> <span aria-hidden="true">{showDeck ? '▾' : '▴'}</span>
           </button>
+          </div>
           <div id="ttr-deck-drawer" className="ttr-controls" aria-hidden={!showDeck}>
             <div className="ttr-deck">
               <CardDeckArea
@@ -554,7 +563,7 @@ export const GameBoard: React.FC = () => {
       )}
       
       {/* Station builder modal */}
-      {showStationBuilder && gameState.currentAction === 'buildStation' && (
+      {showStationBuilder && (
         <StationBuilderModal
           cities={gameState.cities}
           cost={stationCost}
