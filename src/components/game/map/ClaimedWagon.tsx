@@ -1,40 +1,13 @@
 import React, { memo } from 'react';
 import { PlayerColor } from '@/types/game';
 
-// Vibrant wagon fill colors - bright and saturated
-const WAGON_FILL_MAP: Record<PlayerColor, string> = {
-  red: '#FF2D2D',
-  blue: '#2196F3',
-  green: '#4CAF50',
-  yellow: '#FFEB3B',
-  black: '#424242',
-};
-
-// Gradient top colors for 3D effect
-const WAGON_TOP_MAP: Record<PlayerColor, string> = {
-  red: '#FF6B6B',
-  blue: '#64B5F6',
-  green: '#81C784',
-  yellow: '#FFF176',
-  black: '#757575',
-};
-
-// Dark stroke colors for depth
-const WAGON_STROKE_MAP: Record<PlayerColor, string> = {
-  red: '#B71C1C',
-  blue: '#1565C0',
-  green: '#2E7D32',
-  yellow: '#F9A825',
-  black: '#212121',
-};
-
-// Text/icon color for contrast
-const TEXT_COLOR_MAP: Record<PlayerColor, string> = {
-  red: '#FFFFFF',
-  blue: '#FFFFFF',
-  green: '#FFFFFF',
-  yellow: '#1A1A1A',
-  black: '#FFFFFF',
+// Claimed wagons use the OWNER'S player color, not the printed route color.
+const PALETTE: Record<PlayerColor, { body: string; roof: string; dark: string; trim: string }> = {
+  red: { body: '#e23b3b', roof: '#ff8880', dark: '#801c22', trim: '#ffe0d5' },
+  blue: { body: '#256fe0', roof: '#88caff', dark: '#173b87', trim: '#e0f5ff' },
+  green: { body: '#23a05b', roof: '#8be6a5', dark: '#145b36', trim: '#e4ffe5' },
+  yellow: { body: '#f7c948', roof: '#fff3a1', dark: '#a36716', trim: '#422c12' },
+  black: { body: '#323946', roof: '#8793a4', dark: '#101722', trim: '#f3f6fb' },
 };
 
 interface ClaimedWagonProps {
@@ -46,123 +19,45 @@ interface ClaimedWagonProps {
   animationIndex?: number;
 }
 
-// Vibrant 3D wagon with gradient and highlights
+/** Detailed miniature freight wagon, sized to fit one 24px map route slot. */
 export const ClaimedWagon = memo<ClaimedWagonProps>(({ x, y, angle, playerColor, playerName, animationIndex = 0 }) => {
-  const fillColor = WAGON_FILL_MAP[playerColor] || '#6b7280';
-  const topColor = WAGON_TOP_MAP[playerColor] || '#9ca3af';
-  const strokeColor = WAGON_STROKE_MAP[playerColor] || '#4b5563';
-  const textColor = TEXT_COLOR_MAP[playerColor] || '#fff';
-  
-  // Wagon dimensions
-  const width = 28;
-  const height = 12;
-  
-  // Animation class with staggered delay
-  const animationClass = `wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`;
-  
-  // Generate unique gradient ID
-  const gradientId = `wagon-grad-${playerColor}-${x}-${y}`;
-  
+  const palette = PALETTE[playerColor] ?? PALETTE.black;
+  const gradientId = `claimed-car-${playerColor}-${x}-${y}`;
   return (
-    <g 
-      transform={`translate(${x}, ${y}) rotate(${angle})`}
-      className={animationClass}
-    >
-      {/* Gradient definition */}
+    <g transform={`translate(${x} ${y}) rotate(${angle})`}
+       className={`wagon-animated wagon-delay-${Math.min(animationIndex + 1, 8)}`}
+       pointerEvents="none">
+      <title>{`Маршрут занят: ${playerName ?? 'игрок'} (${playerColor})`}</title>
       <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={topColor} />
-          <stop offset="50%" stopColor={fillColor} />
-          <stop offset="100%" stopColor={strokeColor} />
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={palette.roof} />
+          <stop offset="48%" stopColor={palette.body} />
+          <stop offset="100%" stopColor={palette.dark} />
         </linearGradient>
       </defs>
-      
-      {/* Drop shadow */}
-      <rect
-        x={-width / 2 + 1.5}
-        y={-height / 2 + 1.5}
-        width={width}
-        height={height}
-        rx={2}
-        ry={2}
-        fill="rgba(0,0,0,0.5)"
-      />
-      
-      {/* White outline for contrast */}
-      <rect
-        x={-width / 2 - 1.5}
-        y={-height / 2 - 1.5}
-        width={width + 3}
-        height={height + 3}
-        rx={3}
-        ry={3}
-        fill="white"
-      />
-      
-      {/* Main wagon body with gradient */}
-      <rect
-        x={-width / 2}
-        y={-height / 2}
-        width={width}
-        height={height}
-        rx={2}
-        ry={2}
-        fill={`url(#${gradientId})`}
-        stroke={strokeColor}
-        strokeWidth={1.5}
-      />
-      
-      {/* Top shine effect */}
-      <rect
-        x={-width / 2 + 2}
-        y={-height / 2 + 1}
-        width={width - 4}
-        height={3}
-        rx={1}
-        fill="rgba(255,255,255,0.5)"
-      />
-      
-      {/* Mini train icon in center */}
-      <g transform="translate(0, -0.5)">
-        {/* Train body */}
-        <rect
-          x={-4}
-          y={-2}
-          width={8}
-          height={4}
-          rx={1}
-          fill={textColor}
-          opacity={0.9}
-        />
-        {/* Chimney */}
-        <rect
-          x={-3}
-          y={-4}
-          width={2}
-          height={2}
-          fill={textColor}
-          opacity={0.9}
-        />
-        {/* Cabin window */}
-        <rect
-          x={1}
-          y={-1}
-          width={2}
-          height={2}
-          rx={0.5}
-          fill={strokeColor}
-          opacity={0.8}
-        />
-      </g>
-      
-      {/* Wheel indicators */}
-      <circle cx={-width / 2 + 4} cy={height / 2 - 1} r={2} fill={strokeColor} />
-      <circle cx={width / 2 - 4} cy={height / 2 - 1} r={2} fill={strokeColor} />
-      
-      {/* Tooltip on hover */}
-      {playerName && <title>🚃 {playerName}</title>}
+      {/* Strong halo makes the claimed route legible on any map background. */}
+      <rect x="-15" y="-9" width="30" height="18" rx="4"
+        fill="#fff9e9" stroke="#1b2634" strokeWidth="1.8" />
+      {/* Couplers and undercarriage */}
+      <path d="M-16 1 H16" stroke={palette.dark} strokeWidth="2.6" strokeLinecap="round" />
+      <rect x="-12" y="3" width="24" height="2.6" rx="1" fill="#202630" />
+      {/* Wheel sets */}
+      <circle cx="-9" cy="6.2" r="2.8" fill="#15191f" stroke="#c6d1dd" strokeWidth=".8" />
+      <circle cx="9" cy="6.2" r="2.8" fill="#15191f" stroke="#c6d1dd" strokeWidth=".8" />
+      {/* Carriage body */}
+      <path d="M-12 -5.5 Q-12 -7 -10 -7 H10 Q12 -7 12 -5.5 V3 H-12 Z"
+        fill={`url(#${gradientId})`} stroke={palette.dark} strokeWidth="1.4" />
+      {/* Raised roof and side panel ribs */}
+      <path d="M-10 -7.5 H10 L12 -5.4 H-12 Z" fill={palette.roof}
+        stroke={palette.dark} strokeWidth=".8" />
+      <path d="M-7 -4 V1.5 M0 -4 V1.5 M7 -4 V1.5" stroke={palette.dark}
+        strokeWidth="1" opacity=".8" />
+      <rect x="-10" y="-3" width="20" height="3.4" rx=".6"
+        fill={palette.body} opacity=".85" />
+      {/* High contrast owner color mark */}
+      <rect x="-3.5" y="-3.3" width="7" height="4.2" rx=".7"
+        fill={palette.trim} stroke={palette.dark} strokeWidth=".6" />
     </g>
   );
 });
-
 ClaimedWagon.displayName = 'ClaimedWagon';
