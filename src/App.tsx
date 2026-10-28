@@ -1,8 +1,9 @@
+import { useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import WaitingRoom from "./pages/WaitingRoom";
@@ -18,6 +19,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnalyticsRouteTracker = () => {
+  const { pathname, search } = useLocation();
+  const initial = useRef(true);
+  useEffect(() => {
+    const robots = document.querySelector('meta[name="robots"]');
+    if (robots) robots.setAttribute('content', pathname === '/' ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
+    if (initial.current) { initial.current = false; return; }
+    // Metrika init counts the first page; hit() tracks subsequent SPA navigation.
+    const tracker = (window as Window & { ym?: (id: number, action: string, url: string) => void }).ym;
+    tracker?.(113841365, 'hit', window.location.origin + pathname + search);
+  }, [pathname, search]);
+  return null;
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -25,6 +40,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AnalyticsRouteTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/test" element={<TestSandbox />} />
