@@ -56,7 +56,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/email-confirmed`,
+          emailRedirectTo: 'https://tickettoride.online/',
         },
       });
 

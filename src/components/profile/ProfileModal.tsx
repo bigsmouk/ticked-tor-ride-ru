@@ -241,9 +241,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-transparent border-none max-h-[90vh]">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-transparent border-none max-h-[90dvh] flex flex-col">
         {/* Vintage Railway Ticket Design */}
-        <div className="relative bg-gradient-to-b from-amber-100 via-amber-50 to-amber-100 border-4 border-amber-800 rounded-lg overflow-hidden">
+        <div className="relative bg-gradient-to-b from-amber-100 via-amber-50 to-amber-100 border-4 border-amber-800 rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
           {/* Perforation effect - top */}
           <div className="absolute top-0 left-0 right-0 h-3 flex justify-between px-2">
             {Array.from({ length: 20 }).map((_, i) => (
@@ -274,7 +274,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             </DialogDescription>
           </DialogHeader>
 
-          <div className="px-6 py-4">
+          <div className="px-4 sm:px-6 py-4 flex flex-col flex-1 min-h-0">
             {/* Tabs styled as ticket sections */}
             <div className="flex gap-1 mb-4 border-b-2 border-dashed border-amber-400 pb-3">
               {(['profile', 'stats', 'history'] as const).map((tab) => (
@@ -294,7 +294,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               ))}
             </div>
 
-            <ScrollArea className="max-h-[55vh]">
+            <ScrollArea className="flex-1 min-h-0">
               {/* Profile Tab */}
               {activeTab === 'profile' && (
                 <div className="space-y-4 p-1">
@@ -422,15 +422,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                     </Button>
                   )}
 
-                  <div className="pt-4 border-t-2 border-dashed border-amber-400">
-                    <Button
-                      variant="outline"
-                      onClick={handleSignOut}
-                      className="w-full border-red-400 text-red-700 hover:bg-red-50 font-display"
-                    >
-                      Выйти из аккаунта
-                    </Button>
-                  </div>
+
                 </div>
               )}
 
@@ -579,6 +571,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             </div>
           )}
             </ScrollArea>
+            <div className="shrink-0 mt-3 pt-3 pb-1 border-t-2 border-dashed border-amber-400 bg-amber-50/90">
+              <Button variant="outline" onClick={handleSignOut} className="w-full border-red-400 text-red-700 hover:bg-red-50 font-display">
+                Выйти из аккаунта
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
