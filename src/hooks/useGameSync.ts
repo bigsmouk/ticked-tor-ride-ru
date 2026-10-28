@@ -107,15 +107,18 @@ export const useGameSync = (roomId: string | null) => {
     clearStaleCheckTimer();
   }, [clearRetryTimer, clearReconnectTimer, clearStaleCheckTimer]);
 
-  // Унифицированная отправка broadcast (предпочитаем REST-доставку)
+  // Отправляем игровые события только через активный Realtime-канал.
+  // REST fallback не подтверждает получение события другим клиентом.
+  // Унифицированная отправка broadcast
   const sendBroadcast = useCallback(async (
   event: string,
   payload: Record<string, unknown>
 ) => {
   const channel = channelRef.current;
 
-  if (!channel) {
-    console.error('[GameSync DEBUG] Cannot send: channel is missing');
+  if (!channel || channel.state !== 'joined') {
+    console.warn('[GameSync] Broadcast skipped: realtime channel is not joined', { event, state: channel?.state });
+    if (mountedRef.current) setConnectionStatus('disconnected');
     return;
   }
 
@@ -258,6 +261,10 @@ export const useGameSync = (roomId: string | null) => {
   payload: Record<string, unknown>
 ) => {
   const ch = channel;
+      if (ch.state !== 'joined') {
+        console.warn('[GameSync] Skipping broadcast on inactive channel:', event, ch.state);
+        return;
+      }
       try {
         if (typeof ch.httpSend === 'function') {
           await ch.httpSend(event, payload);
@@ -288,7 +295,7 @@ export const useGameSync = (roomId: string | null) => {
         // Если мы хост, статус всегда "connected"
         if (isHostRef.current) {
           console.log('[GameSync] We are host, ignoring presence sync');
-          setConnectionStatus('connected');
+          if (channel.state === 'joined') setConnectionStatus('connected');
           return;
         }
 
@@ -419,7 +426,7 @@ export const useGameSync = (roomId: string | null) => {
       })
       // Хост слушает действия от других игроков
       .on('broadcast', { event: 'player_action' }, (payload) => {
-        if (!isHostRef.current) return;
+        if (!isHostRef.current || channel.state !== 'joined') return;
         
         const { playerId, action } = payload.payload as { playerId: string; action: GameAction };
         console.log('[GameSync] Host received action from player:', playerId, 'action:', action.type);
@@ -451,11 +458,11 @@ export const useGameSync = (roomId: string | null) => {
           }
         }
         
-        // Временно подменяем localPlayerId для выполнения действия
+        // Временно подменяем localPlayerId для выполнения действия.
+        // Восстанавливаем его даже при исключении в обработчике.
         const originalPlayerId = useGameStore.getState().localPlayerId;
         useGameStore.setState({ localPlayerId: playerId });
-        
-        // Выполняем действие
+        try {
         switch (action.type) {
           case 'startDrawingCards':
             executeStartDrawingCards();
@@ -510,8 +517,12 @@ export const useGameSync = (roomId: string | null) => {
             break;
         }
         
-        // Восстанавливаем localPlayerId
-        useGameStore.setState({ localPlayerId: originalPlayerId });
+        } catch (error) {
+          console.error('[GameSync] Failed to process remote action:', action.type, error);
+          return;
+        } finally {
+          useGameStore.setState({ localPlayerId: originalPlayerId });
+        }
         
         // После выполнения действия сразу рассылаем обновлённое состояние
         const updatedState = useGameStore.getState().gameState;
@@ -542,6 +553,9 @@ export const useGameSync = (roomId: string | null) => {
         }
 
         if (status === 'SUBSCRIBED') {
+          reconnectAttemptsRef.current = 0;
+          usingRestFallbackRef.current = false;
+          setConnectionStatus('connected');
           // Хост всегда считает себя подключенным
           if (isHostRef.current) {
             setConnectionStatus('connected');
@@ -600,7 +614,7 @@ export const useGameSync = (roomId: string | null) => {
 
   // Транслируем изменения состояния игры (только хост) через broadcast + presence
   useEffect(() => {
-    if (gameState && isHostRef.current && channelRef.current) {
+    if (gameState && isHostRef.current && channelRef.current?.state === 'joined') {
       console.log('[GameSync] Host broadcasting updated state, turn:', gameState.turnNumber, 'currentPlayer:', gameState.currentPlayerId);
       
       // Обновляем presence
@@ -624,7 +638,7 @@ export const useGameSync = (roomId: string | null) => {
 
     const interval = setInterval(() => {
       const currentGameState = useGameStore.getState().gameState;
-      if (currentGameState && channelRef.current) {
+      if (currentGameState && channelRef.current?.state === 'joined') {
         console.log('[GameSync] Host periodic sync, turn:', currentGameState.turnNumber);
         
         channelRef.current.track({
