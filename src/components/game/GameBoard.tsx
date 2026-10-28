@@ -1,3 +1,4 @@
+import { canSelectRouteCard, validateRoutePayment } from '@/utils/routePayment';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './GameBoardLayout.css';
 import { EuropeMap } from '@/components/game/EuropeMap';
@@ -195,9 +196,7 @@ export const GameBoard: React.FC = () => {
       if (selectedCards.length >= route.length) return;
       
       // Проверяем валидность карты для маршрута
-      const isValidCard = card === 'locomotive' || 
-        route.color === 'gray' || 
-        card === route.color;
+      const isValidCard = canSelectRouteCard(route, selectedCards, card);
       
       if (!isValidCard) return;
       
@@ -302,6 +301,10 @@ export const GameBoard: React.FC = () => {
       return;
     }
     
+    const paymentError = validateRoutePayment(route, selectedCards, localPlayer?.trainCards ?? []);
+    if (paymentError) { setNotice(paymentError); return; }
+    const routeError = getClaimRouteError(selectedRoute);
+    if (routeError) { setNotice(routeError); return; }
     // Если это туннель - используем специальную механику
     if (route.isTunnel) {
       if (isHost) {
@@ -501,7 +504,7 @@ export const GameBoard: React.FC = () => {
                 currentAction={gameState.currentAction}
                 selectedRouteId={selectedRoute}
                 selectedCards={selectedCards}
-                canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && selectedCards.length === (routeRequirement?.count || 0) : false}
+                canClaimSelectedRoute={selectedRoute ? canClaimRoute(selectedRoute) && !!localPlayer && !validateRoutePayment(gameState.routes.find(r => r.id === selectedRoute)!, selectedCards, localPlayer.trainCards) : false}
                 onDrawCards={handleStartDrawingCards}
                 onDrawDestinations={handleDrawDestinations}
                 onClaimRoute={handleClaimRoute}
