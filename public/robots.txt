@@ -1,4 +1,4 @@
-# Only the public homepage is intended for search indexing.
+# Public homepage, game rules and privacy policy are intended for search indexing.
 # Do not crawl game sessions, waiting rooms, auth or developer pages.
 User-agent: *
 Allow: /
@@ -14,4 +14,3 @@ Disallow: /test-routes
 
 Sitemap: https://tickettoride.online/sitemap.xml
 
-Disallow: /privacy

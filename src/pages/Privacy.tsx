@@ -4,7 +4,7 @@ export default function Privacy() {
   return (
     <main className="min-h-screen bg-amber-50 text-amber-950 px-4 py-10">
       <article className="mx-auto max-w-3xl rounded-xl bg-white shadow-lg p-6 sm:p-10 space-y-5">
-        <Link to="/" className="text-amber-800 underline">← На главную</Link>
+        <nav aria-label="Карта сайта" className="flex flex-wrap gap-4 text-sm text-amber-800 underline"><Link to="/">Главная</Link><Link to="/rules">Правила игры</Link><Link to="/privacy">Конфиденциальность</Link></nav>
         <h1 className="text-3xl font-bold">Конфиденциальность и использование cookies</h1>
         <p className="text-sm text-amber-700">Информация о работе сайта «Ticket to Ride: Europe» (tickettoride.online). Дата обновления: 28 октября 2026 года.</p>
         <h2 className="text-xl font-semibold">Какие данные обрабатываются</h2>

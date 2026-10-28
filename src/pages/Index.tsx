@@ -202,6 +202,11 @@ const Index = () => {
         {/* Footer */}
         <footer className="py-4 text-center text-sm text-muted-foreground border-t border-ornament space-y-1">
           <p>Создатель: <strong>Симинеев Тимур</strong></p>
+          <nav aria-label="Карта сайта" className="flex flex-wrap justify-center gap-4 text-xs mt-2">
+            <Link to="/" className="underline">Главная</Link>
+            <Link to="/rules" className="underline">Правила игры</Link>
+            <Link to="/privacy" className="underline">Конфиденциальность</Link>
+          </nav>
           <p className="text-xs opacity-75">Вдохновлено настольной игрой Ticket to Ride: Europe</p>
         </footer>
       </div>
@@ -305,7 +310,14 @@ const Index = () => {
                 <button
                   id="create-room-button"
                   className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
-                  onClick={() => isAuthenticated ? setShowCreate(true) : toast.error('Сначала зарегистрируйтесь или войдите')}
+                  onClick={() => {
+                    if (!isAuthenticated) { toast.error('Сначала зарегистрируйтесь или войдите'); return; }
+                    if (localStorage.getItem('ttr_analytics_consent') === 'accepted') {
+                      const ym = (window as Window & { ym?: (...args: any[]) => void }).ym;
+                      ym?.(113841365, 'reachGoal', 'create-room-button');
+                    }
+                    setShowCreate(true);
+                  }}
                   disabled={!isAuthenticated}
                 >
                   ➕ Создать комнату
@@ -510,18 +522,24 @@ const Index = () => {
             
             <div>
               <RulesModal />
+              <Link to="/rules" className="block mt-1 text-xs underline text-primary hover:text-amber-700">Подробные правила на отдельной странице →</Link>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer - Vintage style */}
-      <footer className="py-1.5 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
-        <div className="flex items-center justify-center gap-2">
+      <footer className="py-2 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <p className="text-primary-foreground font-display text-sm md:text-base">
             Разработчик: <strong className="text-gold">Симинеев Тимур</strong>
           </p>
-          <a href="/privacy" className="text-gold underline text-xs">Конфиденциальность и cookies</a>
+          <nav aria-label="Карта сайта" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-gold">
+            <span className="text-primary-foreground/70">Карта сайта:</span>
+            <Link to="/" className="underline hover:text-amber-200">Главная</Link>
+            <Link to="/rules" className="underline hover:text-amber-200">Правила игры</Link>
+            <Link to="/privacy" className="underline hover:text-amber-200">Конфиденциальность</Link>
+          </nav>
           <a 
             href="https://t.me/bigsssmoke" 
             target="_blank" 
