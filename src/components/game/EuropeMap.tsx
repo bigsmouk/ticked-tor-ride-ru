@@ -163,6 +163,19 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
     };
   }, []);
   
+  const resetMapView = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    pendingScaleRef.current = null;
+    pendingPositionRef.current = null;
+    setIsDragging(false);
+    setHoveredRoute(null);
+    setScale(1.08);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
   // Handle mouse wheel zoom with RAF
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -227,7 +240,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
       onMouseLeave={handleMouseUp}
     >
       {/* Map controls */}
-      <div className="ttr-map-controls absolute top-4 right-4 z-30 flex flex-col gap-2" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="ttr-map-controls absolute top-4 right-4 z-50 flex flex-col gap-2" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
         <button 
           onClick={() => { setScale(prev => Math.min(MAX_SCALE, prev * 1.2)); }}
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors"
@@ -241,18 +254,21 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           −
         </button>
         <button 
-          onClick={() => { pendingScaleRef.current = null; pendingPositionRef.current = null; setScale(1.08); setPosition({ x: 0, y: 0 }); }}
+          onClick={resetMapView}
+          type="button"
+          aria-label="Сбросить масштаб и положение карты"
           title="Сбросить масштаб и положение карты"
           className="w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs"
         >
-          ⟲
+          ↺
         </button>
         <button 
           type="button"
           aria-pressed={showCityNames}
           onClick={(e) => { e.stopPropagation(); setShowCityNames(prev => !prev); }}
           className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showCityNames ? 'bg-primary text-primary-foreground' : ''}`}
-          title={showCityNames ? 'Скрыть названия' : 'Показать названия'}
+          aria-label={showCityNames ? 'Скрыть названия городов' : 'Показать названия городов'}
+          title={showCityNames ? 'Скрыть названия городов' : 'Показать названия городов'}
         >
           {showCityNames ? 'Г✓' : 'Г'}
         </button>
@@ -261,7 +277,8 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           aria-pressed={showStations}
           onClick={(e) => { e.stopPropagation(); setShowStations(prev => !prev); }}
           className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showStations ? 'bg-primary text-primary-foreground' : ''}`}
-          title={showStations ? 'Скрыть станции' : 'Показать станции'}
+          aria-label={showStations ? 'Скрыть построенные станции' : 'Показать построенные станции'}
+          title={showStations ? 'Скрыть построенные станции' : 'Показать построенные станции'}
         >
           🏛️
         </button>
@@ -301,7 +318,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
       
       <svg
         viewBox="0 0 800 550"
-        className="w-full h-full"
+        className="w-full h-full relative z-0"
         style={{ 
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
           transformOrigin: 'center center',

@@ -162,7 +162,11 @@ export const GameBoard: React.FC = () => {
 
   const handleRouteClick = (routeId: string) => {
     // Можно выбирать маршрут только если наш ход и нет активного действия
-    if (!canInteract) return;
+    if (!canInteract) {
+      if (!isMyTurn) setNotice('Сейчас ход соперника. Дождитесь своего хода.');
+      else setNotice('Завершите текущее действие, прежде чем выбирать маршрут.');
+      return;
+    }
     
     if (selectedRoute === routeId) {
       setSelectedRoute(null);
@@ -170,8 +174,11 @@ export const GameBoard: React.FC = () => {
       setSelectedCardIndices([]);
     } else {
       setSelectedRoute(routeId);
+      setShowHand(true);
+      setShowDeck(true);
       const warning = getClaimRouteError(routeId);
       if (warning) setNotice(warning);
+      else setNotice('Маршрут выбран. Выберите карты вагонов справа и нажмите «Построить путь» в панели колоды.');
       setSelectedCards([]);
       setSelectedCardIndices([]);
     }
