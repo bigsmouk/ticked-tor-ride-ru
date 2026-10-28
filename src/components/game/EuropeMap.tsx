@@ -268,14 +268,18 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
           ⟲
         </button>
         <button 
-          onClick={() => setShowCityNames(prev => !prev)}
+          type="button"
+          aria-pressed={showCityNames}
+          onClick={(e) => { e.stopPropagation(); setShowCityNames(prev => !prev); }}
           className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showCityNames ? 'bg-primary text-primary-foreground' : ''}`}
           title={showCityNames ? 'Скрыть названия' : 'Показать названия'}
         >
-          🏙️
+          {showCityNames ? 'Г✓' : 'Г'}
         </button>
         <button 
-          onClick={() => setShowStations(prev => !prev)}
+          type="button"
+          aria-pressed={showStations}
+          onClick={(e) => { e.stopPropagation(); setShowStations(prev => !prev); }}
           className={`w-8 h-8 bg-background/90 border border-border rounded flex items-center justify-center hover:bg-accent transition-colors text-xs ${showStations ? 'bg-primary text-primary-foreground' : ''}`}
           title={showStations ? 'Скрыть станции' : 'Показать станции'}
         >
@@ -429,7 +433,7 @@ export const EuropeMap: React.FC<EuropeMapProps> = ({
         </g>
         
         {/* Cities - using memoized components */}
-        <g className="cities">
+        <g className="cities" style={{ pointerEvents: 'none' }}>
           {cities.map((city) => (
             <CityMarker
               key={city.id}
