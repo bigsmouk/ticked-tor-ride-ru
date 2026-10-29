@@ -198,6 +198,8 @@ export const useAuth = () => {
     };
   }, [ensureProfile]);
 
+  const signInAsGuest = async () => supabase.auth.signInAnonymously();
+
   const signUp = async (email: string, password: string, displayName: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -325,6 +327,7 @@ export const useAuth = () => {
   return {
     ...authState,
     signUp,
+    signInAsGuest,
     signIn,
     signOut,
     updateProfile,
