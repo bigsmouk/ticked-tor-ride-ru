@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Rules from "./pages/Rules";
+import SeoLanding from "./pages/SeoLanding";
 import CookieConsent from "./components/CookieConsent";
 import { useAuth } from "./hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -34,15 +35,18 @@ const AnalyticsRouteTracker = () => {
   const { language } = useLanguage();
   useEffect(() => {
     const robots = document.querySelector('meta[name="robots"]');
-    if (robots) robots.setAttribute('content', ['/', '/rules', '/privacy'].includes(pathname) ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
+    if (robots) robots.setAttribute('content', ['/', '/rules', '/privacy', '/play-with-friends', '/play-solo', '/how-to-play'].includes(pathname) ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) {
-      if (['/', '/rules', '/privacy'].includes(pathname)) canonical.setAttribute('href', 'https://tickettoride.online' + (pathname === '/' ? '/' : pathname));
+      if (['/', '/rules', '/privacy', '/play-with-friends', '/play-solo', '/how-to-play'].includes(pathname)) canonical.setAttribute('href', 'https://tickettoride.online' + (pathname === '/' ? '/' : pathname));
       else canonical.removeAttribute('href');
     }
     const seo = {
-      '/': { title: 'Ticket to Ride: Europe — играть онлайн с друзьями бесплатно', description: 'Ticket to Ride: Europe — настольная стратегия онлайн. Стройте железные дороги по Европе, собирайте карты и выполняйте маршруты. Играйте с друзьями бесплатно.' },
+      '/': { title: 'Железнодорожная стратегия онлайн — играть бесплатно без регистрации', description: 'Бесплатная браузерная игра про строительство железных дорог. Играйте с друзьями по коду комнаты или против бота. Без скачивания и регистрации.' },
       '/rules': { title: 'Правила Ticket to Ride: Europe — как играть онлайн | Ticket to Ride', description: 'Подробные правила Ticket to Ride: Europe на русском: как строить маршруты, брать карты, выполнять билеты, использовать станции, туннели и паромы.' },
+      '/play-with-friends': { title: 'Настольная стратегия с друзьями онлайн — без регистрации', description: 'Создайте комнату и играйте с друзьями в железнодорожную стратегию онлайн. Бесплатно, без скачивания и регистрации, для 2–4 игроков.' },
+      '/play-solo': { title: 'Игра про поезда против бота — бесплатно и без регистрации', description: 'Играйте против бота в железнодорожную стратегию по карте Европы. Соло-режим запускается прямо в браузере, без регистрации и скачивания.' },
+      '/how-to-play': { title: 'Как играть в железнодорожную стратегию — первые шаги', description: 'Короткое руководство для новичков: как выбрать режим, собирать карты вагонов, строить дороги и выполнять билеты с маршрутами.' },
       '/privacy': { title: 'Конфиденциальность и cookies | Ticket to Ride', description: 'Политика конфиденциальности Ticket to Ride: Europe: регистрация, Supabase, cookies, Яндекс.Метрика и обработка данных.' },
     }[pathname];
     if (pathname === '/about') {
@@ -54,7 +58,10 @@ const AnalyticsRouteTracker = () => {
     if (seo) {
       if (language === "en") {
         const en = {
-          "/": { title: "Ticket to Ride: Europe — Play Online with Friends", description: "Play Ticket to Ride: Europe online. Build railway routes across Europe, collect cards and complete destination tickets." },
+          "/": { title: "Railway Strategy Online — Play Free Without Registration", description: "Play a free railway strategy game in your browser. Build routes across Europe with friends or against a bot. No download or registration." },
+          "/play-with-friends": { title: "Play a Railway Strategy Game Online With Friends", description: "Create a room and play a railway strategy game online with 2–4 friends. No registration or download required." },
+          "/play-solo": { title: "Play a Railway Strategy Game Against a Bot", description: "Practice building railway routes across Europe against a computer opponent. Free browser game, no sign-up required." },
+          "/how-to-play": { title: "How to Play a Railway Strategy Game — Beginner Guide", description: "Learn the basics: destination tickets, train cards, claiming routes and scoring points in a railway strategy game." },
           "/rules": { title: "Ticket to Ride: Europe — Rules and How to Play", description: "Learn how to play Ticket to Ride: Europe: routes, destination tickets, stations, tunnels, ferries and scoring." },
           "/privacy": { title: "Privacy Policy and Cookies | Ticket to Ride", description: "Learn about accounts, cookies, analytics and data processing for Ticket to Ride: Europe." },
         }[pathname];
@@ -108,6 +115,9 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
             <Route path="/rules" element={<Rules />} />
+            <Route path="/play-with-friends" element={<SeoLanding page="friends" />} />
+            <Route path="/play-solo" element={<SeoLanding page="solo" />} />
+            <Route path="/how-to-play" element={<SeoLanding page="guide" />} />
             <Route path="/email-confirmed" element={<EmailConfirmed />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
