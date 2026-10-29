@@ -246,7 +246,7 @@ const Index = () => {
 
   return (
     <>
-    <div className="min-h-[100dvh] lg:h-[100dvh] parchment flex flex-col relative lg:overflow-hidden">
+    <div className="min-h-[calc(100dvh-52px)] lg:h-[calc(100dvh-52px)] parchment flex flex-col relative lg:overflow-hidden">
       {/* Background */}
       <AnimatedTrainBackground />
       
