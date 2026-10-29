@@ -246,7 +246,7 @@ const Index = () => {
 
   return (
     <>
-    <div className="min-h-[100dvh] parchment flex flex-col relative">
+    <div className="min-h-[100dvh] lg:h-[100dvh] parchment flex flex-col relative lg:overflow-hidden">
       {/* Background */}
       <AnimatedTrainBackground />
       
@@ -268,15 +268,15 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-3 py-6 md:py-8 relative z-10">
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-4 md:py-5 lg:py-2 relative z-10">
         <div className="text-center max-w-3xl mb-3 lg:mb-2 space-y-1"><span className="inline-block rounded-full border border-gold/50 bg-primary/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-foreground">Железнодорожное приключение по Европе</span><h2 className="font-display text-2xl md:text-3xl lg:text-3xl font-bold text-foreground leading-tight">Построй свою железнодорожную империю</h2><p className="text-sm md:text-base text-foreground/80">Бесплатная стратегия онлайн: играй с друзьями или против бота прямо в браузере, без скачивания и регистрации.</p></div>
         {/* Active games counter */}
         <div className="mb-1 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-lg w-full flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-          <div className="vintage-card rounded-2xl p-4 md:p-5 shadow-2xl">
+        <div className="max-w-lg w-full min-h-0 flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
+          <div className="vintage-card lobby-scroll rounded-2xl p-4 md:p-5 shadow-2xl min-h-0 overflow-y-auto overscroll-contain">
             {/* Welcome text */}
             <div className="text-center mb-2">
               <h2 className="font-display text-xl font-bold text-foreground mb-1">
