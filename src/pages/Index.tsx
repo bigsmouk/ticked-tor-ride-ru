@@ -232,7 +232,6 @@ const Index = () => {
   };
 
  const handleJoinPublicRoom = async (roomId: string) => {
-  if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
   if (!effectivePlayerName) {
     alert('Введите имя игрока, чтобы присоединиться к комнате.');
     return;
@@ -247,7 +246,7 @@ const Index = () => {
 
   return (
     <>
-    <div className="h-[100dvh] parchment flex flex-col relative overflow-hidden">
+    <div className="min-h-[100dvh] parchment flex flex-col relative">
       {/* Background */}
       <AnimatedTrainBackground />
       
@@ -269,14 +268,15 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-2 md:px-4 md:py-3 relative z-10 overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 relative z-10">
+        <div className="text-center max-w-3xl mb-7 space-y-3"><span className="inline-block rounded-full border border-gold/50 bg-primary/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-foreground">Железнодорожное приключение по Европе</span><h2 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight">Построй свою железнодорожную империю</h2><p className="text-base md:text-lg text-foreground/80">Бесплатная стратегия онлайн: играй с друзьями или против бота прямо в браузере, без скачивания и регистрации.</p></div>
         {/* Active games counter */}
         <div className="mb-1 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-lg w-full min-h-0 flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-          <div className="vintage-card rounded-xl p-3 md:p-4 min-h-0 overflow-y-auto">
+        <div className="max-w-xl w-full flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
+          <div className="vintage-card rounded-2xl p-5 md:p-8 shadow-2xl">
             {/* Welcome text */}
             <div className="text-center mb-2">
               <h2 className="font-display text-xl font-bold text-foreground mb-1">
@@ -323,7 +323,7 @@ const Index = () => {
                 <button
                   className="btn-vintage w-full rounded-lg py-2 hover-scale"
                   onClick={() => setShowJoin(true)}
-                  disabled={!isAuthenticated}
+                  disabled={isLoading}
                 >
                   🔗 Присоединиться по коду
                 </button>
@@ -524,7 +524,35 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer - Vintage style */}
+    </div>
+    <section aria-labelledby="features-title" className="bg-amber-50 text-amber-950 px-4 py-16 md:py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center max-w-3xl mx-auto mb-12"><p className="uppercase tracking-[.2em] text-xs font-bold text-amber-700 mb-3">Твоё приключение начинается здесь</p><h2 id="features-title" className="font-display text-3xl md:text-4xl font-bold mb-4">Железнодорожная стратегия онлайн бесплатно</h2><p className="text-amber-900/80">Соединяй города Европы, собирай карты вагонов и выполняй билеты с маршрутами. Выбирай, как отправиться в путешествие.</p></div>
+        <div className="grid gap-5 md:grid-cols-3">
+          {[
+            { icon: '👥', title: 'С друзьями', description: 'Создай комнату, поделись кодом и соревнуйся с друзьями за лучшие маршруты.', link: '/play-with-friends', action: 'Игра с друзьями' },
+            { icon: '🚂', title: 'Против бота', description: 'Тренируй стратегию в одиночном режиме. Начать можно без аккаунта.', link: '/play-solo', action: 'Соло-режим' },
+            { icon: '🗺️', title: 'Изучи правила', description: 'Разберись с картами, маршрутами, станциями и подсчётом очков.', link: '/how-to-play', action: 'Как играть' }
+          ].map(card => <article key={card.title} className="group rounded-2xl border border-amber-900/15 bg-white/85 p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"><div className="text-4xl mb-5" aria-hidden="true">{card.icon}</div><h3 className="font-display text-2xl font-bold mb-3">{card.title}</h3><p className="leading-relaxed text-amber-900/80 mb-6">{card.description}</p><Link to={card.link} className="font-semibold text-amber-800 underline underline-offset-4 hover:text-amber-600">{card.action} →</Link></article>)}
+        </div>
+      </div>
+    </section>
+    <section aria-labelledby="steps-title" className="bg-[#f5ead3] text-amber-950 px-4 py-16 md:py-20">
+      <div className="mx-auto max-w-5xl text-center"><h2 id="steps-title" className="font-display text-3xl md:text-4xl font-bold mb-10">Как начать играть</h2><ol className="grid gap-8 md:grid-cols-3 text-left">{[
+        ['01', 'Введи имя', 'Укажи имя игрока на главной странице. Регистрация необязательна.'],
+        ['02', 'Выбери режим', 'Создай комнату для друзей, присоединись по коду или начни соло-партию.'],
+        ['03', 'Строй маршруты', 'Собирай карты вагонов, соединяй города и набирай победные очки.']
+      ].map(([number,title,description]) => <li key={number} className="border-t-2 border-amber-800/30 pt-5"><span className="font-display text-4xl text-amber-700/70">{number}</span><h3 className="text-xl font-bold mt-3 mb-2">{title}</h3><p className="text-amber-900/80">{description}</p></li>)}</ol><Link to="/rules" className="inline-block mt-10 font-semibold underline underline-offset-4 text-amber-900">Читать подробные правила →</Link></div>
+    </section>
+    <section aria-labelledby="faq-title" className="bg-amber-50 text-amber-950 px-4 py-16 md:py-20">
+      <div className="mx-auto max-w-3xl"><h2 id="faq-title" className="font-display text-3xl md:text-4xl font-bold text-center mb-10">Частые вопросы</h2><div className="space-y-3">{[
+        ['Можно ли играть без регистрации?', 'Да. Для начала игры с друзьями или против бота достаточно указать имя игрока.'],
+        ['Сколько игроков могут участвовать?', 'В многопользовательской партии могут участвовать от 2 до 4 игроков.'],
+        ['Как пригласить друзей?', 'Создай комнату и отправь друзьям её код. Они смогут присоединиться с главной страницы.'],
+        ['Нужно ли скачивать игру?', 'Нет. Игра запускается прямо в браузере на сайте.']
+      ].map(([question,answer]) => <details key={question} className="group rounded-xl border border-amber-900/15 bg-white p-5 shadow-sm"><summary className="cursor-pointer font-semibold marker:text-amber-700">{question}</summary><p className="mt-3 text-amber-900/80 leading-relaxed">{answer}</p></details>)}</div></div>
+    </section>
+    <div className="relative">      {/* Footer - Vintage style */}
       <footer className="py-2 text-center border-t-4 border-gold/50 bg-primary/80 backdrop-blur-sm relative z-10 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <p className="text-primary-foreground font-display text-sm md:text-base">
@@ -552,26 +580,7 @@ const Index = () => {
         </p>
       </footer>
 
-    </div>
-    <section aria-label="Об игре" className="bg-amber-50 text-amber-950 px-4 py-10">
-      <div className="mx-auto max-w-4xl space-y-5">
-        <h2 className="text-2xl md:text-3xl font-bold">Бесплатная железнодорожная стратегия онлайн без регистрации</h2>
-        <p>Стройте маршруты между городами Европы, собирайте карты вагонов и выполняйте билеты с заданиями. Играйте прямо в браузере: ничего скачивать и устанавливать не нужно.</p>
-        <p>Хотите устроить партию с друзьями? Создайте комнату, отправьте код приглашения и начните игру вдвоём, втроём или вчетвером. Для тренировки доступна игра против бота — тоже без аккаунта.</p>
-        <h3 className="text-xl font-semibold">Частые вопросы</h3>
-        <dl className="space-y-3">
-          <div><dt className="font-semibold">Можно ли играть без регистрации?</dt><dd>Да, и с друзьями, и против бота. Для начала достаточно указать имя игрока.</dd></div>
-          <div><dt className="font-semibold">Сколько игроков поддерживается?</dt><dd>В многопользовательской партии участвуют от 2 до 4 человек.</dd></div>
-          <div><dt className="font-semibold">Как пригласить друзей?</dt><dd>Создайте комнату и отправьте друзьям её код. Они смогут присоединиться с главной страницы.</dd></div>
-        </dl>
-        <nav aria-label="Как играть" className="flex flex-wrap gap-4 text-blue-800 underline">
-          <Link to="/play-with-friends">Играть с друзьями</Link>
-          <Link to="/play-solo">Играть против бота</Link>
-          <Link to="/how-to-play">Как начать играть</Link>
-          <Link to="/rules">Подробные правила</Link>
-        </nav>
-      </div>
-    </section>
+</div>
     </>
   );
 };
