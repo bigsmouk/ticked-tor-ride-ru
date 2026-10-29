@@ -246,6 +246,7 @@ const Index = () => {
 };
 
   return (
+    <>
     <div className="h-[100dvh] parchment flex flex-col relative overflow-hidden">
       {/* Background */}
       <AnimatedTrainBackground />
@@ -552,6 +553,26 @@ const Index = () => {
       </footer>
 
     </div>
+    <section aria-label="Об игре" className="bg-amber-50 text-amber-950 px-4 py-10">
+      <div className="mx-auto max-w-4xl space-y-5">
+        <h2 className="text-2xl md:text-3xl font-bold">Бесплатная железнодорожная стратегия онлайн без регистрации</h2>
+        <p>Стройте маршруты между городами Европы, собирайте карты вагонов и выполняйте билеты с заданиями. Играйте прямо в браузере: ничего скачивать и устанавливать не нужно.</p>
+        <p>Хотите устроить партию с друзьями? Создайте комнату, отправьте код приглашения и начните игру вдвоём, втроём или вчетвером. Для тренировки доступна игра против бота — тоже без аккаунта.</p>
+        <h3 className="text-xl font-semibold">Частые вопросы</h3>
+        <dl className="space-y-3">
+          <div><dt className="font-semibold">Можно ли играть без регистрации?</dt><dd>Да, и с друзьями, и против бота. Для начала достаточно указать имя игрока.</dd></div>
+          <div><dt className="font-semibold">Сколько игроков поддерживается?</dt><dd>В многопользовательской партии участвуют от 2 до 4 человек.</dd></div>
+          <div><dt className="font-semibold">Как пригласить друзей?</dt><dd>Создайте комнату и отправьте друзьям её код. Они смогут присоединиться с главной страницы.</dd></div>
+        </dl>
+        <nav aria-label="Как играть" className="flex flex-wrap gap-4 text-blue-800 underline">
+          <Link to="/play-with-friends">Играть с друзьями</Link>
+          <Link to="/play-solo">Играть против бота</Link>
+          <Link to="/how-to-play">Как начать играть</Link>
+          <Link to="/rules">Подробные правила</Link>
+        </nav>
+      </div>
+    </section>
+    </>
   );
 };
 
