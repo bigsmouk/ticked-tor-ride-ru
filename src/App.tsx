@@ -79,10 +79,10 @@ const AnalyticsRouteTracker = () => {
 
 const RegisteredOnly = ({ children }: { children: React.ReactNode }) => {
   const soloGame = useGameStore(state => Boolean(state.currentRoom?.isSoloMode));
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   if (soloGame) return <>{children}</>;
   if (loading) return <div className="min-h-screen flex items-center justify-center">Проверка авторизации…</div>;
-  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+  return (isAuthenticated || Boolean(user?.is_anonymous)) ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 const App = () => (
