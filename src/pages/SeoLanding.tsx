@@ -59,17 +59,23 @@ const pages = {
   questions: [string, string][]; action: string;
 }>;
 
+const englishPages: typeof pages = {
+ friends: {eyebrow:'Free multiplayer game',title:'Play a railway strategy game online with friends',intro:'Gather 2–4 players and build railway routes across Europe in your browser. No download or account required.',sections:[{title:'Start a game with friends',body:'Open the home page, enter your name and select Create room. Choose a room name and enable private mode if you only want invited players. Share the six-character room code.'},{title:'Join a game',body:'Open the site, enter your name, select Join with code and enter the invitation code. You can also join a public room. The host starts once at least two players are ready.'},{title:'During the game',body:'Take turns collecting train cards, claiming railway routes and completing destination tickets. The player with the most points wins.'}],questions:[['Is registration required?','No. Enter a player name to create or join a room.'],['How many people can play?','Multiplayer supports 2–4 players.'],['Can I make a private room?','Yes. Enable private mode and share the room code with invited players.']],action:'Create a free room'},
+ solo: {eyebrow:'Single-player mode',title:'Play a railway strategy game against a bot',intro:'Practice railway routes across Europe against a computer opponent. Play free in your browser without signing up.',sections:[{title:'Start a solo game',body:'Go to the home page, enter a name and select Play solo vs bot. No account or invitation is needed.'},{title:'Practice your strategy',body:'Collect train cards, connect cities and complete destination tickets before trying multiplayer.'},{title:'Play with friends next',body:'Return to the home page, create a public or private room and share its code with friends.'}],questions:[['Do I need an account?','No. Solo mode works without registration.'],['Do I need to download anything?','No. Play directly in your browser.'],['Can I play with friends later?','Yes. Create a room or join with a code.']],action:'Play against the bot'},
+ guide: {eyebrow:'Beginner guide',title:'How to play a railway strategy game: first steps',intro:'New to railway games? Learn the basic steps here, then read the full rules for more details.',sections:[{title:'Step 1. Choose a mode',body:'Start with solo practice or create a room and invite friends with a code. Registration is optional.'},{title:'Step 2. Check destination tickets',body:'Tickets show the pairs of cities you need to connect. Plan a continuous route; it does not have to be direct.'},{title:'Step 3. Collect cards and build',body:'Use matching train cards to claim routes. Watch opponents, who may take the connection you need.'},{title:'Step 4. Score points',body:'Claimed routes and completed tickets earn points. Unfinished tickets reduce your final score.'}],questions:[['Where should I start?','Try solo mode and claim a few short routes.'],['Must I know all the rules?','No. Start with train cards, tickets and route building.'],['Where are the full rules?','The rules page explains stations, tunnels, ferries and scoring.']],action:'Start playing'}
+};
+
 export default function SeoLanding({ page }: { page: LandingKey }) {
   const { language } = useLanguage();
   const content = language === 'en' ? englishPages[page] : pages[page];
   return (
-    <div className="min-h-screen bg-amber-50 text-amber-950">
+    <div data-no-translate className="min-h-screen bg-amber-50 text-amber-950">
       <header className="bg-primary text-primary-foreground border-b-4 border-amber-500">
         <div className="mx-auto max-w-4xl px-4 py-5 flex flex-wrap items-center justify-between gap-3">
           <Link to="/" className="font-display text-xl font-bold text-amber-300 hover:underline">🚂 Ticket to Ride: Europe</Link>
           <nav aria-label="Навигация" className="flex flex-wrap gap-4 text-sm">
-            <Link to="/" className="hover:underline">Главная</Link>
-            <Link to="/rules" className="hover:underline">Правила</Link>
+            <Link to="/" className="hover:underline">{language === "en" ? "Home" : "Главная"}</Link>
+            <Link to="/rules" className="hover:underline">{language === "en" ? "Rules" : "Правила"}</Link>
           </nav>
         </div>
       </header>
@@ -88,21 +94,21 @@ export default function SeoLanding({ page }: { page: LandingKey }) {
             </section>
           ))}
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold">Частые вопросы</h2>
+            <h2 className="text-2xl font-bold">{language === "en" ? "Frequently asked questions" : "Частые вопросы"}</h2>
             {content.questions.map(([question, answer]) => (
               <div key={question}><h3 className="text-lg font-semibold">{question}</h3><p>{answer}</p></div>
             ))}
           </section>
           <section className="rounded-xl bg-amber-100 p-5 space-y-3">
-            <h2 className="text-xl font-bold">Узнайте больше об игре</h2>
+            <h2 className="text-xl font-bold">{language === "en" ? "Explore more" : "Узнайте больше об игре"}</h2>
             <nav aria-label="Другие материалы" className="flex flex-col gap-2">
-              <Link className="underline text-blue-800" to="/play-with-friends">Игра с друзьями без регистрации</Link>
-              <Link className="underline text-blue-800" to="/play-solo">Игра против бота</Link>
-              <Link className="underline text-blue-800" to="/how-to-play">Первые шаги в игре</Link>
-              <Link className="underline text-blue-800" to="/rules">Подробные правила игры</Link>
+              <Link className="underline text-blue-800" to="/play-with-friends">{language === "en" ? "Play with friends" : "Игра с друзьями без регистрации"}</Link>
+              <Link className="underline text-blue-800" to="/play-solo">{language === "en" ? "Play against a bot" : "Игра против бота"}</Link>
+              <Link className="underline text-blue-800" to="/how-to-play">{language === "en" ? "Getting started" : "Первые шаги в игре"}</Link>
+              <Link className="underline text-blue-800" to="/rules">{language === "en" ? "Full game rules" : "Подробные правила игры"}</Link>
             </nav>
           </section>
-          <p className="text-sm text-amber-800">Неофициальная браузерная игра, вдохновлённая настольной игрой Ticket to Ride: Europe. Проект не связан с правообладателями оригинальной игры.</p>
+          <p className="text-sm text-amber-800">{language === "en" ? "Unofficial browser game inspired by Ticket to Ride: Europe. Not affiliated with the original rights holders." : "Неофициальная браузерная игра, вдохновлённая настольной игрой Ticket to Ride: Europe. Проект не связан с правообладателями оригинальной игры."}</p>
         </article>
       </main>
     </div>
