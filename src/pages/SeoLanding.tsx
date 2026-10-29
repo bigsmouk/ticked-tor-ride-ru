@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/i18n/language';
 
 type LandingKey = 'friends' | 'solo' | 'guide';
 
@@ -59,7 +60,8 @@ const pages = {
 }>;
 
 export default function SeoLanding({ page }: { page: LandingKey }) {
-  const content = pages[page];
+  const { language } = useLanguage();
+  const content = language === 'en' ? englishPages[page] : pages[page];
   return (
     <div className="min-h-screen bg-amber-50 text-amber-950">
       <header className="bg-primary text-primary-foreground border-b-4 border-amber-500">
