@@ -20,12 +20,13 @@ import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import Rules from "./pages/Rules";
 import SeoLanding from "./pages/SeoLanding";
+import SiteNavigation from "./components/SiteNavigation";
 import CookieConsent from "./components/CookieConsent";
 import { useAuth } from "./hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { useGameStore } from "./stores/gameStore";
 import { LanguageDOMBridge, useLanguage } from "./i18n/language";
-import { LanguageSwitcher } from "./components/LanguageSwitcher";
+
 
 const queryClient = new QueryClient();
 
@@ -102,7 +103,7 @@ const App = () => (
           <AnalyticsRouteTracker />
           <CookieConsent />
           <LanguageDOMBridge />
-          <div className="fixed bottom-3 left-3 z-[100]"><LanguageSwitcher /></div>
+          <SiteNavigation />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/test" element={<TestSandbox />} />
