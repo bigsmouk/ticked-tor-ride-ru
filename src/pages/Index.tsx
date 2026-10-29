@@ -59,7 +59,6 @@ const Index = () => {
     if (!isAuthenticated && playerName.trim()) localStorage.setItem('ttr_guest_name', playerName.trim());
   }, [playerName, isAuthenticated]);
   const loadPublicRooms = async () => {
-    if (!user) return;
     setLoadingRooms(true);
     const rooms = await fetchPublicRooms();
     setPublicRooms(rooms);
@@ -91,7 +90,7 @@ const Index = () => {
 
   // Загружаем открытые комнаты при входе на страницу + realtime подписка
   useEffect(() => {
-    if (!user || showCreate || showJoin) return;
+    if (showCreate || showJoin) return;
     
     // Начальная загрузка
     loadPublicRooms();
@@ -215,7 +214,6 @@ const Index = () => {
   }
 
   const handleCreateGame = async () => {
-    if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
     if (effectivePlayerName && roomName.trim()) {
       const result = await createRoom(roomName.trim(), effectivePlayerName, isPrivate);
       if (result) {
@@ -225,7 +223,6 @@ const Index = () => {
   };
 
   const handleJoinGame = async () => {
-    if (!isAuthenticated) { toast.error('Для игры зарегистрируйтесь или войдите в аккаунт'); return; }
     if (effectivePlayerName && joinCode.trim()) {
       const result = await joinRoom(joinCode.trim(), effectivePlayerName);
       if (result) {
@@ -289,7 +286,7 @@ const Index = () => {
 
             {!authLoading && !isAuthenticated && (
               <div className="mb-3 rounded-lg border border-amber-500 bg-amber-100 p-3 text-center text-sm text-amber-950">
-                🔒 Для игры с друзьями необходима регистрация. Соло-тренировка доступна без аккаунта.
+                🚂 Играйте с друзьями без регистрации! Просто введите имя. Аккаунт необязателен.
               </div>
             )}
             {/* Player name input */}
@@ -312,21 +309,19 @@ const Index = () => {
                   id="create-room-button"
                   className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
                   onClick={() => {
-                    if (!isAuthenticated) { toast.error('Сначала зарегистрируйтесь или войдите'); return; }
                     if (localStorage.getItem('ttr_analytics_consent') === 'accepted') {
                       const ym = (window as Window & { ym?: (...args: any[]) => void }).ym;
                       ym?.(113841365, 'reachGoal', 'create-room-button');
                     }
                     setShowCreate(true);
                   }}
-                  disabled={!isAuthenticated}
                 >
                   ➕ Создать комнату
                 </button>
                 
                 <button
                   className="btn-vintage w-full rounded-lg py-2 hover-scale"
-                  onClick={() => isAuthenticated ? setShowJoin(true) : toast.error('Сначала зарегистрируйтесь или войдите')}
+                  onClick={() => setShowJoin(true)}
                   disabled={!isAuthenticated}
                 >
                   🔗 Присоединиться по коду
@@ -362,7 +357,7 @@ const Index = () => {
                 </button>
 
                 {/* Список открытых комнат */}
-                {isAuthenticated && (
+                {(
                   <div className="mt-2 pt-2 border-t border-ornament">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
@@ -456,7 +451,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleCreateGame}
-                  disabled={!isAuthenticated || !effectivePlayerName || !roomName.trim() || isLoading}
+                  disabled={!effectivePlayerName || !roomName.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Создание...' : '✓ Создать комнату'}
                 </button>
@@ -487,7 +482,7 @@ const Index = () => {
                 <button
                   className="btn-gold w-full rounded-lg py-3"
                   onClick={handleJoinGame}
-                  disabled={!isAuthenticated || !effectivePlayerName || !joinCode.trim() || isLoading}
+                  disabled={!effectivePlayerName || !joinCode.trim() || isLoading}
                 >
                   {isLoading ? '⏳ Присоединение...' : '🚂 Присоединиться'}
                 </button>
