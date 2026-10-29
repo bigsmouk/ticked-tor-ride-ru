@@ -46,7 +46,17 @@ export const useMultiplayer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setCurrentRoom, setLocalPlayerId, setView } = useGameStore();
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile } = useAuth();
+  const ensureMultiplayerUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) return session.user;
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error || !data.user) {
+      toast.error('Не удалось подключиться как гость. Включите Anonymous Sign-Ins в Supabase.');
+      return null;
+    }
+    return data.user;
+  };
 
   const playerId = getOrCreatePlayerId();
 
@@ -57,12 +67,6 @@ export const useMultiplayer = () => {
 
   // Создание комнаты
   const createRoom = useCallback(async (roomName: string, playerName: string, isPrivate: boolean = false) => {
-    // Требуем авторизацию для создания комнаты
-    if (!isAuthenticated) {
-      toast.error('Войдите в аккаунт для создания комнаты');
-      return null;
-    }
-
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -88,6 +92,8 @@ export const useMultiplayer = () => {
     setError(null);
 
     try {
+      const authUser = await ensureMultiplayerUser();
+      if (!authUser) return null;
       const roomCode = generateRoomCode();
 
       // Создаём комнату в базе с привязкой к auth.uid() если пользователь авторизован
@@ -97,7 +103,7 @@ export const useMultiplayer = () => {
           code: roomCode,
           name: validatedRoomName,
           host_id: playerId,
-          owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
+          owner_auth_id: authUser.id, // Привязываем к auth.uid() для RLS
           status: 'waiting',
           max_players: 4,
           is_private: isPrivate,
@@ -117,7 +123,7 @@ export const useMultiplayer = () => {
           color: PLAYER_COLORS[0],
           is_ready: true,
           is_host: true,
-          owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
+          owner_auth_id: authUser.id, // Привязываем к auth.uid() для RLS
           avatar_url: profile?.avatar_url || null, // Передаём аватар профиля
         });
 
@@ -163,16 +169,10 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
+  }, [playerId, user, profile, setCurrentRoom, setView]);
 
   // Присоединение к комнате
   const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
-    // Требуем авторизацию для присоединения к комнате
-    if (!isAuthenticated) {
-      toast.error('Войдите в аккаунт для присоединения к комнате');
-      return null;
-    }
-
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -191,6 +191,8 @@ export const useMultiplayer = () => {
     setError(null);
 
     try {
+      const authUser = await ensureMultiplayerUser();
+      if (!authUser) return null;
       // Находим комнату по коду
       const { data: room, error: roomError } = await supabase
         .from('rooms')
@@ -235,7 +237,7 @@ export const useMultiplayer = () => {
             color: availableColor,
             is_ready: true,
             is_host: false,
-            owner_auth_id: user?.id || null, // Привязываем к auth.uid() для RLS
+            owner_auth_id: authUser.id, // Привязываем к auth.uid() для RLS
             avatar_url: profile?.avatar_url || null, // Передаём аватар профиля
           });
 
@@ -294,7 +296,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
+  }, [playerId, user, profile, setCurrentRoom, setView]);
 
   // Выход из комнаты
   const leaveRoom = useCallback(async (roomId: string) => {
@@ -391,12 +393,6 @@ export const useMultiplayer = () => {
 
   // Присоединиться к комнате по ID (для открытых комнат)
   const joinRoomById = useCallback(async (roomId: string, playerName: string) => {
-    // Требуем авторизацию
-    if (!isAuthenticated) {
-      toast.error('Войдите в аккаунт для присоединения к комнате');
-      return null;
-    }
-
     if (!playerId) {
       toast.error('Подождите, идёт подключение...');
       return null;
@@ -412,6 +408,8 @@ export const useMultiplayer = () => {
     setIsLoading(true);
 
     try {
+      const authUser = await ensureMultiplayerUser();
+      if (!authUser) return null;
       // Получаем комнату
       const { data: room, error: roomError } = await supabase
         .from('rooms')
@@ -454,7 +452,7 @@ export const useMultiplayer = () => {
             color: availableColor,
             is_ready: true,
             is_host: false,
-            owner_auth_id: user?.id || null,
+            owner_auth_id: authUser.id,
             avatar_url: profile?.avatar_url || null,
           });
 
@@ -510,7 +508,7 @@ export const useMultiplayer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [playerId, user, profile, isAuthenticated, setCurrentRoom, setView]);
+  }, [playerId, user, profile, setCurrentRoom, setView]);
 
   // Кикнуть игрока (только для хоста в комнате ожидания)
   const kickPlayer = useCallback(async (roomId: string, targetPlayerId: string) => {
