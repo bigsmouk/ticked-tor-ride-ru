@@ -246,12 +246,12 @@ const Index = () => {
 
   return (
     <>
-    <div className="min-h-[100dvh] parchment flex flex-col relative">
+    <div className="min-h-[100dvh] lg:h-[100dvh] parchment flex flex-col relative lg:overflow-hidden">
       {/* Background */}
       <AnimatedTrainBackground />
       
       {/* Header - Retro poster style */}
-      <header className="retro-header py-2 md:py-3 text-center relative z-10 flex-shrink-0 animate-fade-in">
+      <header className="retro-header py-1 md:py-1.5 text-center relative z-10 flex-shrink-0 animate-fade-in">
         
         <div className="absolute right-2 md:right-4 top-2 z-20"><AuthControls /></div>
         {/* Decorative train icon */}
@@ -268,15 +268,15 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 relative z-10">
-        <div className="text-center max-w-3xl mb-7 space-y-3"><span className="inline-block rounded-full border border-gold/50 bg-primary/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-foreground">Железнодорожное приключение по Европе</span><h2 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight">Построй свою железнодорожную империю</h2><p className="text-base md:text-lg text-foreground/80">Бесплатная стратегия онлайн: играй с друзьями или против бота прямо в браузере, без скачивания и регистрации.</p></div>
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-start lg:justify-center px-3 py-5 md:py-6 lg:py-2 relative z-10">
+        <div className="text-center max-w-3xl mb-3 lg:mb-2 space-y-1"><span className="inline-block rounded-full border border-gold/50 bg-primary/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-foreground">Железнодорожное приключение по Европе</span><h2 className="font-display text-2xl md:text-3xl lg:text-3xl font-bold text-foreground leading-tight">Построй свою железнодорожную империю</h2><p className="text-sm md:text-base text-foreground/80">Бесплатная стратегия онлайн: играй с друзьями или против бота прямо в браузере, без скачивания и регистрации.</p></div>
         {/* Active games counter */}
         <div className="mb-1 animate-fade-in flex-shrink-0">
           <ActiveGamesCounter />
         </div>
         
-        <div className="max-w-xl w-full flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-          <div className="vintage-card rounded-2xl p-5 md:p-8 shadow-2xl">
+        <div className="max-w-lg w-full min-h-0 flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
+          <div className="vintage-card rounded-2xl p-3 md:p-4 shadow-2xl min-h-0 overflow-y-auto">
             {/* Welcome text */}
             <div className="text-center mb-2">
               <h2 className="font-display text-xl font-bold text-foreground mb-1">
@@ -305,10 +305,10 @@ const Index = () => {
             </div>
 
             {!showCreate && !showJoin ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <button
                   id="create-room-button"
-                  className="btn-gold w-full rounded-lg py-3 text-base hover-scale"
+                  className="btn-gold w-full rounded-lg py-2 text-base hover-scale"
                   onClick={() => {
                     if (localStorage.getItem('ttr_analytics_consent') === 'accepted') {
                       const ym = (window as Window & { ym?: (...args: any[]) => void }).ym;
@@ -339,7 +339,7 @@ const Index = () => {
                 </div>
 
                 <button
-                  className="w-full rounded-lg py-3 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
+                  className="w-full rounded-lg py-2 bg-muted/50 hover:bg-muted border border-ornament/30 text-foreground font-medium transition-colors flex items-center justify-center gap-2"
                   onClick={async () => {
                     if (!effectivePlayerName) {
                       toast.error('Введите ваше имя');
@@ -407,7 +407,7 @@ const Index = () => {
                   </div>
                 )}
 
-                <div className="text-center text-xs text-muted-foreground mt-4">
+                <div className="text-center text-xs text-muted-foreground mt-2">
                   <p>Постройте железнодорожную империю в Европе!</p>
                 </div>
               </div>
@@ -500,7 +500,7 @@ const Index = () => {
           </div>
 
           {/* Game info and rules */}
-          <div className="mt-2 text-center space-y-1 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+          <div className="mt-1 text-center space-y-1 flex-shrink-0 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             <div className="inline-flex flex-wrap justify-center gap-2 md:gap-4 text-xs md:text-sm">
               <span className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full border border-gold/30 hover-scale">
                 <span className="text-gold">👥</span>
