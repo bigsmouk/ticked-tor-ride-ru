@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Loader2, RefreshCw, Users, Lock, Globe, Train, Send } from 'lucide-react';
 import AnimatedTrainBackground from '@/components/home/AnimatedTrainBackground';
-import ActiveGamesCounter from '@/components/home/ActiveGamesCounter';
+
 import { toast } from 'sonner';
 import { AuthControls } from '@/components/auth/AuthControls';
 
@@ -270,10 +270,6 @@ const Index = () => {
       {/* Main content */}
       <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-3 py-4 md:py-5 lg:py-2 relative z-10">
         <div className="text-center max-w-3xl mb-3 lg:mb-2 space-y-1"><span className="inline-block rounded-full border border-gold/50 bg-primary/10 px-4 py-1 text-xs font-semibold tracking-widest uppercase text-foreground">Железнодорожное приключение по Европе</span><h2 className="font-display text-2xl md:text-3xl lg:text-3xl font-bold text-foreground leading-tight">Построй свою железнодорожную империю</h2><p className="text-sm md:text-base text-foreground/80">Бесплатная стратегия онлайн: играй с друзьями или против бота прямо в браузере, без скачивания и регистрации.</p></div>
-        {/* Active games counter */}
-        <div className="mb-1 animate-fade-in flex-shrink-0">
-          <ActiveGamesCounter />
-        </div>
         
         <div className="max-w-lg w-full min-h-0 flex flex-col animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
           <div className="vintage-card lobby-scroll rounded-2xl p-4 md:p-5 shadow-2xl min-h-0 overflow-y-auto overscroll-contain">
