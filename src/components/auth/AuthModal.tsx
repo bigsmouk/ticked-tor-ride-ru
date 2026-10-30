@@ -28,6 +28,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [resending, setResending] = useState(false);
   const { signIn, signUp } = useAuth();
 
+  const handleYandexLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'custom:yandex' as Parameters<typeof supabase.auth.signInWithOAuth>[0]['provider'],
+        options: { redirectTo: window.location.origin + '/' },
+      });
+      if (error) toast.error('Не удалось войти через Яндекс: ' + error.message);
+    } catch (error) {
+      toast.error('Не удалось начать вход через Яндекс');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async () => {
     if (!email.trim()) {
       toast.error('Введите email');
@@ -304,6 +319,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               : 'Создайте аккаунт для игры с друзьями'}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="mt-4 space-y-3">
+          <Button
+            type="button"
+            onClick={handleYandexLogin}
+            disabled={loading}
+            className="w-full bg-[#FC3F1D] hover:bg-[#df3517] text-white font-semibold"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <span className="mr-2 font-bold text-lg">Я</span>}
+            Войти через Яндекс
+          </Button>
+          <div className="flex items-center gap-3 text-xs text-amber-700/70">
+            <span className="h-px flex-1 bg-amber-900/20" />
+            <span>или по электронной почте</span>
+            <span className="h-px flex-1 bg-amber-900/20" />
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {mode === 'register' && (
