@@ -789,11 +789,16 @@ export const useRoomSubscription = (roomId: string | null) => {
         },
         (payload) => {
           const newStatus = payload.new.status;
-          if (currentRoom && newStatus !== currentRoom.status) {
+          const newHostId = payload.new.host_id as string;
+          if (currentRoom && (newStatus !== currentRoom.status || newHostId !== currentRoom.hostId)) {
+            const wasPromoted = currentRoom.hostId !== newHostId &&
+              newHostId === useGameStore.getState().localPlayerId;
             setCurrentRoom({
               ...currentRoom,
+              hostId: newHostId,
               status: newStatus as 'waiting' | 'playing' | 'finished',
             });
+            if (wasPromoted) toast.success('Хост покинул комнату. Теперь вы новый хост!', { duration: 7000 });
           }
         }
       )
