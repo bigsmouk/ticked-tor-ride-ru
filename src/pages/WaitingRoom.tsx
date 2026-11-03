@@ -32,6 +32,31 @@ const WaitingRoom = () => {
   // Отслеживание онлайн-статуса игроков
   const { isPlayerOnline } = usePresence(currentRoom?.id || null);
 
+  // Keep the waiting-room host lease alive; expired leases are cleaned server-side.
+  useEffect(() => {
+    if (!currentRoom?.id || currentRoom.status !== 'waiting' || currentRoom.hostId !== localPlayerId || currentRoom.isSoloMode) return;
+    const roomId = currentRoom.id;
+    let stopped = false;
+    const renew = async () => {
+      if (stopped || document.visibilityState === 'hidden' || !navigator.onLine) return;
+      const { data, error } = await supabase.from('rooms')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', roomId).eq('host_id', localPlayerId).eq('status', 'waiting').select('id');
+      if (error || !data?.length) console.warn('[RoomLease] Heartbeat failed', error);
+    };
+    void renew();
+    const timer = window.setInterval(() => void renew(), 30000);
+    const onVisible = () => { if (document.visibilityState === 'visible') void renew(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onVisible);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onVisible);
+    };
+  }, [currentRoom?.id, currentRoom?.status, currentRoom?.hostId, currentRoom?.isSoloMode, localPlayerId]);
+
   // Подписка на realtime обновления комнаты
   useRoomSubscription(currentRoom?.id || null);
 
