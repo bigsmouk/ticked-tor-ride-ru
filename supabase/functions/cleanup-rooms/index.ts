@@ -20,58 +20,26 @@ Deno.serve(async (req) => {
 
     // Delete ONLY waiting rooms that have had no members for at least 3 minutes.
     // Never remove an occupied room just because its updated_at is old.
-    const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    const twoMinutesAgo = new Date(Date.now() - 120000).toISOString();
     const { data: candidates, error: findError } = await supabase
       .from("rooms")
       .select("id, code, name, created_at, updated_at")
       .eq("status", "waiting")
-      .lt("created_at", threeMinutesAgo);
+      .lt("updated_at", twoMinutesAgo);
     if (findError) throw findError;
 
-    const emptyRooms: Array<{ id: string; code: string; name: string }> = [];
+    // Atomic conditional delete avoids deleting a room renewed after candidate selection.
+    const deletedRooms: Array<{ id: string; code: string; name: string }> = [];
     for (const room of candidates || []) {
-      const { count, error } = await supabase
-        .from("room_players")
-        .select("id", { count: "exact", head: true })
-        .eq("room_id", room.id);
+      const { data: deleted, error } = await supabase.from("rooms")
+        .delete().eq("id", room.id).eq("status", "waiting")
+        .lt("updated_at", twoMinutesAgo).select("id");
       if (error) throw error;
-      if (count === 0) emptyRooms.push({ id: room.id, code: room.code, name: room.name });
-    }
-    const allRoomIds = emptyRooms.map(room => room.id);
-
-    if (allRoomIds.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          message: "No rooms to clean up", 
-          deleted: 0,
-          emptyRooms: 0
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Recheck immediately before deletion: a player may have joined meanwhile.
-    // Delete only the rooms still empty, and fail safely if the check fails.
-    const deletedRooms: typeof emptyRooms = [];
-    for (const room of emptyRooms) {
-      const { count, error: countError } = await supabase
-        .from("room_players")
-        .select("id", { count: "exact", head: true })
-        .eq("room_id", room.id);
-      if (countError) throw countError;
-      if (count !== 0) continue;
-      const { data: deleted, error: deleteError } = await supabase
-        .from("rooms")
-        .delete()
-        .eq("id", room.id)
-        .eq("status", "waiting")
-        .select("id");
-      if (deleteError) throw deleteError;
       if (deleted?.length) deletedRooms.push(room);
     }
 
     return new Response(JSON.stringify({
-      message: `Deleted ${deletedRooms.length} empty waiting rooms`,
+      message: `Deleted ${deletedRooms.length} expired waiting rooms`,
       deleted: deletedRooms.length,
       emptyRooms: deletedRooms.length,
       details: { empty: deletedRooms.map(r => ({ code: r.code, name: r.name })) },
