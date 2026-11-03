@@ -166,6 +166,24 @@ export const usePresence = (roomId: string | null) => {
 
     setChannel(presenceChannel);
 
+    // Persist player activity so server-side host transfer can select a live successor.
+    // Update only the authenticated player's own row (subject to RLS).
+    const renewPlayerActivity = async () => {
+      if (document.visibilityState === 'hidden' || !navigator.onLine) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase.from('room_players')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('room_id', roomId).eq('player_id', localPlayerId)
+        .eq('owner_auth_id', user.id);
+      if (error) console.warn('[Presence] Database heartbeat failed', error);
+    };
+    void renewPlayerActivity();
+    const playerHeartbeat = window.setInterval(() => void renewPlayerActivity(), 30000);
+    const resumeHeartbeat = () => { if (document.visibilityState === 'visible') void renewPlayerActivity(); };
+    document.addEventListener('visibilitychange', resumeHeartbeat);
+    window.addEventListener('online', resumeHeartbeat);
+
     // Периодический heartbeat для поддержания соединения
     const heartbeat = setInterval(async () => {
       if (presenceChannel) {
@@ -179,6 +197,9 @@ export const usePresence = (roomId: string | null) => {
 
     return () => {
       clearInterval(heartbeat);
+      clearInterval(playerHeartbeat);
+      document.removeEventListener('visibilitychange', resumeHeartbeat);
+      window.removeEventListener('online', resumeHeartbeat);
       // Очищаем все pending таймеры выхода
       leaveTimersRef.current.forEach((timer) => clearTimeout(timer));
       leaveTimersRef.current.clear();
