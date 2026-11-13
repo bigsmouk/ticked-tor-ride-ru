@@ -6,6 +6,8 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 const items = [['/','Главная','Home'],['/play-with-friends','С друзьями','With friends'],['/play-solo','Против бота','Solo vs bot'],['/how-to-play','Как играть','How to play'],['/rules','Правила','Rules'],['/about','О проекте','About'],['/privacy','Конфиденциальность','Privacy']] as const;
 export default function SiteNavigation() {
  const { language } = useLanguage(); const { pathname } = useLocation(); const [open,setOpen]=useState(false);
+ // The active match owns the entire viewport; never push its board down with site navigation.
+ if (pathname === '/game') return null;
  return <nav data-no-translate aria-label={language==='en'?'Main navigation':'Главная навигация'} className="relative z-40 border-b border-amber-500/40 bg-[#4b2818] text-amber-50">
   <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2">
    <Link to="/" className="flex items-center gap-2 font-display font-bold text-amber-300"><TrainFront size={20}/> Ticket to Ride</Link>
