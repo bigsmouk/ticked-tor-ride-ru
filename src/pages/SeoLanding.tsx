@@ -65,8 +65,9 @@ const englishPages: typeof pages = {
  guide: {eyebrow:'Beginner guide',title:'How to play a railway strategy game: first steps',intro:'New to railway games? Learn the basic steps here, then read the full rules for more details.',sections:[{title:'Step 1. Choose a mode',body:'Start with solo practice or create a room and invite friends with a code. Registration is optional.'},{title:'Step 2. Check destination tickets',body:'Tickets show the pairs of cities you need to connect. Plan a continuous route; it does not have to be direct.'},{title:'Step 3. Collect cards and build',body:'Use matching train cards to claim routes. Watch opponents, who may take the connection you need.'},{title:'Step 4. Score points',body:'Claimed routes and completed tickets earn points. Unfinished tickets reduce your final score.'}],questions:[['Where should I start?','Try solo mode and claim a few short routes.'],['Must I know all the rules?','No. Start with train cards, tickets and route building.'],['Where are the full rules?','The rules page explains stations, tunnels, ferries and scoring.']],action:'Start playing'}
 };
 
-export default function SeoLanding({ page }: { page: LandingKey }) {
-  const { language } = useLanguage();
+export default function SeoLanding({ page, forceLanguage }: { page: LandingKey; forceLanguage?: 'en' }) {
+  const { language: preferredLanguage } = useLanguage();
+  const language = forceLanguage ?? preferredLanguage;
   const content = language === 'en' ? englishPages[page] : pages[page];
   return (
     <div data-no-translate className="min-h-screen bg-amber-50 text-amber-950">
@@ -108,6 +109,10 @@ export default function SeoLanding({ page }: { page: LandingKey }) {
               <Link className="underline text-blue-800" to="/rules">{language === "en" ? "Full game rules" : "Подробные правила игры"}</Link>
             </nav>
           </section>
+          <nav aria-label={language === 'en' ? 'Languages' : 'Языковые версии'} className="flex gap-4 text-sm border-t pt-4">
+            <Link className="underline text-blue-800" to={page === 'friends' ? '/play-with-friends' : page === 'solo' ? '/play-solo' : '/how-to-play'}>Русский</Link>
+            <Link className="underline text-blue-800" to={page === 'friends' ? '/en/play-with-friends' : page === 'solo' ? '/en/play-solo' : '/en/how-to-play'}>English</Link>
+          </nav>
           <p className="text-sm text-amber-800">{language === "en" ? "Unofficial browser game inspired by Ticket to Ride: Europe. Not affiliated with the original rights holders." : "Неофициальная браузерная игра, вдохновлённая настольной игрой Ticket to Ride: Europe. Проект не связан с правообладателями оригинальной игры."}</p>
         </article>
       </main>
