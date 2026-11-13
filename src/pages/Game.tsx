@@ -1,3 +1,4 @@
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GameBoard } from '@/components/game/GameBoard';
@@ -100,6 +101,7 @@ const GameInner: React.FC<{
 
   return (
     <div className="min-h-screen parchment relative">
+      <div className="fixed right-2 top-2 z-[70] opacity-75 hover:opacity-100 focus-within:opacity-100" aria-label="Game language"><LanguageSwitcher /></div>
       {/* Всегда рендерим GameBoard, но скрываем если нет состояния */}
       <div className={showGameBoard ? 'block' : 'hidden'}>
         <GameBoard />
