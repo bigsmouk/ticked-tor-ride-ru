@@ -30,17 +30,31 @@ import { LanguageDOMBridge, useLanguage } from "./i18n/language";
 
 const queryClient = new QueryClient();
 
+const indexablePaths = ['/', '/rules', '/privacy', '/about', '/play-with-friends', '/play-solo', '/how-to-play', '/en/play-with-friends', '/en/play-solo', '/en/how-to-play'];
+const englishPath = (path: string) => path.startsWith('/en/');
+
 const AnalyticsRouteTracker = () => {
   const { pathname, search } = useLocation();
   const initial = useRef(true);
   const { language } = useLanguage();
   useEffect(() => {
     const robots = document.querySelector('meta[name="robots"]');
-    if (robots) robots.setAttribute('content', ['/', '/rules', '/privacy', '/play-with-friends', '/play-solo', '/how-to-play'].includes(pathname) ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
+    if (robots) robots.setAttribute('content', indexablePaths.includes(pathname) ? 'index, follow, max-image-preview:large' : 'noindex, nofollow');
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) {
-      if (['/', '/rules', '/privacy', '/play-with-friends', '/play-solo', '/how-to-play'].includes(pathname)) canonical.setAttribute('href', 'https://tickettoride.online' + (pathname === '/' ? '/' : pathname));
+      if (indexablePaths.includes(pathname)) canonical.setAttribute('href', 'https://tickettoride.online' + (pathname === '/' ? '/' : pathname));
       else canonical.removeAttribute('href');
+    }
+    document.documentElement.lang = englishPath(pathname) ? 'en' : language;
+    const hreflang = document.querySelectorAll('link[rel="alternate"][hreflang]');
+    hreflang.forEach(node => node.remove());
+    if (['/play-with-friends', '/play-solo', '/how-to-play', '/en/play-with-friends', '/en/play-solo', '/en/how-to-play'].includes(pathname)) {
+      const base = pathname.replace(/^\\/en/, '');
+      for (const [lang, href] of [['ru', base], ['en', '/en' + base], ['x-default', base]]) {
+        const link = document.createElement('link');
+        link.rel = 'alternate'; link.hreflang = lang; link.href = 'https://tickettoride.online' + href;
+        document.head.appendChild(link);
+      }
     }
     const seo = {
       '/': { title: 'Железнодорожная стратегия онлайн — играть бесплатно без регистрации', description: 'Бесплатная браузерная игра про строительство железных дорог. Играйте с друзьями по коду комнаты или против бота. Без скачивания и регистрации.' },
@@ -48,6 +62,9 @@ const AnalyticsRouteTracker = () => {
       '/play-with-friends': { title: 'Настольная стратегия с друзьями онлайн — без регистрации', description: 'Создайте комнату и играйте с друзьями в железнодорожную стратегию онлайн. Бесплатно, без скачивания и регистрации, для 2–4 игроков.' },
       '/play-solo': { title: 'Игра про поезда против бота — бесплатно и без регистрации', description: 'Играйте против бота в железнодорожную стратегию по карте Европы. Соло-режим запускается прямо в браузере, без регистрации и скачивания.' },
       '/how-to-play': { title: 'Как играть в железнодорожную стратегию — первые шаги', description: 'Короткое руководство для новичков: как выбрать режим, собирать карты вагонов, строить дороги и выполнять билеты с маршрутами.' },
+      '/en/play-with-friends': { title: 'Railway Strategy Online With Friends — Free Browser Game', description: 'Create a private room for 2–4 players, share the invite code and build routes across Europe. Play online with friends without signing up.' },
+      '/en/play-solo': { title: 'Play Railway Strategy Against a Bot — Free Online', description: 'Practice railway routes against a computer opponent in your browser. Start a solo game free without registration or download.' },
+      '/en/how-to-play': { title: 'How to Play Railway Strategy — Beginner Guide', description: 'Learn destination tickets, train cards, claiming routes and scoring points before starting your first railway strategy game.' },
       '/privacy': { title: 'Конфиденциальность и cookies | Ticket to Ride', description: 'Политика конфиденциальности Ticket to Ride: Europe: регистрация, Supabase, cookies, Яндекс.Метрика и обработка данных.' },
     }[pathname];
     if (pathname === '/about') {
@@ -57,7 +74,7 @@ const AnalyticsRouteTracker = () => {
       document.querySelector('meta[property="og:description"]')?.setAttribute('content', language === 'en' ? 'About the creator and the independent browser game.' : 'Об авторе и независимой браузерной игре.');
     }
     if (seo) {
-      if (language === "en") {
+      if (language === "en" && !englishPath(pathname)) {
         const en = {
           "/": { title: "Railway Strategy Online — Play Free Without Registration", description: "Play a free railway strategy game in your browser. Build routes across Europe with friends or against a bot. No download or registration." },
           "/play-with-friends": { title: "Play a Railway Strategy Game Online With Friends", description: "Create a room and play a railway strategy game online with 2–4 friends. No registration or download required." },
@@ -119,6 +136,9 @@ const App = () => (
             <Route path="/play-with-friends" element={<SeoLanding page="friends" />} />
             <Route path="/play-solo" element={<SeoLanding page="solo" />} />
             <Route path="/how-to-play" element={<SeoLanding page="guide" />} />
+            <Route path="/en/play-with-friends" element={<SeoLanding page="friends" forceLanguage="en" />} />
+            <Route path="/en/play-solo" element={<SeoLanding page="solo" forceLanguage="en" />} />
+            <Route path="/en/how-to-play" element={<SeoLanding page="guide" forceLanguage="en" />} />
             <Route path="/email-confirmed" element={<EmailConfirmed />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
