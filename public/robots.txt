@@ -2,7 +2,7 @@
 # Do not crawl game sessions, waiting rooms, auth or developer pages.
 User-agent: *
 Allow: /
-Disallow: /about
+Disallow: /en/game
 Disallow: /game
 Disallow: /waiting
 Disallow: /reset-password
