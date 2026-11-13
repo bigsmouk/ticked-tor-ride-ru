@@ -49,7 +49,7 @@ const AnalyticsRouteTracker = () => {
     const hreflang = document.querySelectorAll('link[rel="alternate"][hreflang]');
     hreflang.forEach(node => node.remove());
     if (['/play-with-friends', '/play-solo', '/how-to-play', '/en/play-with-friends', '/en/play-solo', '/en/how-to-play'].includes(pathname)) {
-      const base = pathname.replace(/^\\/en/, '');
+      const base = pathname.startsWith('/en/') ? pathname.slice(3) : pathname;
       for (const [lang, href] of [['ru', base], ['en', '/en' + base], ['x-default', base]]) {
         const link = document.createElement('link');
         link.rel = 'alternate'; link.hreflang = lang; link.href = 'https://tickettoride.online' + href;
